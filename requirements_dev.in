@@ -1,1 +1,2 @@
 -r requirements_test.in
+bumpversion
