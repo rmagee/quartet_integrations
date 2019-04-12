@@ -54,3 +54,4 @@ sphinxcontrib-serializinghtml
 sqlparse
 urllib3
 whichcraft
+coverage
