@@ -4,10 +4,10 @@
 		<n1:StandardBusinessDocumentHeader xmlns:n1="http://www.unece.org/cefact/namespaces/StandardBusinessDocumentHeader">
 			<n1:HeaderVersion>1.0</n1:HeaderVersion>
 			<n1:Sender>
-				<n1:Identifier Authority="SGLN">urn:epc:id:sgln:030006.000000.0</n1:Identifier>
+				<n1:Identifier Authority="SGLN">urn:epc:id:sgln:035555.000000.0</n1:Identifier>
 			</n1:Sender>
 			<n1:Receiver>
-				<n1:Identifier Authority="SGLN">urn:epc:id:sgln:0351754.00000.0</n1:Identifier>
+				<n1:Identifier Authority="SGLN">urn:epc:id:sgln:0355555.00000.0</n1:Identifier>
 			</n1:Receiver>
 			<n1:DocumentIdentification>
 				<n1:Standard>EPCglobal</n1:Standard>
@@ -28,22 +28,22 @@
 				<bizStep>urn:epcglobal:cbv:bizstep:commissioning</bizStep>
 				<disposition>urn:epcglobal:cbv:disp:active</disposition>
 				<readPoint>
-					<id>urn:epc:id:sgln:030006.000013.0</id>
+					<id>urn:epc:id:sgln:035555.000013.0</id>
 				</readPoint>
 				<bizLocation>
-					<id>urn:epc:id:sgln:030006.000013.0</id>
+					<id>urn:epc:id:sgln:035555.000013.0</id>
 				</bizLocation>
 				<extension>
 					<quantityList>
 						<quantityElement>
-							<epcClass>urn:epc:class:lgtin:0351754.050601.8AHUB97A01</epcClass>
+							<epcClass>urn:epc:class:lgtin:0355555.050601.LOT12345</epcClass>
 							<quantity>0</quantity>
 						</quantityElement>
 					</quantityList>
 				</extension>
 				<SAPExtension>
 					<ObjAttributes>
-						<LOTNO>8AHUB97A01</LOTNO>
+						<LOTNO>LOT12345</LOTNO>
 						<DATEX>2020-04-18</DATEX>
 						<DATMF>2018-10-19</DATMF>
 					</ObjAttributes>
@@ -58,22 +58,22 @@
 				<bizStep>urn:epcglobal:cbv:bizstep:commissioning</bizStep>
 				<disposition>urn:epcglobal:cbv:disp:active</disposition>
 				<readPoint>
-					<id>urn:epc:id:sgln:030006.000013.0</id>
+					<id>urn:epc:id:sgln:035555.000013.0</id>
 				</readPoint>
 				<bizLocation>
-					<id>urn:epc:id:sgln:030006.000013.0</id>
+					<id>urn:epc:id:sgln:035555.000013.0</id>
 				</bizLocation>
 				<extension>
 					<quantityList>
 						<quantityElement>
-							<epcClass>urn:epc:class:lgtin:0351754.550601.8AHUB97A01</epcClass>
+							<epcClass>urn:epc:class:lgtin:0355555.550601.LOT12345</epcClass>
 							<quantity>0</quantity>
 						</quantityElement>
 					</quantityList>
 				</extension>
 				<SAPExtension>
 					<ObjAttributes>
-						<LOTNO>8AHUB97A01</LOTNO>
+						<LOTNO>LOT12345</LOTNO>
 						<DATEX>2020-04-18</DATEX>
 						<DATMF>2018-10-19</DATMF>
 					</ObjAttributes>
@@ -84,22 +84,22 @@
 				<eventTime>2019-01-03T18:34:19.037Z</eventTime>
 				<eventTimeZoneOffset>+01:00</eventTimeZoneOffset>
 				<epcList>
-					<epc>urn:epc:id:sgtin:0351754.050601.100041164991</epc>
-					<epc>urn:epc:id:sgtin:0351754.050601.100041220263</epc>
-					<epc>urn:epc:id:sgtin:0351754.050601.100041224053</epc>
+					<epc>urn:epc:id:sgtin:0355555.050601.100041164991</epc>
+					<epc>urn:epc:id:sgtin:0355555.050601.100041220263</epc>
+					<epc>urn:epc:id:sgtin:0355555.050601.100041224053</epc>
 				</epcList>
 				<action>ADD</action>
 				<bizStep>urn:epcglobal:cbv:bizstep:commissioning</bizStep>
 				<disposition>urn:epcglobal:cbv:disp:active</disposition>
 				<readPoint>
-					<id>urn:epc:id:sgln:030006.000013.0</id>
+					<id>urn:epc:id:sgln:035555.000013.0</id>
 				</readPoint>
 				<bizLocation>
-					<id>urn:epc:id:sgln:030006.000013.0</id>
+					<id>urn:epc:id:sgln:035555.000013.0</id>
 				</bizLocation>
 				<SAPExtension>
 					<ObjAttributes>
-						<LOTNO>8AHUB97A01</LOTNO>
+						<LOTNO>LOT12345</LOTNO>
 						<DATEX>2020-04-18</DATEX>
 						<DATMF>2018-10-19</DATMF>
 					</ObjAttributes>

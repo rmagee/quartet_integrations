@@ -1,5 +1,7 @@
 [run]
 branch = true
+source =
+    quartet_integrations
 
 [report]
 omit =

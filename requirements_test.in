@@ -55,3 +55,4 @@ sqlparse
 urllib3
 whichcraft
 coverage
+celery

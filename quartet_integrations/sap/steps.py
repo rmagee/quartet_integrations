@@ -13,7 +13,7 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 import io
-from quartet_output.steps import ContextKeys
+from quartet_epcis.parsing.steps import ContextKeys
 from django.core.files.base import File
 from quartet_capture.rules import Step, RuleContext
 from quartet_integrations.sap.parsing import SAPParser
@@ -48,3 +48,13 @@ class SAPParsingStep(Step):
         rule_context.context[
             ContextKeys.EPCIS_MESSAGE_ID_KEY.value
         ] = message_id
+
+    def on_failure(self):
+        pass
+
+    @property
+    def declared_parameters(self):
+        pass
+
+
+

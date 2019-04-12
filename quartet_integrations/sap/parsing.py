@@ -15,7 +15,6 @@
 
 from typing import List
 from quartet_epcis.parsing.parser import QuartetParser
-from quartet_epcis.models import events
 from EPCPyYes.core.v1_2 import events as yes_events
 
 from EPCPyYes.core.v1_2.CBV.instance_lot_master_data import \

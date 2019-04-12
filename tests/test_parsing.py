@@ -15,7 +15,9 @@
 
 import os
 from django.test import TestCase
-
+from quartet_output.steps import ContextKeys
+from quartet_capture.models import Rule, Step, Task
+from quartet_capture.tasks import execute_rule
 from EPCPyYes.core.v1_2 import template_events as yes_events
 from quartet_integrations.sap.parsing import SAPParser
 
@@ -42,4 +44,38 @@ class TestEparsecis(TestCase):
         parser = TestParser(
             os.path.join(curpath, 'data/sap-epcis.xml'))
         parser.parse()
-        parser.get_epcpyyes_object_event()
+
+
+class TestRule(TestCase):
+    def test_sap_step(self):
+        rule = self._create_rule()
+        self._create_sap_step(rule)
+        curpath = os.path.dirname(__file__)
+        data_path = os.path.join(curpath, 'data/sap-epcis.xml')
+        db_task = self._create_task(rule)
+        with open(data_path, 'r') as data_file:
+            context = execute_rule(data_file.read().encode(), db_task)
+
+    def _create_rule(self):
+        rule = Rule()
+        rule.name = 'EPCIS'
+        rule.description = 'test rule'
+        rule.save()
+        return rule
+
+    def _create_sap_step(self, rule):
+        step = Step()
+        step.rule = rule
+        step.order = 3
+        step.name = 'Parse SAP EPCIS'
+        step.step_class = 'quartet_integrations.sap.steps.SAPParsingStep'
+        step.description = 'sap unit test parsing step'
+        step.save()
+
+
+    def _create_task(self, rule):
+        task = Task()
+        task.rule = rule
+        task.name = 'unit test task'
+        task.save()
+        return task
