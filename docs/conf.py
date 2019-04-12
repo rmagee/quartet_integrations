@@ -22,7 +22,6 @@ cwd = os.getcwd()
 parent = os.path.dirname(cwd)
 sys.path.append(parent)
 
-from recommonmark.parser import CommonMarkParser
 import quartet_integrations
 import sphinx_rtd_theme
 import django
@@ -30,7 +29,6 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'docs.docsettings'
 django.setup()
 # -- General configuration -----------------------------------------------------
 
-source_parsers = {'.md': CommonMarkParser}
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
