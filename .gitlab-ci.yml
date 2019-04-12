@@ -1,0 +1,47 @@
+stages:
+    - test-python
+    - build-docs
+
+python3_5_unit_test:
+  image: seriallab/python3.5dev
+  stage: test-python
+  script:
+  - apt-get install -y git
+  - export PYTHONPATH=$PYTHONPATH:$CI_PROJECT_DIR
+  - pip install -r requirements_test.txt
+  - coverage run runtests.py
+  - coverage report -m
+  - coverage html
+  artifacts:
+    paths:
+      - htmlcov/
+
+python3_6_unit_test:
+  image: seriallab/python3.6dev
+  stage: test-python
+  script:
+  - apt-get install -y git
+  - export PYTHONPATH=$PYTHONPATH:$CI_PROJECT_DIR
+  - pip install -r requirements_test.txt
+  - coverage run runtests.py
+  - coverage report -m
+  - coverage html
+  artifacts:
+    paths:
+      - htmlcov/
+
+pages:
+    image: seriallab/python3.5dev
+    stage: build-docs
+    script:
+    - apt-get install -y git
+    - export PYTHONPATH=$PYTHONPATH:$CI_PROJECT_DIR
+    - pip install -r requirements_test.txt
+    - pip install sphinx sphinx_rtd_theme pygments ipython recommonmark
+    - make docs
+    - mv docs/_build/html/ public/
+    artifacts:
+        paths:
+        - public
+    only:
+      - master
