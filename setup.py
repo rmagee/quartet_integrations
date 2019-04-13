@@ -47,7 +47,7 @@ setup(
     name='quartet_integrations',
     version=version,
     description="""Third party integrations for the QU4RTET platform.""",
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     author='SerialLab, Corp',
     author_email='slab@serial-lab.com',
     url='https://gitlab.com/serial-lab/quartet_integrations',
