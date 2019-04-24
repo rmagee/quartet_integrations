@@ -45,30 +45,24 @@
     </EPCISHeader>
     <EPCISBody>
         <EventList>
-			<ObjectEvent>
-				<eventTime>2019-01-03T18:34:19.037Z</eventTime>
-				<eventTimeZoneOffset>+01:00</eventTimeZoneOffset>
-				<epcList>
-					<epc>urn:epc:id:sgtin:0351754.550601.100000000013</epc>
-				</epcList>
-				<action>ADD</action>
-				<bizStep>urn:epcglobal:cbv:bizstep:commissioning</bizStep>
-				<disposition>urn:epcglobal:cbv:disp:active</disposition>
-				<readPoint>
-					<id>urn:epc:id:sgln:030006.000013.0</id>
-				</readPoint>
-				<bizLocation>
-					<id>urn:epc:id:sgln:030006.000013.0</id>
-				</bizLocation>
-				<SAPExtension>
-					<ObjAttributes>
-						<LOTNO>8AHUB97A01</LOTNO>
-						<DATEX>2020-04-18</DATEX>
-						<DATMF>2018-10-19</DATMF>
-					</ObjAttributes>
-					<ObjAttGroupList/>
-				</SAPExtension>
-			</ObjectEvent>
+            <ObjectEvent>
+                <eventTime>2019-01-03T18:34:19.037Z</eventTime>
+                <eventTimeZoneOffset>+01:00</eventTimeZoneOffset>
+                <epcList>
+                    <epc>urn:epc:id:sgtin:0331722.119201.276429174853</epc>
+                    <epc>urn:epc:id:sgtin:0331722.119201.276431236337</epc>
+                    <epc>urn:epc:id:sscc:0343602.0000000096</epc>
+                </epcList>
+                <action>ADD</action>
+                <bizStep>urn:epcglobal:cbv:bizstep:commissioning</bizStep>
+                <disposition>urn:epcglobal:cbv:disp:active</disposition>
+                <readPoint>
+                    <id>urn:epc:id:sgln:030006.000013.0</id>
+                </readPoint>
+                <bizLocation>
+                    <id>urn:epc:id:sgln:030006.000013.0</id>
+                </bizLocation>
+            </ObjectEvent>
 
         </EventList>
     </EPCISBody>

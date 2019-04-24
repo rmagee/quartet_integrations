@@ -25,7 +25,8 @@ INSTALLED_APPS = [
     "quartet_integrations",
     "quartet_epcis",
     "quartet_capture",
-    "quartet_output"
+    "quartet_output",
+    "quartet_masterdata"
 ]
 
 SITE_ID = 1
