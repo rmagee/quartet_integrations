@@ -7,8 +7,8 @@
 commonmark==0.8.1         # via epcpyyes
 django-model-utils==3.1.2  # via quartet-epcis
 django==2.2
-eparsecis==2.0.10
-epcpyyes==1.3.3
+eparsecis==3.0.1
+epcpyyes==2.0.1
 future==0.17.1            # via commonmark
 haikunator==2.1.0         # via quartet-capture
 jinja2==2.10.1            # via epcpyyes
@@ -16,8 +16,8 @@ lxml==4.3.3               # via eparsecis, epcpyyes
 markupsafe==1.1.1         # via jinja2
 python-dateutil==2.8.0    # via quartet-epcis
 pytz==2019.1              # via django
-quartet-capture==2.4.0
-quartet-epcis==1.4.5
+quartet-capture==2.6.2
+quartet-epcis==1.4.9
 quartet-masterdata==1.3.0
 quartet-output==2.0.4
 six==1.12.0               # via python-dateutil
