@@ -28,6 +28,7 @@ eparsecis==3.0.1
 epcpyyes==2.0.1
 first==2.0.2
 future==0.17.1
+gs123==1.0.5
 haikunator==2.1.0
 idna==2.8
 imagesize==1.1.0

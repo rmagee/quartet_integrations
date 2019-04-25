@@ -4,12 +4,14 @@
 #
 #    pip-compile --output-file requirements.txt requirements.in
 #
+click==7.0                # via gs123
 commonmark==0.8.1         # via epcpyyes
 django-model-utils==3.1.2  # via quartet-epcis
 django==2.2
 eparsecis==3.0.1
 epcpyyes==2.0.1
 future==0.17.1            # via commonmark
+gs123==1.0.5
 haikunator==2.1.0         # via quartet-capture
 jinja2==2.10.1            # via epcpyyes
 lxml==4.3.3               # via eparsecis, epcpyyes
