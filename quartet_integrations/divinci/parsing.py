@@ -12,13 +12,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-from logging import getLogger
-from EPCPyYes.core.v1_2 import events as yes_events
-from quartet_epcis.models import events
 from EPCPyYes.core.v1_2.events import AggregationEvent
-from quartet_masterdata.models import TradeItem, Company
-from quartet_epcis.parsing.json import JSONParser as EPCISJSONParser
 from gs123.conversion import BarcodeConverter
+from logging import getLogger
+from quartet_epcis.parsing.json import JSONParser as EPCISJSONParser
+from quartet_masterdata.models import TradeItem, Company
 
 logger = getLogger(__name__)
 

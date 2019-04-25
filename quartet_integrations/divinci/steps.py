@@ -13,6 +13,7 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved
 import io
+from django.db import transaction
 from django.core.files.base import File
 from quartet_integrations.divinci.parsing import JSONParser
 from quartet_capture.rules import Step, RuleContext
@@ -22,8 +23,9 @@ class JSONParsingStep(Step):
     def execute(self, data, rule_context: RuleContext):
         data = self.get_data(data)
         self.info('Parsing inbound data...')
-        parser = JSONParser(data)
-        parser.parse()
+        with transaction.atomic():
+            parser = JSONParser(data)
+            parser.parse()
         self.info('Parsing complete.')
 
     def get_data(self, data):
