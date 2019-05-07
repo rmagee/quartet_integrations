@@ -24,12 +24,13 @@ class SAPParsingStep(Step):
     A QU4RTET parsing step that can parse SAP XML data that contains
     custom event data.
     """
+
     def execute(self, data, rule_context: RuleContext):
         data = self.get_data(data)
         # the base class will return a generic message id for the
         # parsed epcis data
         self.info('Beginning parsing...')
-        message_id = SAPParser(data).parse()
+        message_id = self._parse(data)
         self.info('Adding Message ID %s to the context under '
                   'key MESSAGE_ID.', message_id)
         self.info('Parsing complete.')
@@ -39,6 +40,9 @@ class SAPParsingStep(Step):
         rule_context.context[
             ContextKeys.EPCIS_MESSAGE_ID_KEY.value
         ] = message_id
+
+    def _parse(self, data):
+        return SAPParser(data).parse()
 
     def get_data(self, data):
         try:
