@@ -14,7 +14,7 @@
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 import io
 from quartet_integrations.sap.steps import SAPParsingStep
-from quartet_integrations.optel.parsing import OptelEPCISLegacyParser
+from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, ConsolidationParser
 
 
 class OptelLineParsingStep(SAPParsingStep):
@@ -26,3 +26,10 @@ class OptelLineParsingStep(SAPParsingStep):
     def _parse(self, data):
         return OptelEPCISLegacyParser(data).parse()
 
+
+class ConsolidationParsingStep(SAPParsingStep):
+    """
+    Uses the consolidation parser to handle any bloated optel messages.
+    """
+    def _parse(self, data):
+        return ConsolidationParser(data).parse()

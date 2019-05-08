@@ -84,6 +84,25 @@
 					<id>urn:epc:id:sgln:035555.2029.1</id>
 				</bizLocation>
 			</ObjectEvent>
+			<AggregationEvent>
+				<eventTime>2017-12-13T03:22:36.831029Z</eventTime>
+				<eventTimeZoneOffset>-06:00</eventTimeZoneOffset>
+                <parentID>urn:epc:id:sgtin:0355555.659415.8496</parentID>
+				<childEPCs>
+					<epc>urn:epc:id:sgtin:0355555.059415.126852</epc>
+                    <epc>urn:epc:id:sgtin:0355555.059415.126855</epc>
+                    <epc>urn:epc:id:sgtin:0355555.059415.126853</epc>
+				</childEPCs>
+				<action>ADD</action>
+				<bizStep>urn:epcglobal:cbv:bizstep:packing</bizStep>
+				<disposition>urn:epcglobal:cbv:disp:unknown</disposition>
+				<readPoint>
+					<id>N/A</id>
+				</readPoint>
+				<bizLocation>
+					<id>urn:epc:id:sgln:035555.2029.1</id>
+				</bizLocation>
+			</AggregationEvent>
 		</EventList>
 	</EPCISBody>
 </epcis:EPCISDocument>

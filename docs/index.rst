@@ -18,4 +18,5 @@ Contents:
    authors
    history
    sap
+   optel
    modules
