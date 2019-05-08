@@ -3,8 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to quartet_integrations's documentation!
-=================================================================
+The QU4RTET Integration Module
+==============================
+
+The QU4RTET (q4) integration module handles a number of integration
+interfaces to various vendor systems
+that implement either non-standard EPCIS markups or are altogether
+non-standard.
 
 Contents:
 
