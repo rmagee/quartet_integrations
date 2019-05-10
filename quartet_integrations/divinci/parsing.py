@@ -104,7 +104,12 @@ class JSONParser(EPCISJSONParser):
         """
         for epc in epcis_event.child_epcs:
             # see if the child has a parent
-            entry = Entry.objects.get(identifier=epc)
+            try:
+                entry = Entry.objects.get(identifier=epc)
+            except Entry.DoesNotExist:
+                logger.exception()
+                raise self.InvalidEPC('The EPC %s does not exist and can not'
+                                      ' be processed.' % epc)
             # if so remove it
             if entry.parent_id:
                 disagg = AggregationEvent(
@@ -219,4 +224,7 @@ class JSONParser(EPCISJSONParser):
         pass
 
     class InvalidEncodingError(Exception):
+        pass
+
+    class InvalidEPC(Exception):
         pass

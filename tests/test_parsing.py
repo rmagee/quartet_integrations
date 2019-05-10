@@ -94,17 +94,10 @@ class TestDivinciRule(TestCase):
         rule = self._create_rule()
         self._create_sap_step(rule)
         curpath = os.path.dirname(__file__)
-        data_path = os.path.join(curpath, 'data/divinci-inbound.json')
+        data_path = os.path.join(curpath, file)
         db_task = self._create_task(rule)
         with open(data_path, 'r') as data_file:
             context = execute_rule(data_file.read().encode(), db_task)
-        proxy = EPCISDBProxy()
-        evs = events.Event.objects.filter(type='tx')
-        self.assertEqual(evs.count(), 1, 'There should be one transaction event')
-        evs = events.Event.objects.filter(type='ob')
-        self.assertEqual(evs.count(), 1)
-        evs = events.Event.objects.filter(type='ag')
-        self.assertEqual(evs.count(), 4)
 
     def test_divinci_step(self):
         self._test_divinci_step()
@@ -112,9 +105,11 @@ class TestDivinciRule(TestCase):
         self.assertEqual(evs.count(), 1, 'There should be one transaction event')
         evs = events.Event.objects.filter(type='ob')
         self.assertEqual(evs.count(), 1)
+        evs = events.Event.objects.filter(type='ag')
+        self.assertEqual(evs.count(), 4)
 
     def test_divinci_auto_commisssion(self):
-        self.test_divinci_step('data/divinci-auto-commission.json')
+        self._test_divinci_step('data/divinci-auto-commission.json')
         evs = events.Event.objects.filter(type='tx')
         self.assertEqual(evs.count(), 1, 'There should be one transaction event')
         evs = events.Event.objects.filter(type='ob')
