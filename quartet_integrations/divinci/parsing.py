@@ -12,7 +12,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-from EPCPyYes.core.v1_2.events import AggregationEvent
+from EPCPyYes.core.v1_2.events import AggregationEvent, ObjectEvent
+from EPCPyYes.core.v1_2.events import Action
 from gs123.conversion import BarcodeConverter
 from logging import getLogger
 from quartet_epcis.parsing.json import JSONParser as EPCISJSONParser
@@ -41,6 +42,10 @@ class JSONParser(EPCISJSONParser):
         :return: None
         """
         epcis_event.parent_id = self._convert_epc(epcis_event.parent_id)
+        obj_event = ObjectEvent(epcis_event.event_time, epcis_event.event_timezone_offset,
+                                epcis_event.record_time, Action.add.value)
+        obj_event.epc_list.append(epcis_event.parent_id)
+        self.handle_object_event(obj_event)
         new_epcs = []
         for epc in epcis_event.child_epcs:
             new_epcs.append(self._convert_epc(epc))
@@ -130,14 +135,13 @@ class JSONParser(EPCISJSONParser):
                 self.master_material_cache[
                     gtin14] = company_prefix_length
             except TradeItem.DoesNotExist:
-                logger.exception()
                 raise self.TradeItemConfigurationError(
                     'There is no trade item and corresponding company defined '
                     'for gtin %s.  This must be defined '
                     'in order for the system to '
                     'determin company prefix length. '
                     'Make sure you have a trade item configured and assigned to '
-                    'a company that has a valid gs1 company prefix entry.',
+                    'a company that has a valid gs1 company prefix entry.' %
                     gtin14
                 )
         return company_prefix_length

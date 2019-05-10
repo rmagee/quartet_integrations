@@ -88,7 +88,7 @@ class TestDivinciRule(TestCase):
         BusinessEPCISParser(data_path).parse()
         self._create_trade_item()
 
-    def test_sap_step(self):
+    def test_divinci_step(self):
         rule = self._create_rule()
         self._create_sap_step(rule)
         curpath = os.path.dirname(__file__)

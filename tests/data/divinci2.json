@@ -1,0 +1,28 @@
+{
+    "events": [
+        {
+            "aggregationEvent": {
+                "id": [],
+                "eventID": null,
+                "eventTime": "2019-05-10 08:29:25",
+                "eventTimezoneOffset": "+00:00",
+                "recordTime": "2019-05-10 08:29:25",
+                "errorDeclaration": null,
+                "action": "ADD",
+                "disposition": "urn:epcglobal:cbv:disp:encoded",
+                "bizStep": "urn:epcglobal:cbv:bizstep:packing",
+                "readPoint": null,
+                "bizLocation": null,
+                "sourceList": null,
+                "destinationList": null,
+                "bizTransactionList": null,
+                "parentID": "urn:epc:id:sscc:00003436020000200011",
+                "childEPCs": [
+                    "urn:epc:id:sgtin:10331722917015.017571987008"
+                ],
+                "childQuantityList": null
+            }
+        }
+    ],
+    "createdDate": "2019-05-10 08:29:25"
+}
