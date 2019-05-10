@@ -16,6 +16,7 @@ from EPCPyYes.core.v1_2.events import AggregationEvent, ObjectEvent
 from EPCPyYes.core.v1_2.events import Action
 from gs123.conversion import BarcodeConverter
 from logging import getLogger
+from quartet_epcis.models import Entry
 from quartet_epcis.parsing.json import JSONParser as EPCISJSONParser
 from quartet_masterdata.models import TradeItem, Company
 
@@ -42,10 +43,11 @@ class JSONParser(EPCISJSONParser):
         :return: None
         """
         epcis_event.parent_id = self._convert_epc(epcis_event.parent_id)
-        obj_event = ObjectEvent(epcis_event.event_time, epcis_event.event_timezone_offset,
-                                epcis_event.record_time, Action.add.value)
-        obj_event.epc_list.append(epcis_event.parent_id)
-        self.handle_object_event(obj_event)
+        if not Entry.objects.filter(identifier=epcis_event.parent_id).exists():
+            obj_event = ObjectEvent(epcis_event.event_time, epcis_event.event_timezone_offset,
+                                    epcis_event.record_time, Action.add.value)
+            obj_event.epc_list.append(epcis_event.parent_id)
+            self.handle_object_event(obj_event)
         new_epcs = []
         for epc in epcis_event.child_epcs:
             new_epcs.append(self._convert_epc(epc))
