@@ -52,6 +52,7 @@
                     <epc>urn:epc:id:sgtin:0331722.119201.276429174853</epc>
                     <epc>urn:epc:id:sgtin:0331722.119201.276431236337</epc>
                     <epc>urn:epc:id:sscc:0343602.0000000096</epc>
+                    <epc>urn:epc:id:sgtin:305555.3555555.1</epc>
                 </epcList>
                 <action>ADD</action>
                 <bizStep>urn:epcglobal:cbv:bizstep:commissioning</bizStep>
@@ -63,7 +64,64 @@
                     <id>urn:epc:id:sgln:030006.000013.0</id>
                 </bizLocation>
             </ObjectEvent>
-
+            <AggregationEvent>
+                <eventTime>2018-01-22T22:51:50.294565+00:00</eventTime>
+                <recordTime>2018-01-22T22:51:50.294565+00:00</recordTime>
+                <eventTimeZoneOffset>+00:00</eventTimeZoneOffset>
+                <parentID>urn:epc:id:sgtin:305555.3555555.1</parentID>
+                <childEPCs>
+                    <epc>urn:epc:id:sgtin:0331722.119201.276429174853</epc>
+                    <epc>urn:epc:id:sgtin:0331722.119201.276431236337</epc>
+                </childEPCs>
+                <action>ADD</action>
+                <bizStep>urn:epcglobal:cbv:bizstep:packing</bizStep>
+                <disposition>urn:epcglobal:cbv:disp:container_closed
+                </disposition>
+                <readPoint>
+                    <id>urn:epc:id:sgln:305555.123456.12</id>
+                </readPoint>
+                <bizLocation>
+                    <id>urn:epc:id:sgln:305555.123456.0</id>
+                </bizLocation>
+                <bizTransactionList>
+                    <bizTransaction type="urn:epcglobal:cbv:btt:po">
+                        urn:epc:id:gdti:0614141.06012.1234
+                    </bizTransaction>
+                </bizTransactionList>
+                <extension>
+                    <childQuantityList>
+                        <quantityElement>
+                            <epcClass>urn:epc:idpat:sgtin:305555.0555555.*
+                            </epcClass>
+                            <quantity>5</quantity>
+                        </quantityElement>
+                        <quantityElement>
+                            <epcClass>urn:epc:idpat:sgtin:305555.0555555.*
+                            </epcClass>
+                            <quantity>14.5</quantity>
+                            <uom>LB</uom>
+                        </quantityElement>
+                    </childQuantityList>
+                    <sourceList>
+                        <source type="urn:epcglobal:cbv:sdt:possessing_party">
+                            urn:epc:id:sgln:305555.123456.0
+                        </source>
+                        <source type="urn:epcglobal:cbv:sdt:location">
+                            urn:epc:id:sgln:305555.123456.12
+                        </source>
+                    </sourceList>
+                    <destinationList>
+                        <destination
+                                type="urn:epcglobal:cbv:sdt:owning_party">
+                            urn:epc:id:sgln:309999.111111.0
+                        </destination>
+                        <destination
+                                type="urn:epcglobal:cbv:sdt:location">
+                            urn:epc:id:sgln:309999.111111.233
+                        </destination>
+                    </destinationList>
+                </extension>
+            </AggregationEvent>
         </EventList>
     </EPCISBody>
 </epcis:EPCISDocument>

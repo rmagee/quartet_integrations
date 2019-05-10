@@ -12,11 +12,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-from EPCPyYes.core.v1_2.events import AggregationEvent, ObjectEvent
+import pytz
+from EPCPyYes.core.v1_2.events import AggregationEvent, ObjectEvent, TransactionEvent
 from EPCPyYes.core.v1_2.events import Action
+from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
+from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
 from gs123.conversion import BarcodeConverter
 from logging import getLogger
+from datetime import datetime
+from quartet_epcis.db_api.queries import EPCISDBProxy
 from quartet_epcis.models import Entry
+from quartet_epcis.parsing.errors import InvalidAggregationEventError
 from quartet_epcis.parsing.json import JSONParser as EPCISJSONParser
 from quartet_masterdata.models import TradeItem, Company
 
@@ -43,16 +49,74 @@ class JSONParser(EPCISJSONParser):
         :return: None
         """
         epcis_event.parent_id = self._convert_epc(epcis_event.parent_id)
-        if not Entry.objects.filter(identifier=epcis_event.parent_id).exists():
-            obj_event = ObjectEvent(epcis_event.event_time, epcis_event.event_timezone_offset,
-                                    epcis_event.record_time, Action.add.value)
-            obj_event.epc_list.append(epcis_event.parent_id)
-            self.handle_object_event(obj_event)
+        self._commission_new_parent(epcis_event)
+        self._convert_epcs(epcis_event)
+        self._dis_aggregate(epcis_event)
+        self._create_shipment_event(epcis_event)
+        return super().handle_aggregation_event(epcis_event)
+
+    def _convert_epcs(self, epcis_event):
+        """
+        Convert the malformed EPC values into valid ones.
+        :param epcis_event: The event with the bad values
+        :return: None
+        """
         new_epcs = []
         for epc in epcis_event.child_epcs:
             new_epcs.append(self._convert_epc(epc))
         epcis_event.child_epcs = new_epcs
-        return super().handle_aggregation_event(epcis_event)
+
+    def _create_shipment_event(self, epcis_event):
+        """
+        Creates an actual shipment event.
+        :param epcis_event: The inbound divinci event
+        :return: None
+        """
+        xact = TransactionEvent(datetime.utcnow(),
+                                '+00:00',
+                                datetime.utcnow(),
+                                parent_id=epcis_event.parent_id,
+                                epc_list=epcis_event.child_epcs,
+                                action=Action.observe.value,
+                                biz_step=BusinessSteps.shipping.value,
+                                disposition=Disposition.in_transit.value
+                                )
+        super().handle_transaction_event(xact)
+
+    def _commission_new_parent(self, epcis_event):
+        """
+        If the parent does not exist, we auto-commission a new one.
+        :param epcis_event: The inbound divinci event
+        :return: None
+        """
+        if not Entry.objects.filter(identifier=epcis_event.parent_id).exists():
+            obj_event = ObjectEvent(epcis_event.event_time,
+                                    epcis_event.event_timezone_offset,
+                                    epcis_event.record_time, Action.add.value)
+            obj_event.epc_list.append(epcis_event.parent_id)
+            obj_event.biz_step = BusinessSteps.commissioning.value,
+            obj_event.disposition = Disposition.active
+            self.handle_object_event(obj_event)
+
+    def _dis_aggregate(self, epcis_event: AggregationEvent):
+        """
+        Does some magic to account for inadequacies in divinci.
+        """
+        for epc in epcis_event.child_epcs:
+            # see if the child has a parent
+            entry = Entry.objects.get(identifier=epc)
+            # if so remove it
+            if entry.parent_id:
+                disagg = AggregationEvent(
+                    datetime.utcnow(),
+                    "+00:00",
+                    datetime.utcnow(),
+                    Action.delete.value,
+                    biz_step=BusinessSteps.removing,
+                    parent_id=entry.parent_id,
+                )
+                disagg.child_epcs.append(epc)
+                super().handle_aggregation_event(disagg)
 
     def _convert_epc(self, epc: str) -> str:
         """

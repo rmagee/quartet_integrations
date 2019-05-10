@@ -1,0 +1,29 @@
+{
+  "createdDate": "2019-04-22 09:58:43",
+  "events": [
+    {
+      "aggregationEvent": {
+        "action": "ADD",
+        "bizLocation": null,
+        "bizStep": "urn:epcglobal:cbv:bizstep:packing",
+        "bizTransactionList": null,
+        "childEPCs": [
+          "urn:epc:id:sgtin:10331722192016.276429174853",
+          "urn:epc:id:sgtin:10331722192016.276431236337"
+        ],
+        "childQuantityList": null,
+        "destinationList": null,
+        "disposition": "urn:epcglobal:cbv:disp:encoded",
+        "errorDeclaration": null,
+        "eventID": null,
+        "eventTime": "2019-04-22 09:58:43",
+        "eventTimezoneOffset": "+00:00",
+        "id": [],
+        "parentID": "urn:epc:id:sscc:00003436020000000955",
+        "readPoint": null,
+        "recordTime": "2019-04-22 09:58:43",
+        "sourceList": null
+      }
+    }
+  ]
+}
