@@ -107,7 +107,6 @@ class JSONParser(EPCISJSONParser):
             try:
                 entry = Entry.objects.get(identifier=epc)
             except Entry.DoesNotExist:
-                logger.exception()
                 raise self.InvalidEPC('The EPC %s does not exist and can not'
                                       ' be processed.' % epc)
             # if so remove it
