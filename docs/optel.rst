@@ -24,7 +24,7 @@ the following *Step* in one of your q4 rules.
 
 .. code-block:: text
 
-    quartet_integrations.optel.steps.
+    quartet_integrations.optel.steps.OptelLineParsingStep
 
 
 Consolidating Step
