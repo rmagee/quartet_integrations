@@ -30,7 +30,7 @@ class SAPParser(BusinessEPCISParser):
     def parse_unexpected_obj_element(self, oevent, child):
         if child.tag == 'SAPExtension':
             for attribute_element in child:
-                if 'ObjAttributes' in attribute_element.tag:
+                if 'objattributes' in attribute_element.tag.lower():
                     self.handle_sap_obj_attributes(oevent, attribute_element)
 
     def handle_sap_obj_attributes(self, oevent: yes_events.ObjectEvent,

@@ -12,17 +12,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-import pytz
-from EPCPyYes.core.v1_2.events import AggregationEvent, ObjectEvent, TransactionEvent
-from EPCPyYes.core.v1_2.events import Action
+from datetime import datetime
+from logging import getLogger
 from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
 from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
+from EPCPyYes.core.v1_2.events import Action
+from EPCPyYes.core.v1_2.events import AggregationEvent, ObjectEvent, \
+    TransactionEvent
 from gs123.conversion import BarcodeConverter
-from logging import getLogger
-from datetime import datetime
-from quartet_epcis.db_api.queries import EPCISDBProxy
 from quartet_epcis.models import Entry
-from quartet_epcis.parsing.errors import InvalidAggregationEventError
 from quartet_epcis.parsing.json import JSONParser as EPCISJSONParser
 from quartet_masterdata.models import TradeItem, Company
 
