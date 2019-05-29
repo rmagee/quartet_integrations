@@ -1,11 +1,14 @@
 [run]
 branch = true
+source =
+    quartet_integrations
 
 [report]
 omit =
     *site-packages*
     *tests*
     *.tox*
+    *apps.py
 show_missing = True
 exclude_lines =
     raise NotImplementedError

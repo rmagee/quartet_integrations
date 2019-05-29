@@ -42,13 +42,12 @@ if sys.argv[-1] == 'tag':
     sys.exit()
 
 readme = open('README.rst').read()
-history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 setup(
     name='quartet_integrations',
     version=version,
     description="""Third party integrations for the QU4RTET platform.""",
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     author='SerialLab, Corp',
     author_email='slab@serial-lab.com',
     url='https://gitlab.com/serial-lab/quartet_integrations',
@@ -61,13 +60,11 @@ setup(
     zip_safe=False,
     keywords='quartet_integrations',
     classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Framework :: Django',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: GNU General Public License v3',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6'
     ],
 )

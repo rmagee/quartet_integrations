@@ -3,5 +3,6 @@ EPCPyYes
 quartet_output
 quartet_epcis
 quartet_capture
+quartet_masterdata
 django
-
+gs123

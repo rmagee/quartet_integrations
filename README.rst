@@ -9,7 +9,10 @@ quartet_integrations
 .. image:: https://badge.fury.io/py/quartet_integrations.svg
     :target: https://badge.fury.io/py/quartet_integrations
 
-Third party integrations for the QU4RTET platform.
+Third party integrations for the QU4RTET open-source EPCIS platform.  For
+more on QU4RTET and SerialLab, see `the SerialLab website`_
+
+_`the SerialLab website`: http://serial-lab.com
 
 Documentation
 -------------

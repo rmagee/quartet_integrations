@@ -14,8 +14,7 @@
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 
 from typing import List
-from quartet_epcis.parsing.parser import QuartetParser
-from quartet_epcis.models import events
+from quartet_epcis.parsing.business_parser import BusinessEPCISParser
 from EPCPyYes.core.v1_2 import events as yes_events
 
 from EPCPyYes.core.v1_2.CBV.instance_lot_master_data import \
@@ -26,12 +25,12 @@ from EPCPyYes.core.v1_2.CBV.instance_lot_master_data import \
 ilmd_list = List[yes_events.InstanceLotMasterDataAttribute]
 
 
-class SAPParser(QuartetParser):
+class SAPParser(BusinessEPCISParser):
 
     def parse_unexpected_obj_element(self, oevent, child):
         if child.tag == 'SAPExtension':
             for attribute_element in child:
-                if 'ObjAttributes' in attribute_element.tag:
+                if 'objattributes' in attribute_element.tag.lower():
                     self.handle_sap_obj_attributes(oevent, attribute_element)
 
     def handle_sap_obj_attributes(self, oevent: yes_events.ObjectEvent,

@@ -1,3 +1,4 @@
+-r requirements.in
 alabaster
 arrow
 asn1crypto
@@ -11,11 +12,8 @@ click
 commonmark
 cookiecutter
 cryptography
-Django
 django-model-utils
 docutils
-EParseCIS
-EPCPyYes
 first
 future
 haikunator
@@ -36,9 +34,6 @@ PyNaCl
 pyparsing
 python-dateutil
 pytz
-quartet-capture
-quartet_epcis
-quartet_output
 recommonmark
 requests
 six
@@ -54,3 +49,5 @@ sphinxcontrib-serializinghtml
 sqlparse
 urllib3
 whichcraft
+coverage
+celery
