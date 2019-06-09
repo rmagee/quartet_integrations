@@ -139,7 +139,8 @@ class JSONParser(EPCISJSONParser):
             converter = BarcodeConverter(
                 barcode_val, company_prefix_length, len(data[1])
             )
-            ret = converter.epc_urn
+            # Keep padded serial numbers from Da Vinci
+            ret = converter.padded_epc_urn
         elif epc.startswith('urn:epc:id:sscc:'):
             barcode_val = epc[16:]
             company_prefix_length = self._get_company_prefix_length_sscc(
