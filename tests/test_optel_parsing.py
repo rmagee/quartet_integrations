@@ -34,7 +34,7 @@ class TestOpelLegacyParser(TestCase):
 
     def test_double_tz_file(self):
         curpath = os.path.dirname(__file__)
-        parser = OptelEPCISLegacyParser(
+        parser = ConsolidationParser(
             os.path.join(curpath, 'data/optel_double_timezone.xml'))
         parser.parse(replace_timezone=True)
 
