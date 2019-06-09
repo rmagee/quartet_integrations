@@ -1,6 +1,6 @@
 # -*- coding: utf-8
 from __future__ import unicode_literals, absolute_import
-
+import os
 import django
 
 DEBUG = True
@@ -28,6 +28,28 @@ INSTALLED_APPS = [
     "quartet_output",
     "quartet_masterdata"
 ]
+
+SETTINGS_PATH = os.path.normpath(os.path.dirname(__file__))
+TEMPLATE_DIRS = (
+    os.path.join(SETTINGS_PATH, '../quartet_integrations/templates'),
+)
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
 
 SITE_ID = 1
 

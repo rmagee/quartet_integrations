@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-from django.conf.urls import url
-from django.views.generic import TemplateView
+from django.conf.urls import url, include
 
-from . import views
+from .rocit.urls import urlpatterns as rocit_urls
 
-urlpatterns = []
+urlpatterns = [
+    url(r'^', include(rocit_urls)),
+]

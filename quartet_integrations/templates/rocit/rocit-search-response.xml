@@ -1,0 +1,32 @@
+<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsa="http://www.w3.org/2005/08/addressing" xmlns:typ="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/">
+   <env:Header>
+      <wsa:Action>http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common//PackagingHierarchyServiceAMService/retrievePackagingHierarchyResponse</wsa:Action>
+      <wsa:MessageID>urn:uuid:{{ message_id }}</wsa:MessageID>
+   </env:Header>
+   <env:Body>
+      <ns0:retrievePackagingHierarchyResponse xmlns:ns0="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/">
+         <ns1:result xsi:type="ns0:PackagingHierarchyResponseVOSDO" xmlns:ns1="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/" xmlns:ns0="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <ns0:TagId>{{ tag_id }}</ns0:TagId>
+             {%  if parent_tag_id %}<ns0:ParentTagId>{{ parent_tag }}</ns0:ParentTagId>{% endif %}
+            <ns0:Status>{{ status }}</ns0:Status>
+            <ns0:State>{{ state }}</ns0:State>
+            <ns0:DocumentId>{{ document_id }}</ns0:DocumentId>
+            <ns0:DocumentType>{{ document_type }}</ns0:DocumentType>
+            <ns0:ChildTagCount>{{ child_tag_count }}</ns0:ChildTagCount>
+            <ns0:ProductInformationCount>1</ns0:ProductInformationCount>
+            {%  for child in child_tags %}
+            <ns0:ChildTagsVO>
+               <ns0:ChildTagId>{{ child }}</ns0:ChildTagId>
+            </ns0:ChildTagsVO>
+            {% endfor %}
+            <ns0:ProductInformationVO>
+               <ns0:Product>{{ product }}</ns0:Product>
+               <ns0:Lot>{{ lot }}</ns0:Lot>
+               <ns0:ExpiryDate>{{ expiry }}</ns0:ExpiryDate>
+               <ns0:Uom>{{ uom }}</ns0:Uom>
+               <ns0:Quantity>{{ child_tag_count }}</ns0:Quantity>
+            </ns0:ProductInformationVO>
+         </ns1:result>
+      </ns0:retrievePackagingHierarchyResponse>
+   </env:Body>
+</env:Envelope>
