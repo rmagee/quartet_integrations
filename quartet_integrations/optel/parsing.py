@@ -98,6 +98,9 @@ class OptelEPCISLegacyParser(BusinessEPCISParser):
                 )
         return super().get_event_time(epcis_event)
 
+    def _parse_date(self, epcis_event):
+        return self.get_event_time(epcis_event)
+
 
 class ConsolidationParser(OptelEPCISLegacyParser):
     """
