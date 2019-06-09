@@ -13,8 +13,11 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 import io
+
+from quartet_capture import models
 from quartet_integrations.sap.steps import SAPParsingStep
-from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, ConsolidationParser
+from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
+    ConsolidationParser
 
 
 class OptelLineParsingStep(SAPParsingStep):
@@ -23,13 +26,28 @@ class OptelLineParsingStep(SAPParsingStep):
     custom event data.
     """
 
+    def __init__(self, db_task: models.Task, **kwargs):
+        super().__init__(db_task, **kwargs)
+        self.replace_timezone = self.get_boolean_parameter('Replace Timezone',
+                                                           False)
+
     def _parse(self, data):
-        return OptelEPCISLegacyParser(data).parse()
+        return OptelEPCISLegacyParser(data).parse(
+            replace_timezone=self.replace_timezone
+        )
+
+    @property
+    def declared_parameters(self):
+        params = super().declared_parameters()
+        params['Replace Timezone'] = 'Whether or not to replace explicit ' \
+                                     'timezone declarations in event times ' \
+                                     'with the timezone offset in the event.'
 
 
-class ConsolidationParsingStep(SAPParsingStep):
+class ConsolidationParsingStep(OptelLineParsingStep):
     """
     Uses the consolidation parser to handle any bloated optel messages.
     """
+
     def _parse(self, data):
-        return ConsolidationParser(data).parse()
+        return ConsolidationParser(data).parse(self.replace_timezone)

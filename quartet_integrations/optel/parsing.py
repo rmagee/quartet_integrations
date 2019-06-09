@@ -12,12 +12,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
+import re
+from datetime import datetime
 from logging import getLogger
 from typing import List
 from quartet_epcis.models import events, entries, choices, headers
 from quartet_epcis.parsing.business_parser import BusinessEPCISParser
 from EPCPyYes.core.v1_2 import template_events as yes_events, events
-
 from EPCPyYes.core.v1_2.CBV.instance_lot_master_data import \
     InstanceLotMasterDataAttribute, \
     LotLevelAttributeName, \
@@ -25,8 +26,9 @@ from EPCPyYes.core.v1_2.CBV.instance_lot_master_data import \
     TradeItemLevelAttributeName
 
 logger = getLogger(__name__)
-
 ilmd_list = List[yes_events.InstanceLotMasterDataAttribute]
+# https://regex101.com/r/D1coNK/1
+time_regex = re.compile(r'([\+\-]([01]\d|2[0-3]):([0-5]\d)|24:00)')
 
 
 class OptelEPCISLegacyParser(BusinessEPCISParser):
@@ -34,6 +36,17 @@ class OptelEPCISLegacyParser(BusinessEPCISParser):
     Parses the old Optel non-compliant epcis data and converts
     to use-able EPCIS data for QU4RTET.
     """
+
+    def parse(self, replace_timezone=False):
+        """
+        Will begin the parsing process of any inbound stream/file provided
+        in the constructor.
+        :param replace_timezone: Whether or not to replace timezones in
+        event times with the timezone offset in the event.
+        :return:
+        """
+        self._replace_timezone = replace_timezone
+        return super().parse()
 
     def parse_unexpected_obj_element(self, oevent: yes_events.ObjectEvent,
                                      child):
@@ -71,6 +84,19 @@ class OptelEPCISLegacyParser(BusinessEPCISParser):
                 self.parse_unexpected_obj_element(oevent, sub_element)
         if ilmd:
             oevent.ilmd.append(ilmd)
+
+    def get_event_time(self, epcis_event: events.EPCISEvent) -> datetime:
+        if self._replace_timezone and epcis_event.event_timezone_offset:
+            epcis_event.event_time = time_regex.sub(
+                epcis_event.event_timezone_offset,
+                epcis_event.event_time
+            )
+            if epcis_event.record_time:
+                epcis_event.record_time = time_regex.sub(
+                    epcis_event.event_timezone_offset,
+                    epcis_event.record_time
+                )
+        return super().get_event_time(epcis_event)
 
 
 class ConsolidationParser(OptelEPCISLegacyParser):
@@ -112,6 +138,3 @@ class ConsolidationParser(OptelEPCISLegacyParser):
                                            self.add_event)
         else:
             super().handle_object_event(epcis_event)
-
-    def handle_aggregation_event(self, epcis_event: events.AggregationEvent):
-        return super().handle_aggregation_event(epcis_event)

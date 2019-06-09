@@ -24,6 +24,7 @@ from quartet_epcis.parsing.business_parser import BusinessEPCISParser
 from quartet_epcis.db_api.queries import EPCISDBProxy
 from quartet_epcis.models import events, entries
 
+
 class TestParser(SAPParser):
 
     def handle_object_event(self, epcis_event: yes_events.ObjectEvent):
@@ -32,20 +33,16 @@ class TestParser(SAPParser):
 
 
 class TestEparsecis(TestCase):
-    def __init__(self, methodName='runTest'):
-        super().__init__(methodName)
-        #logging.basicConfig(level=logging.DEBUG)
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
     def test_epcis_file(self):
         curpath = os.path.dirname(__file__)
         parser = TestParser(
             os.path.join(curpath, 'data/sap-epcis.xml'))
+        parser.parse()
+
+    def test_test_file(self):
+        curpath = os.path.dirname(__file__)
+        parser = TestParser(
+            os.path.join(curpath, 'data/test.xml'))
         parser.parse()
 
 
@@ -55,6 +52,15 @@ class TestRule(TestCase):
         self._create_sap_step(rule)
         curpath = os.path.dirname(__file__)
         data_path = os.path.join(curpath, 'data/sap-epcis.xml')
+        db_task = self._create_task(rule)
+        with open(data_path, 'r') as data_file:
+            context = execute_rule(data_file.read().encode(), db_task)
+
+    def test_sap_test_step(self):
+        rule = self._create_rule()
+        self._create_sap_step(rule)
+        curpath = os.path.dirname(__file__)
+        data_path = os.path.join(curpath, 'data/test.xml')
         db_task = self._create_task(rule)
         with open(data_path, 'r') as data_file:
             context = execute_rule(data_file.read().encode(), db_task)
@@ -75,13 +81,13 @@ class TestRule(TestCase):
         step.description = 'sap unit test parsing step'
         step.save()
 
-
     def _create_task(self, rule):
         task = Task()
         task.rule = rule
         task.name = 'unit test task'
         task.save()
         return task
+
 
 class TestDivinciRule(TestCase):
     def setUp(self) -> None:
@@ -102,7 +108,8 @@ class TestDivinciRule(TestCase):
     def test_divinci_step(self):
         self._test_divinci_step()
         evs = events.Event.objects.filter(type='tx')
-        self.assertEqual(evs.count(), 1, 'There should be one transaction event')
+        self.assertEqual(evs.count(), 1,
+                         'There should be one transaction event')
         evs = events.Event.objects.filter(type='ob')
         self.assertEqual(evs.count(), 1)
         evs = events.Event.objects.filter(type='ag')
@@ -111,7 +118,8 @@ class TestDivinciRule(TestCase):
     def test_divinci_auto_commisssion(self):
         self._test_divinci_step('data/divinci-auto-commission.json')
         evs = events.Event.objects.filter(type='tx')
-        self.assertEqual(evs.count(), 1, 'There should be one transaction event')
+        self.assertEqual(evs.count(), 1,
+                         'There should be one transaction event')
         evs = events.Event.objects.filter(type='ob')
         self.assertEqual(evs.count(), 2)
 
@@ -130,7 +138,6 @@ class TestDivinciRule(TestCase):
         step.step_class = 'quartet_integrations.divinci.steps.JSONParsingStep'
         step.description = 'divinci unit test parsing step'
         step.save()
-
 
     def _create_task(self, rule):
         task = Task()

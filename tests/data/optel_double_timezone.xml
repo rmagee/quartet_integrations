@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<epcis:EPCISDocument xmlns:epcis="urn:epcglobal:epcis:xsd:1" creationDate="2019-06-01T02:09:48.000000+00:00" schemaVersion="1">
+	<EPCISBody>
+		<EventList>
+			<ObjectEvent>
+				<eventTime>2019-06-01T05:54:36.767000+00:00</eventTime>
+				<recordTime>2019-06-07T00:27:53.475000+00:00</recordTime>
+				<eventTimeZoneOffset>-05:00</eventTimeZoneOffset>
+				<epcList>
+					<epc>urn:epc:id:sgtin:0342291.034390.4259</epc>
+				</epcList>
+				<action>ADD</action>
+				<bizStep>urn:epcglobal:cbv:bizstep:commissioning</bizStep>
+				<disposition>urn:epcglobal:cbv:disp:active</disposition>
+				<readPoint>
+					<id>urn:epc:id:sgln:08620530000.0.2</id>
+				</readPoint>
+				<bizLocation>
+					<id>urn:epc:id:sgln:08620530000.0.0</id>
+				</bizLocation>
+				<gs1ushc:unitOfMeasure xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">Btl</gs1ushc:unitOfMeasure>
+				<gs1ushc:lotNumber xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">23930</gs1ushc:lotNumber>
+				<gs1ushc:itemExpirationDate xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">2021-01-31</gs1ushc:itemExpirationDate>
+				<gs1ushc:additionalTradeItemIdentification xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">
+					<gs1ushc:additionalTradeItemIdentificationValue>034390</gs1ushc:additionalTradeItemIdentificationValue>
+				</gs1ushc:additionalTradeItemIdentification>
+				<epcisid xmlns="http://www.oracle.com/idext">1023996</epcisid>
+			</ObjectEvent>
+			<ObjectEvent>
+				<eventTime>2019-06-01T05:54:37.375000+00:00</eventTime>
+				<recordTime>2019-06-07T00:27:53.475000+00:00</recordTime>
+				<eventTimeZoneOffset>-05:00</eventTimeZoneOffset>
+				<epcList>
+					<epc>urn:epc:id:sgtin:0342291.034390.4260</epc>
+				</epcList>
+				<action>ADD</action>
+				<bizStep>urn:epcglobal:cbv:bizstep:commissioning</bizStep>
+				<disposition>urn:epcglobal:cbv:disp:active</disposition>
+				<readPoint>
+					<id>urn:epc:id:sgln:08620530000.0.2</id>
+				</readPoint>
+				<bizLocation>
+					<id>urn:epc:id:sgln:08620530000.0.0</id>
+				</bizLocation>
+				<gs1ushc:unitOfMeasure xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">Btl</gs1ushc:unitOfMeasure>
+				<gs1ushc:lotNumber xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">23930</gs1ushc:lotNumber>
+				<gs1ushc:itemExpirationDate xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">2021-01-31</gs1ushc:itemExpirationDate>
+				<gs1ushc:additionalTradeItemIdentification xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">
+					<gs1ushc:additionalTradeItemIdentificationValue>034390</gs1ushc:additionalTradeItemIdentificationValue>
+				</gs1ushc:additionalTradeItemIdentification>
+				<epcisid xmlns="http://www.oracle.com/idext">1023997</epcisid>
+			</ObjectEvent>
+		</EventList>
+	</EPCISBody>
+</epcis:EPCISDocument>

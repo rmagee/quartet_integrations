@@ -14,6 +14,7 @@
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 from datetime import datetime
 from logging import getLogger
+from dateutil.parser import parse as parse_date
 from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
 from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
 from EPCPyYes.core.v1_2.events import Action
@@ -215,6 +216,20 @@ class JSONParser(EPCISJSONParser):
                 )
         return company_prefix_length
 
+    def get_event_time(self, epcis_event) -> datetime:
+        """
+        Override to get a valid event time for a given event if you are
+        dealing with non ISO or python date strings.
+        :param epcis_event: The event with the event time to convert.
+        :return: A datetime representing the EPCIS event event time string.
+        """
+        if epcis_event.event_timezone_offset in epcis_event.event_time:
+            event_time = parse_date(epcis_event.event_time)
+        else:
+            event_time = parse_date("%sZ%s" % (
+                epcis_event.event_time,
+                epcis_event.event_timezone_offset))
+        return event_time
     class TradeItemConfigurationError(Exception):
         pass
 

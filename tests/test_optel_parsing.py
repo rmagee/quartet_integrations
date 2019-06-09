@@ -18,28 +18,25 @@ import os
 from django.test import TestCase
 from quartet_epcis.models.events import Event
 from quartet_epcis.models import entries
-from quartet_capture.models import Rule, Step, Task
+from quartet_capture.models import Rule, Step, Task, StepParameter
 from quartet_capture.tasks import execute_rule
 from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
     ConsolidationParser
 
 
 class TestOpelLegacyParser(TestCase):
-    def __init__(self, methodName='runTest'):
-        super().__init__(methodName)
-        # logging.basicConfig(level=logging.DEBUG)
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
 
     def test_epcis_file(self):
         curpath = os.path.dirname(__file__)
         parser = OptelEPCISLegacyParser(
             os.path.join(curpath, 'data/optel-data-obj.xml'))
         parser.parse()
+
+    def test_double_tz_file(self):
+        curpath = os.path.dirname(__file__)
+        parser = OptelEPCISLegacyParser(
+            os.path.join(curpath, 'data/optel_double_timezone.xml'))
+        parser.parse(replace_timezone=True)
 
     def test_consolidate(self):
         curpath = os.path.dirname(__file__)
@@ -48,7 +45,7 @@ class TestOpelLegacyParser(TestCase):
         parser.parse()
         event = Event.objects.get(type='ob')
         entry_count = entries.EntryEvent.objects.filter(event=event).count()
-        self.assertEqual(7126, entry_count)
+        self.assertEqual(353, entry_count)
 
 
 class TestOptelRule(TestCase):
@@ -95,6 +92,15 @@ class TestConsolidationRule(TestCase):
         with open(data_path, 'r') as data_file:
             context = execute_rule(data_file.read().encode(), db_task)
 
+    def test_optel_step_with_dualtz(self):
+        rule = self._create_rule()
+        self._create_sap_step(rule, tz_param=True)
+        curpath = os.path.dirname(__file__)
+        data_path = os.path.join(curpath, 'data/optel_double_timezone.xml')
+        db_task = self._create_task(rule)
+        with open(data_path, 'r') as data_file:
+            context = execute_rule(data_file.read().encode(), db_task)
+
     def _create_rule(self):
         rule = Rule()
         rule.name = 'EPCIS'
@@ -102,7 +108,7 @@ class TestConsolidationRule(TestCase):
         rule.save()
         return rule
 
-    def _create_sap_step(self, rule):
+    def _create_sap_step(self, rule, tz_param=False):
         step = Step()
         step.rule = rule
         step.order = 3
@@ -110,6 +116,10 @@ class TestConsolidationRule(TestCase):
         step.step_class = 'quartet_integrations.optel.steps.ConsolidationParsingStep'
         step.description = 'optel line master unit test parsing step'
         step.save()
+        if tz_param:
+            param = StepParameter.objects.create(step=step,
+                                                 name='Replace Timezone',
+                                                 value='True')
 
     def _create_task(self, rule):
         task = Task()
