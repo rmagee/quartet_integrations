@@ -13,6 +13,7 @@ commonmark
 cookiecutter
 cryptography
 django-model-utils
+djangorestframework
 docutils
 first
 future

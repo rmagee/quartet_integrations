@@ -5,4 +5,5 @@ quartet_epcis
 quartet_capture
 quartet_masterdata
 django
+djangorestframework
 gs123

@@ -9,4 +9,5 @@ app_name = 'quartet_integrations'
 
 urlpatterns = [
     url(r'^', include(quartet_integrations_urls)),
+
 ]
