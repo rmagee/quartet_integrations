@@ -27,7 +27,7 @@ from EPCPyYes.core.v1_2.CBV.instance_lot_master_data import \
 
 from EPCPyYes.core.v1_2 import template_events
 from quartet_output.parsing import BusinessOutputParser
-from quartet_tracelink.parsing.epcpyyes import get_default_environment
+from quartet_integrations.optel.epcpyyes import get_default_environment
 
 logger = getLogger(__name__)
 ilmd_list = List[yes_events.InstanceLotMasterDataAttribute]
