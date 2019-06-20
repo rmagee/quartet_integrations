@@ -25,11 +25,24 @@ from EPCPyYes.core.v1_2.CBV.instance_lot_master_data import \
     ItemLevelAttributeName, \
     TradeItemLevelAttributeName
 
+from EPCPyYes.core.v1_2 import template_events
+from quartet_output.parsing import BusinessOutputParser
+from quartet_tracelink.parsing.epcpyyes import get_default_environment
+
 logger = getLogger(__name__)
 ilmd_list = List[yes_events.InstanceLotMasterDataAttribute]
 # https://regex101.com/r/D1coNK/1
 time_regex = re.compile(r'([\+\-]([01]\d|2[0-3]):([0-5]\d)|24:00)')
 
+
+class OptelOutputEPCISParser(BusinessOutputParser):
+
+    def get_epcpyyes_object_event(self):
+        return template_events.ObjectEvent(
+            epc_list=[], quantity_list=[],
+            env=get_default_environment(),
+            template='quartet_integrations/optel/object_event.xml'
+        )
 
 class OptelEPCISLegacyParser(BusinessEPCISParser):
     """

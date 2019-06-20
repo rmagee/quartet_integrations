@@ -54,6 +54,16 @@ class TestRocIt(APITestCase):
         response = self.client.post(url, data, content_type='application/xml')
         self.assertEquals(response.status_code, 200)
 
+    def test_rocit_gtin_query(self):
+        '''
+        Posting SOAP Request Content
+        :return:
+        '''
+        url = reverse("retrievePackagingHierarchyResponse")
+        data = self._get_test_data('rocit-gtin-request.xml')
+        response = self.client.post(url, data, content_type='application/xml')
+        self.assertEquals(response.status_code, 200)
+
     def _get_test_data(self, file_name):
         '''
         Loads the XML file and passes its data back as a string.
