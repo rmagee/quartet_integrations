@@ -1,0 +1,15 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/" xmlns:com="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <typ:retrievePackagingHierarchy>
+         <typ:voRow>
+            <!--Optional:-->
+            <com:TagId>urn:epc:id:sscc:305555.0000000001</com:TagId>
+            <!--Optional:-->
+            <com:SendChildren>true</com:SendChildren>
+            <!--Optional:-->
+            <com:SendProductInformation>true</com:SendProductInformation>
+         </typ:voRow>
+      </typ:retrievePackagingHierarchy>
+   </soapenv:Body>
+</soapenv:Envelope>
