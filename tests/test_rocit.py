@@ -1,11 +1,11 @@
 import os, io
 import django
+import xml.etree.ElementTree as ET
 from rest_framework.test import APITestCase
-from django.test import TestCase
 from django.contrib.auth.models import User
 from django.urls import reverse
 from quartet_epcis.parsing.business_parser import BusinessEPCISParser
-from quartet_epcis.db_api.queries import EPCISDBProxy
+
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.settings'
 django.setup()
@@ -44,15 +44,97 @@ class TestRocIt(APITestCase):
         response = self.client.post(url, data, content_type='application/xml')
         self.assertEquals(response.status_code, 500)
 
-    def test_rocit_query(self):
+    def test_rocit_container1_query(self):
         '''
         Posting SOAP Request Content
         :return:
         '''
         url = reverse("retrievePackagingHierarchyResponse")
-        data = self._get_test_data('rocit-search-request.xml')
+        data = self._get_test_data('rocit-search-container1-request.xml')
         response = self.client.post(url, data, content_type='application/xml')
         self.assertEquals(response.status_code, 200)
+
+        root = ET.fromstring(response.data)
+        for body in root.findall('{http://schemas.xmlsoap.org/soap/envelope/}Body'):
+            for resp in body.findall(
+                '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/}retrievePackagingHierarchyResponse'):
+                for result in resp.findall(
+                    '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/}result'):
+                    sgtin = result.find(
+                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}TagId').text
+                    self.assertEquals(sgtin, 'urn:epc:id:sgtin:305555.3555555.1')
+                    status = result.find(
+                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}Status').text
+                    self.assertEquals(status, "CONTAINER_CLOSED")
+                    state = result.find(
+                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}State').text
+                    self.assertEquals(state, 'PACKING')
+                    childCount = result.find(
+                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}ChildTagCount').text
+                    self.assertEquals(childCount, '5')
+                    r = result.findall(
+                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}ChildTagsVO')
+                    self.assertTrue(len(r) == int(childCount))
+
+    def test_rocit_container2_query(self):
+        '''
+        Posting SOAP Request Content
+        :return:
+        '''
+        url = reverse("retrievePackagingHierarchyResponse")
+        data = self._get_test_data('rocit-search-container2-request.xml')
+        response = self.client.post(url, data, content_type='application/xml')
+        self.assertEquals(response.status_code, 200)
+
+        root = ET.fromstring(response.data)
+        for body in root.findall('{http://schemas.xmlsoap.org/soap/envelope/}Body'):
+            for resp in body.findall(
+                '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/}retrievePackagingHierarchyResponse'):
+                for result in resp.findall(
+                    '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/}result'):
+                    sgtin = result.find(
+                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}TagId').text
+                    self.assertEquals(sgtin, 'urn:epc:id:sgtin:305555.3555555.6')
+                    status = result.find(
+                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}Status').text
+                    self.assertEquals(status, "CONTAINER_CLOSED")
+                    state = result.find(
+                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}State').text
+                    self.assertEquals(state, 'PACKING')
+                    childCount = result.find(
+                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}ChildTagCount').text
+                    self.assertEquals(childCount, '5')
+                    r = result.findall(
+                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}ChildTagsVO')
+                    self.assertTrue(len(r) == int(childCount))
+
+
+    def test_rocit_sscc_query(self):
+        '''
+        Posting SOAP Request Content
+        :return:
+        '''
+        url = reverse("retrievePackagingHierarchyResponse")
+        data = self._get_test_data('rocit-search-sscc-request.xml')
+        response = self.client.post(url, data, content_type='application/xml')
+        self.assertEquals(response.status_code, 200)
+
+        root = ET.fromstring(response.data)
+        for body in root.findall('{http://schemas.xmlsoap.org/soap/envelope/}Body'):
+            for resp in body.findall('{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/}retrievePackagingHierarchyResponse'):
+                for result in resp.findall('{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/}result'):
+                    sscc = result.find('{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}TagId').text
+                    self.assertEquals(sscc, "urn:epc:id:sscc:305555.0000000001")
+                    status = result.find('{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}Status').text
+                    self.assertEquals(status, "IN_TRANSIT")
+                    state = result.find('{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}State').text
+                    self.assertEquals(state,'SHIPPING')
+                    childCount = result.find('{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}ChildTagCount').text
+                    self.assertEquals(childCount, '2')
+                    r = result.findall('{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}ChildTagsVO')
+                    self.assertTrue(len(r)==int(childCount))
+
+
 
     def _get_test_data(self, file_name):
         '''
