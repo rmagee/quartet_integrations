@@ -50,6 +50,7 @@ TEMPLATES = [
     },
 ]
 
+MEDIA_ROOT='/tmp/'
 
 SITE_ID = 1
 
