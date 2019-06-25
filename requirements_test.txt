@@ -21,12 +21,12 @@ commonmark==0.9.0
 cookiecutter==1.6.0
 coverage==4.5.3
 cryptography==2.7
-django-model-utils==3.1.2
+django-model-utils==3.2.0
 django==2.2.2
 djangorestframework==3.9.4
 docutils==0.14
 eparsecis==3.1.0
-epcpyyes==2.0.2
+epcpyyes==2.0.3
 first==2.0.2
 future==0.17.1
 gs123==1.0.13
@@ -39,7 +39,7 @@ kombu==4.6.3              # via celery
 lxml==4.3.4
 markupsafe==1.1.1
 packaging==19.0
-paramiko==2.5.0
+paramiko==2.6.0
 pip-tools==3.8.0
 poyo==0.4.2
 pyasn1==0.4.5
@@ -50,7 +50,7 @@ pyparsing==2.4.0
 python-dateutil==2.8.0
 pytz==2019.1
 quartet-capture==2.7.0
-quartet-epcis==1.5.2
+quartet-epcis==1.6.6
 quartet-masterdata==1.4.0
 quartet-output==2.0.6
 recommonmark==0.5.0
