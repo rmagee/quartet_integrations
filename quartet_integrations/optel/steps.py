@@ -21,7 +21,7 @@ from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
 from quartet_integrations.optel.epcpyyes import get_default_environment
 from quartet_output import steps
 from gs123.conversion import URNConverter
-from quartet_output.steps import EPCPyYesOutputStep as OutputStep, ContextKeys
+
 
 class AddCommissioningDataStep(steps.AddCommissioningDataStep):
     def process_events(self, events: list):
@@ -42,6 +42,24 @@ class AddCommissioningDataStep(steps.AddCommissioningDataStep):
             event._env = env
 
         return events
+
+
+class AppendCommissioningStep(steps.AppendCommissioningStep):
+    """
+    Overrides the defautl AppendCommissioningDataStep to provide object
+    events that use the optel template for object events.  This template
+    uses the optel linemaster format from the 2013/14 time frame.
+    """
+
+    def get_object_events(self, epcs):
+        env = get_default_environment()
+        object_events = super().get_object_events(epcs)
+        for object_event in object_events:
+            object_event.template = env.get_template(
+                'optel/object_event.xml'
+            )
+            object_event._env = env
+        return object_events
 
 
 class OptelLineParsingStep(SAPParsingStep):
@@ -66,6 +84,7 @@ class OptelLineParsingStep(SAPParsingStep):
         params['Replace Timezone'] = 'Whether or not to replace explicit ' \
                                      'timezone declarations in event times ' \
                                      'with the timezone offset in the event.'
+        return params
 
 
 class ConsolidationParsingStep(OptelLineParsingStep):
@@ -77,11 +96,11 @@ class ConsolidationParsingStep(OptelLineParsingStep):
         return ConsolidationParser(data).parse(self.replace_timezone)
 
 
-class EPCPyYesOutputStep(OutputStep):
-    '''
+class EPCPyYesOutputStep(steps.EPCPyYesOutputStep):
+    """
     Overrides the standard output step in order to supply a different
     output template for the header of the generated EPCIS document.
-    '''
+    """
 
     def get_epcis_document_class(self, all_events):
         """
