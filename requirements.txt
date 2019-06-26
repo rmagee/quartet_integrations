@@ -22,6 +22,6 @@ pytz==2019.1              # via django
 quartet-capture==2.7.0
 quartet-epcis==1.6.6
 quartet-masterdata==1.4.0
-quartet-output==2.0.6
+quartet-output==2.1.1
 six==1.12.0               # via python-dateutil
 sqlparse==0.3.0           # via django
