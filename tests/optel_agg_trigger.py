@@ -29,7 +29,6 @@ class TestOutputParsing(TestCase):
         auth.save()
         return auth
 
-
     def _create_good_ouput_criterion(self):
         endpoint = self._create_endpoint()
         auth = self._create_auth()
@@ -69,7 +68,7 @@ class TestOutputParsing(TestCase):
         step.description = 'unit test commissioning step'
         step.save()
 
-    def _create_epcpyyes_step(self, rule, json=False):
+    def _create_epcpyyes_step(self, rule, json=False, reverse_search=False):
         step = Step()
         step.rule = rule
         step.order = 4
@@ -84,6 +83,32 @@ class TestOutputParsing(TestCase):
                 name='JSON',
                 value=True
             )
+        param = StepParameter()
+        param.name = 'Additional Context'
+        param.value = (
+            '<gs1ushc:unitOfMeasure xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">Btl</gs1ushc:unitOfMeasure>'
+            '<gs1ushc:additionalTradeItemIdentification xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">'
+            '<gs1ushc:additionalTradeItemIdentificationValue>034390</gs1ushc:additionalTradeItemIdentificationValue>'
+            '</gs1ushc:additionalTradeItemIdentification>'
+        )
+        param.step = step
+        param.save()
+        self._create_search_param(step)
+        self._create_search_direction_step(step, reverse_search)
+
+    def _create_search_direction_step(self, step, reverse=False):
+        param = StepParameter()
+        param.name = 'Context Reverse Search'
+        param.value = str(reverse)
+        param.step = step
+        param.save()
+
+    def _create_search_param(self, step):
+        param2 = StepParameter()
+        param2.name = 'Context Search Value'
+        param2.value = '000101'
+        param2.step = step
+        param2.save()
 
     def _create_task_step(self, rule, order=5):
         step = Step()
@@ -194,6 +219,33 @@ class TestOutputParsing(TestCase):
             execute_queued_task(task_name=task_name)
             task = Task.objects.get(name=task_name)
             self.assertEqual(task.status, 'FINISHED')
-            print(context.context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value])
+            print(
+                context.context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value])
 
-
+    def test_rule_with_agg_comm_output_reverse(self):
+        self._create_good_ouput_criterion()
+        db_rule = self._create_rule()
+        self._create_step(db_rule)
+        self._create_comm_step(db_rule)
+        self._create_epcpyyes_step(db_rule, reverse_search=True)
+        self._create_task_step(db_rule)
+        db_rule2 = self._create_transport_rule()
+        self._create_transport_step(db_rule2)
+        db_task = self._create_task(db_rule)
+        curpath = os.path.dirname(__file__)
+        # prepopulate the db
+        self._parse_test_data('data/commissioning.xml')
+        data_path = os.path.join(curpath, 'data/aggregation.xml')
+        with open(data_path, 'r') as data_file:
+            context = execute_rule(data_file.read().encode(), db_task)
+            self.assertEqual(
+                len(context.context[ContextKeys.FILTERED_EVENTS_KEY.value]),
+                12,
+                "There should be twelve filtered events."
+            )
+            task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY]
+            execute_queued_task(task_name=task_name)
+            task = Task.objects.get(name=task_name)
+            self.assertEqual(task.status, 'FINISHED')
+            print(
+                context.context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value])

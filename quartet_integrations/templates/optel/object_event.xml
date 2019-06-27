@@ -10,12 +10,19 @@
     {% endif %}
     {% include "epcis/business_data.xml" %}
     {% if event.ilmd %}
-    {% for attribute in event.ilmd %}
-        {% if 'CBV' in attribute.__module__ %}
-            <gs1ushc:{{ attribute.name.value or attribute.name }}>{{ attribute.value }}</gs1ushc:{{ attribute.name.value or attribute.name }}>
-        {% else %}
-            <{{ attribute.name }}>{{ attribute.value }}</{{ attribute.name }}>
+    {% if additional_context != None %}
+        {% if additional_context.search_value != None and additional_context.reverse_search != True and additional_context.search_value in event.epc_list[0] %}
+            {% include "optel/optel_ilmd.xml" %}
+            {{ additional_context.object_ilmd }}
+        {% elif additional_context.search_value != None and additional_context.reverse_search == True and additional_context.search_value not in event.epc_list[0] %}
+            {% include "optel/optel_ilmd.xml" %}
+            {{ additional_context.object_ilmd }}
+        {% elif additional_context.search_value == None %}
+            {% include "optel/optel_ilmd.xml" %}
+            {{ additional_context.object_ilmd }}
         {% endif %}
-    {% endfor %}
+    {% else %}
+        {% include "optel/optel_ilmd.xml" %}
+    {% endif %}
     {% endif %}
 </ObjectEvent>

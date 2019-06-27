@@ -111,5 +111,34 @@ class EPCPyYesOutputStep(steps.EPCPyYesOutputStep):
         document = super().get_epcis_document_class(all_events)
         env = get_default_environment()
         template = env.get_template('optel/epcis_events_document.xml')
+        context_search_value = self.get_parameter('Context Search Value', None)
+        context_reverse_search = self.get_boolean_parameter('Context Reverse Search',
+                                                    False)
+        additional_context = self.get_parameter('Additional Context')
+        if additional_context:
+            additional_context = {'object_ilmd': additional_context,
+                                  'search_value': context_search_value,
+                                  'reverse_search': context_reverse_search
+                                  }
+            self.info('Adding additional context : %s', additional_context)
+            document.additional_context = additional_context
         document.template = template
         return document
+
+
+    def declared_parameters(self):
+        return {
+            'Additional Context': 'Any additional data to insert into the'
+                                  ' ilmd area of the message.',
+            'Context Search Value': 'The value to look for in a given serial '
+                              'number to produce the aditional context '
+                              'within a message. Default is None',
+            'Context Reverse Search': 'Whether or not to include the ' 
+                                      'Additional Context if the search value' 
+                                      'is found or whether to include it if'
+                                      ' the search value is not found.  Set '
+                                      'to True to set additional context '
+                                      'when the value is no found. Default '
+                                      'is False.'
+        }
+
