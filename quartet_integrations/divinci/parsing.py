@@ -230,6 +230,10 @@ class JSONParser(EPCISJSONParser):
                 epcis_event.event_time,
                 epcis_event.event_timezone_offset))
         return event_time
+
+    def _parse_date(self, epcis_event):
+        return self.get_event_time(epcis_event)
+    
     class TradeItemConfigurationError(Exception):
         pass
 

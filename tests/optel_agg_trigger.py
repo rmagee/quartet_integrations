@@ -1,18 +1,3 @@
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Copyright 2019 SerialLab Corp.  All rights reserved.
-
 import os
 
 from django.test import TestCase
@@ -22,119 +7,10 @@ from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
 from EPCPyYes.core.v1_2.events import EventType
 from quartet_capture.models import Rule, Step, StepParameter, Task
 from quartet_capture.tasks import execute_rule, execute_queued_task
-from quartet_epcis.models import entries
-from quartet_epcis.models.events import Event
 from quartet_epcis.parsing.business_parser import BusinessEPCISParser
-from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
-    ConsolidationParser
 from quartet_output import models
 from quartet_output.models import EPCISOutputCriteria
 from quartet_output.steps import ContextKeys
-
-
-class TestOpelLegacyParser(TestCase):
-
-    def test_epcis_file(self):
-        curpath = os.path.dirname(__file__)
-        parser = OptelEPCISLegacyParser(
-            os.path.join(curpath, 'data/optel-data-obj.xml'))
-        parser.parse()
-
-    def test_double_tz_file(self):
-        curpath = os.path.dirname(__file__)
-        parser = ConsolidationParser(
-            os.path.join(curpath, 'data/optel_double_timezone.xml'))
-        parser.parse(replace_timezone=True)
-
-    def test_consolidate(self):
-        curpath = os.path.dirname(__file__)
-        parser = ConsolidationParser(
-            os.path.join(curpath, 'data/optel-data.xml'))
-        parser.parse()
-        event = Event.objects.get(type='ob')
-        entry_count = entries.EntryEvent.objects.filter(event=event).count()
-        self.assertEqual(353, entry_count)
-
-
-class TestOptelRule(TestCase):
-    def test_optel_step(self):
-        rule = self._create_rule()
-        self._create_sap_step(rule)
-        curpath = os.path.dirname(__file__)
-        data_path = os.path.join(curpath, 'data/optel-data-obj.xml')
-        db_task = self._create_task(rule)
-        with open(data_path, 'r') as data_file:
-            context = execute_rule(data_file.read().encode(), db_task)
-
-    def _create_rule(self):
-        rule = Rule()
-        rule.name = 'EPCIS'
-        rule.description = 'test rule'
-        rule.save()
-        return rule
-
-    def _create_sap_step(self, rule):
-        step = Step()
-        step.rule = rule
-        step.order = 3
-        step.name = 'Parse Optel EPCIS'
-        step.step_class = 'quartet_integrations.optel.steps.OptelLineParsingStep'
-        step.description = 'optel line master unit test parsing step'
-        step.save()
-
-    def _create_task(self, rule):
-        task = Task()
-        task.rule = rule
-        task.name = 'unit test task'
-        task.save()
-        return task
-
-
-class TestConsolidationRule(TestCase):
-    def test_optel_step(self):
-        rule = self._create_rule()
-        self._create_sap_step(rule)
-        curpath = os.path.dirname(__file__)
-        data_path = os.path.join(curpath, 'data/optel-data.xml')
-        db_task = self._create_task(rule)
-        with open(data_path, 'r') as data_file:
-            context = execute_rule(data_file.read().encode(), db_task)
-
-    def test_optel_step_with_dualtz(self):
-        rule = self._create_rule()
-        self._create_sap_step(rule, tz_param=True)
-        curpath = os.path.dirname(__file__)
-        data_path = os.path.join(curpath, 'data/optel_double_timezone.xml')
-        db_task = self._create_task(rule)
-        with open(data_path, 'r') as data_file:
-            context = execute_rule(data_file.read().encode(), db_task)
-
-    def _create_rule(self):
-        rule = Rule()
-        rule.name = 'EPCIS'
-        rule.description = 'test rule'
-        rule.save()
-        return rule
-
-    def _create_sap_step(self, rule, tz_param=False):
-        step = Step()
-        step.rule = rule
-        step.order = 3
-        step.name = 'Parse Optel EPCIS'
-        step.step_class = 'quartet_integrations.optel.steps.ConsolidationParsingStep'
-        step.description = 'optel line master unit test parsing step'
-        step.save()
-        if tz_param:
-            param = StepParameter.objects.create(step=step,
-                                                 name='Replace Timezone',
-                                                 value='True')
-
-    def _create_task(self, rule):
-        task = Task()
-        task.rule = rule
-        task.name = 'unit test task'
-        task.save()
-        return task
 
 
 class TestOutputParsing(TestCase):
@@ -159,10 +35,10 @@ class TestOutputParsing(TestCase):
         auth = self._create_auth()
         eoc = EPCISOutputCriteria()
         eoc.name = "Test Criteria"
-        eoc.action = "OBSERVE"
-        eoc.event_type = EventType.Object.value
-        eoc.disposition = Disposition.in_transit.value
-        eoc.biz_step = BusinessSteps.shipping.value
+        eoc.action = "ADD"
+        eoc.event_type = EventType.Aggregation.value
+        eoc.disposition = Disposition.in_progress.value
+        eoc.biz_step = BusinessSteps.packing.value
         eoc.read_point = 'urn:epc:id:sgln:0555555.00002.0'
         eoc.authentication_info = auth
         eoc.end_point = endpoint
@@ -184,21 +60,12 @@ class TestOutputParsing(TestCase):
         step_parameter.save()
         return step
 
-    def _create_output_steps(self, rule):
-        step = Step()
-        step.rule = rule
-        step.order = 2
-        step.name = 'UnpackHierarchies'
-        step.step_class = 'quartet_output.steps.UnpackHierarchyStep'
-        step.description = 'unit test unpacking step'
-        step.save()
-
     def _create_comm_step(self, rule):
         step = Step()
         step.rule = rule
         step.order = 3
         step.name = 'CreateCommissioning'
-        step.step_class = 'quartet_integrations.optel.steps.AddCommissioningDataStep'
+        step.step_class = 'quartet_integrations.optel.steps.AppendCommissioningStep'
         step.description = 'unit test commissioning step'
         step.save()
 
@@ -277,13 +144,6 @@ class TestOutputParsing(TestCase):
         step_parameter.value = put_data
         step_parameter.save()
 
-    def _create_rule(self):
-        rule = Rule()
-        rule.name = 'output-test'
-        rule.description = 'output test rule'
-        rule.save()
-        return rule
-
     def _create_task(self, rule):
         task = Task()
         task.rule = rule
@@ -296,7 +156,7 @@ class TestOutputParsing(TestCase):
                          recursive_decommission=False):
         curpath = os.path.dirname(__file__)
         if isinstance(parser_type, BusinessEPCISParser):
-            parser = parser_type(
+            parser = BusinessEPCISParser(
                 os.path.join(curpath, test_file),
                 recursive_decommission=recursive_decommission
             )
@@ -313,7 +173,6 @@ class TestOutputParsing(TestCase):
         self._create_good_ouput_criterion()
         db_rule = self._create_rule()
         self._create_step(db_rule)
-        self._create_output_steps(db_rule)
         self._create_comm_step(db_rule)
         self._create_epcpyyes_step(db_rule)
         self._create_task_step(db_rule)
@@ -323,20 +182,14 @@ class TestOutputParsing(TestCase):
         curpath = os.path.dirname(__file__)
         # prepopulate the db
         self._parse_test_data('data/commissioning.xml')
-        self._parse_test_data('data/aggregation.xml')
-        data_path = os.path.join(curpath, 'data/shipping.xml')
+        data_path = os.path.join(curpath, 'data/aggregation.xml')
         with open(data_path, 'r') as data_file:
             context = execute_rule(data_file.read().encode(), db_task)
             self.assertEqual(
-                len(context.context[ContextKeys.AGGREGATION_EVENTS_KEY.value]),
+                len(context.context[ContextKeys.FILTERED_EVENTS_KEY.value]),
                 12,
                 "There should be twelve filtered events."
             )
-            for event in context.context[
-                ContextKeys.AGGREGATION_EVENTS_KEY.value]:
-                if event.parent_id in ['urn:epc:id:sgtin:0555553.300106.259812595316',
-                                       'urn:epc:id:sgtin:0555553.300106.127892027084']:
-                    self.assertEqual(len(event.child_epcs), 4)
             task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY]
             execute_queued_task(task_name=task_name)
             task = Task.objects.get(name=task_name)
