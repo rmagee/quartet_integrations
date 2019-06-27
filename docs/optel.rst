@@ -39,6 +39,22 @@ step below.  This step can improve performance by up to 1000% in many cases.
 
     quartet_integrations.optel.steps.ConsolidationParsingStep
 
+EPCPyYesOutput Step
+-------------------
+
+This step will produce custom optel EPCIS 1.0 in the format of the old 2013
+line master and later.  Without any conversion, this step will take
+valid EPCPyYes object events and change them to optel formatted events
+with gs1ushc namespaced `lotNumber` and `expirationDate` fields declared
+inline with the object event.  If you wish to add additional ilmd values,
+you can add those to the step parameter as the `Additional Context` and,
+furthermore, if you only wish to add ilmd and additional context when
+certain values are present in the events epcs, you can set the
+`Context Search Value` to look for values in epcs and based on whether the
+`Context Reverse Search` step parameter is false or true, the ilmd and
+additional context will be inserted into the event.
+
+
 Parsers
 -------
 

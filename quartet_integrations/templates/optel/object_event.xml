@@ -13,13 +13,13 @@
     {% if additional_context != None %}
         {% if additional_context.search_value != None and additional_context.reverse_search != True and additional_context.search_value in event.epc_list[0] %}
             {% include "optel/optel_ilmd.xml" %}
-            {{ additional_context.object_ilmd }}
+            {{ additional_context.object_ilmd|default('', true) }}
         {% elif additional_context.search_value != None and additional_context.reverse_search == True and additional_context.search_value not in event.epc_list[0] %}
             {% include "optel/optel_ilmd.xml" %}
-            {{ additional_context.object_ilmd }}
+            {{ additional_context.object_ilmd|default('', true) }}
         {% elif additional_context.search_value == None %}
             {% include "optel/optel_ilmd.xml" %}
-            {{ additional_context.object_ilmd }}
+            {{ additional_context.object_ilmd|default('', true) }}
         {% endif %}
     {% else %}
         {% include "optel/optel_ilmd.xml" %}

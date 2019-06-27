@@ -115,7 +115,7 @@ class EPCPyYesOutputStep(steps.EPCPyYesOutputStep):
         context_reverse_search = self.get_boolean_parameter('Context Reverse Search',
                                                     False)
         additional_context = self.get_parameter('Additional Context')
-        if additional_context:
+        if additional_context or context_search_value:
             additional_context = {'object_ilmd': additional_context,
                                   'search_value': context_search_value,
                                   'reverse_search': context_reverse_search
