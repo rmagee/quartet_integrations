@@ -1,0 +1,7 @@
+{% for attribute in event.ilmd %}
+    {% if 'CBV' in attribute.__module__ %}
+        <gs1ushc:{{ attribute.name.value or attribute.name }}>{{ attribute.value }}</gs1ushc:{{ attribute.name.value or attribute.name }}>
+    {% else %}
+        <{{ attribute.name }}>{{ attribute.value }}</{{ attribute.name }}>
+    {% endif %}
+{% endfor %}
