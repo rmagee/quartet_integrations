@@ -16,14 +16,15 @@
 import os
 from django.test import TestCase
 from quartet_masterdata import models
-from quartet_capture.models import Rule, Step, Task
+from quartet_capture.models import Rule, Step, Task, StepParameter
 from quartet_capture.tasks import execute_rule
 from EPCPyYes.core.v1_2 import template_events as yes_events
+from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
 from quartet_integrations.sap.parsing import SAPParser
 from quartet_epcis.parsing.business_parser import BusinessEPCISParser
 from quartet_epcis.db_api.queries import EPCISDBProxy
 from quartet_epcis.models import events, entries
-
+from quartet_output.models import EPCISOutputCriteria, EndPoint
 
 class TestParser(SAPParser):
 
@@ -98,14 +99,30 @@ class TestDivinciRule(TestCase):
 
     def _test_divinci_step(self, file='data/divinci-inbound.json'):
         rule = self._create_rule()
-        self._create_sap_step(rule)
+        self._create_divinci_parsing_step(rule)
         curpath = os.path.dirname(__file__)
         data_path = os.path.join(curpath, file)
         db_task = self._create_task(rule)
         with open(data_path, 'r') as data_file:
             context = execute_rule(data_file.read().encode(), db_task)
 
+    def _create_good_output_criterion(self):
+        criteria = EPCISOutputCriteria.objects.create(
+            name='unit test criteria',
+            biz_step=BusinessSteps.shipping.value,
+            end_point=self._create_endpoint()
+        )
+        return criteria
+
+    def _create_endpoint(self):
+        ep = EndPoint()
+        ep.urn = 'http://testhost'
+        ep.name = 'Test EndPoint'
+        ep.save()
+        return ep
+
     def test_divinci_step(self):
+        self._create_good_output_criterion()
         self._test_divinci_step()
         evs = events.Event.objects.filter(type='tx')
         self.assertEqual(evs.count(), 1,
@@ -130,7 +147,7 @@ class TestDivinciRule(TestCase):
         rule.save()
         return rule
 
-    def _create_sap_step(self, rule):
+    def _create_divinci_parsing_step(self, rule):
         step = Step()
         step.rule = rule
         step.order = 3
@@ -138,6 +155,12 @@ class TestDivinciRule(TestCase):
         step.step_class = 'quartet_integrations.divinci.steps.JSONParsingStep'
         step.description = 'divinci unit test parsing step'
         step.save()
+        param = StepParameter(
+            name='EPCIS Output Criteria',
+            value='unit test criteria',
+            step=step
+        )
+        param.save()
 
     def _create_task(self, rule):
         task = Task()

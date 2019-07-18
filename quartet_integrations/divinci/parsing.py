@@ -24,7 +24,7 @@ from gs123.conversion import BarcodeConverter
 from quartet_epcis.models import Entry
 from quartet_epcis.parsing.json import JSONParser as EPCISJSONParser
 from quartet_masterdata.models import TradeItem, Company
-
+from quartet_output.models import EPCISOutputCriteria
 logger = getLogger(__name__)
 
 
@@ -33,11 +33,14 @@ class JSONParser(EPCISJSONParser):
     A class that pareses the oddly-formed divinci serial number format.
     """
 
-    def __init__(self, stream, event_cache_size: int = 1024,
+    def __init__(self, stream,
+                 epcis_output_criteria: EPCISOutputCriteria,
+                 event_cache_size: int = 1024,
                  recursive_decommission: bool = True):
         self.master_material_cache = {}
         self.company_prefix_cache = {}
-        super(JSONParser, self).__init__(stream, event_cache_size,
+        super(JSONParser, self).__init__(stream, epcis_output_criteria,
+                                         event_cache_size,
                                          recursive_decommission)
 
     def handle_aggregation_event(self, epcis_event: AggregationEvent):

@@ -16,7 +16,7 @@ from quartet_output.steps import ContextKeys
 class TestOutputParsing(TestCase):
     def _create_endpoint(self):
         ep = models.EndPoint()
-        ep.urn = 'http://testhost'
+        ep.urn = 'http://testhost:777'
         ep.name = 'Test EndPoint'
         ep.save()
         return ep

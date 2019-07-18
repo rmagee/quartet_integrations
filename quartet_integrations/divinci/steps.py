@@ -16,15 +16,22 @@ import io
 from django.db import transaction
 from django.core.files.base import File
 from quartet_integrations.divinci.parsing import JSONParser
+from quartet_output.steps import OutputParsingStep, ContextKeys
 from quartet_capture.rules import Step, RuleContext
 
 
-class JSONParsingStep(Step):
+class JSONParsingStep(OutputParsingStep):
     def execute(self, data, rule_context: RuleContext):
+        # before we start, make sure we make the output criteria available
+        # to any downstream steps that need it in order to send data.
+        rule_context.context[
+            ContextKeys.EPCIS_OUTPUT_CRITERIA_KEY.value
+        ] = self.epc_output_criteria
+
         data = self.get_data(data)
         self.info('Parsing inbound data...')
         with transaction.atomic():
-            parser = JSONParser(data)
+            parser = JSONParser(data, self.epc_output_criteria)
             parser.parse()
         self.info('Parsing complete.')
 
@@ -41,8 +48,3 @@ class JSONParsingStep(Step):
                 raise
         return data
 
-    def declared_parameters(self):
-        return None
-
-    def on_failure(self):
-        pass

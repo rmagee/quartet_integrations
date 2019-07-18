@@ -1,0 +1,17 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <serialNumbersRequest>
+         <SendingSystem>0355555000006</SendingSystem>
+         <ReceivingSystem>0355550000063</ReceivingSystem>
+         <IdType>GS1_SER</IdType>
+         <EncodingType>SGTIN</EncodingType>
+         <Size>10</Size>
+         <ObjectKey>
+            <Name>GTIN</Name>
+            <Value>00355551121021</Value>
+         </ObjectKey>
+         <RequestRandomizedNumber>X</RequestRandomizedNumber>
+      </serialNumbersRequest>
+   </soapenv:Body>
+</soapenv:Envelope>

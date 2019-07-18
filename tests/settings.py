@@ -58,3 +58,8 @@ if django.VERSION >= (1, 10):
     MIDDLEWARE = ()
 else:
     MIDDLEWARE_CLASSES = ()
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
