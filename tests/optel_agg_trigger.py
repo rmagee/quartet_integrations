@@ -1,6 +1,7 @@
 import os
 
 from django.test import TestCase
+from django.conf import settings
 
 from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
 from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
@@ -11,12 +12,13 @@ from quartet_epcis.parsing.business_parser import BusinessEPCISParser
 from quartet_output import models
 from quartet_output.models import EPCISOutputCriteria
 from quartet_output.steps import ContextKeys
+from quartet_templates.models import Template
 
 
 class TestOutputParsing(TestCase):
     def _create_endpoint(self):
         ep = models.EndPoint()
-        ep.urn = 'http://testhost:777'
+        ep.urn = getattr(settings, 'TEST_SERVER', 'http://testhost')
         ep.name = 'Test EndPoint'
         ep.save()
         return ep
@@ -29,6 +31,40 @@ class TestOutputParsing(TestCase):
         auth.save()
         return auth
 
+    def _create_template(self):
+        content = """<ObjectEvent>
+            {% include "epcis/event_times.xml" %}
+            {% include "epcis/base_extension.xml" %}
+            {% if event.epc_list %}
+                <epcList>
+                    {% for epc in event.epc_list %}
+                        <epc>{{ epc }}</epc>
+                    {% endfor %}
+                </epcList>
+            {% endif %}
+            {% include "epcis/business_data.xml" %}
+            {% if event.ilmd and event.action == 'ADD' %}
+            {% if additional_context != None %}
+                {% if additional_context.search_value != None and additional_context.reverse_search == False and additional_context.search_value in event.epc_list[0] %}
+                    {% include "optel/optel_ilmd.xml" %}
+                    {{ additional_context.object_ilmd|default('', true) }}
+                {% elif additional_context.search_value != None and additional_context.reverse_search == True and additional_context.search_value not in event.epc_list[0] %}
+                    {% include "optel/optel_ilmd.xml" %}
+                    {{ additional_context.object_ilmd|default('', true) }}
+                {% else %}
+                    {% include "optel/optel_ilmd.xml" %}
+                {% endif %}
+            {% else %}
+                {% include "optel/optel_ilmd.xml" %}
+            {% endif %}
+            {% endif %}
+        </ObjectEvent>"""
+        Template.objects.create(name='Unit Test Template',
+                                content=content,
+                                description='a unit test template'
+                                )
+
+
     def _create_good_ouput_criterion(self):
         endpoint = self._create_endpoint()
         auth = self._create_auth()
@@ -38,7 +74,6 @@ class TestOutputParsing(TestCase):
         eoc.event_type = EventType.Aggregation.value
         eoc.disposition = Disposition.in_progress.value
         eoc.biz_step = BusinessSteps.packing.value
-        eoc.read_point = 'urn:epc:id:sgln:0555555.00002.0'
         eoc.authentication_info = auth
         eoc.end_point = endpoint
         eoc.save()
@@ -59,7 +94,7 @@ class TestOutputParsing(TestCase):
         step_parameter.save()
         return step
 
-    def _create_comm_step(self, rule):
+    def _create_comm_step(self, rule, use_template=False):
         step = Step()
         step.rule = rule
         step.order = 3
@@ -67,6 +102,12 @@ class TestOutputParsing(TestCase):
         step.step_class = 'quartet_integrations.optel.steps.AppendCommissioningStep'
         step.description = 'unit test commissioning step'
         step.save()
+        if use_template:
+            StepParameter.objects.create(
+                name='Template',
+                value='Unit Test Template',
+                step=step
+            )
 
     def _create_epcpyyes_step(self, rule, json=False, reverse_search=False,
                               create_data=True):
@@ -204,7 +245,7 @@ class TestOutputParsing(TestCase):
         db_rule = self._create_rule()
         self._create_step(db_rule)
         self._create_comm_step(db_rule)
-        self._create_epcpyyes_step(db_rule)
+        self._create_epcpyyes_step(db_rule, create_data=True)
         self._create_task_step(db_rule)
         db_rule2 = self._create_transport_rule()
         self._create_transport_step(db_rule2)
@@ -231,9 +272,10 @@ class TestOutputParsing(TestCase):
         self._create_good_ouput_criterion()
         db_rule = self._create_rule()
         self._create_step(db_rule)
-        self._create_comm_step(db_rule)
+        self._create_comm_step(db_rule, use_template=True)
         self._create_epcpyyes_step(db_rule, reverse_search=True)
         self._create_task_step(db_rule)
+        self._create_template()
         db_rule2 = self._create_transport_rule()
         self._create_transport_step(db_rule2)
         db_task = self._create_task(db_rule)
@@ -268,8 +310,8 @@ class TestOutputParsing(TestCase):
         db_task = self._create_task(db_rule)
         curpath = os.path.dirname(__file__)
         # prepopulate the db
-        self._parse_test_data('data/commissioning.xml')
-        data_path = os.path.join(curpath, 'data/aggregation.xml')
+        self._parse_test_data('data/sun-commissioning.xml')
+        data_path = os.path.join(curpath, 'data/sun-aggregation.xml')
         with open(data_path, 'r') as data_file:
             context = execute_rule(data_file.read().encode(), db_task)
             self.assertEqual(

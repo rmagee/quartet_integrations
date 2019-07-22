@@ -12,7 +12,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-
+from django.conf import settings
 import os
 
 from django.test import TestCase
@@ -140,7 +140,7 @@ class TestConsolidationRule(TestCase):
 class TestOutputParsing(TestCase):
     def _create_endpoint(self):
         ep = models.EndPoint()
-        ep.urn = 'http://testhost'
+        ep.urn = getattr(settings, 'TEST_SERVER', 'http://testhost')
         ep.name = 'Test EndPoint'
         ep.save()
         return ep

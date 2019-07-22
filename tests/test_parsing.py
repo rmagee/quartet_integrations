@@ -14,6 +14,7 @@
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 
 import os
+from django.conf import settings
 from django.test import TestCase
 from quartet_masterdata import models
 from quartet_capture.models import Rule, Step, Task, StepParameter
@@ -98,6 +99,7 @@ class TestDivinciRule(TestCase):
         self._create_trade_item()
 
     def _test_divinci_step(self, file='data/divinci-inbound.json'):
+        self._create_good_output_criterion()
         rule = self._create_rule()
         self._create_divinci_parsing_step(rule)
         curpath = os.path.dirname(__file__)
@@ -116,13 +118,12 @@ class TestDivinciRule(TestCase):
 
     def _create_endpoint(self):
         ep = EndPoint()
-        ep.urn = 'http://testhost'
+        ep.urn = getattr(settings, 'TEST_SERVER', 'http://testhost')
         ep.name = 'Test EndPoint'
         ep.save()
         return ep
 
     def test_divinci_step(self):
-        self._create_good_output_criterion()
         self._test_divinci_step()
         evs = events.Event.objects.filter(type='tx')
         self.assertEqual(evs.count(), 1,

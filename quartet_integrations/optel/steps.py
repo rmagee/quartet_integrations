@@ -21,15 +21,27 @@ from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
 from quartet_integrations.optel.epcpyyes import get_default_environment
 from quartet_output import steps
 from gs123.conversion import URNConverter
-
+from quartet_templates.models import Template
 
 class AddCommissioningDataStep(steps.AddCommissioningDataStep):
+    """
+    Changes the default template and environment for the EPCPyYes
+    object events.  Will first attempt to use a defined QU4RTET template
+    to render object events, otherwise it will use the default optel
+    object_event.xml template in this package.
+
+    To define a QU4RTET template use the Template step parameter and assign
+    it the name of a given QU4RTET template.  This template will then be used
+    to render object events.
+    """
     def process_events(self, events: list):
-        """
-        Changes the default template and environment for the EPCPyYes
-        object events.
-        """
         env = get_default_environment()
+        template_name = self.get_parameter('Template',None)
+        if template_name:
+            template_model = Template.objects.get(name=template_name)
+            template = env.from_string(template_model.content)
+        else:
+            template = env.get_template('optel/object_event.xml')
         for event in events:
             for epc in event.epc_list:
                 if ':sscc:' in epc:
@@ -37,8 +49,7 @@ class AddCommissioningDataStep(steps.AddCommissioningDataStep):
                     event.company_prefix = parsed_sscc._company_prefix
                     event.extension_digit = parsed_sscc._extension_digit
                     break
-            event.template = env.get_template(
-                'optel/object_event.xml')
+            event.template = template
             event._env = env
 
         return events

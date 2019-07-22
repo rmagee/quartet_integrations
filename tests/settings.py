@@ -26,7 +26,8 @@ INSTALLED_APPS = [
     "quartet_epcis",
     "quartet_capture",
     "quartet_output",
-    "quartet_masterdata"
+    "quartet_masterdata",
+    "quartet_templates",
 ]
 
 SETTINGS_PATH = os.path.normpath(os.path.dirname(__file__))
@@ -60,6 +61,6 @@ else:
     MIDDLEWARE_CLASSES = ()
 
 try:
-    from local_settings import *
+    from tests.local_settings import *
 except ImportError:
     pass
