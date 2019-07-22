@@ -54,6 +54,15 @@ certain values are present in the events epcs, you can set the
 `Context Reverse Search` step parameter is false or true, the ilmd and
 additional context will be inserted into the event.
 
+AppendCommissioningStep
+-----------------------
+Takes any filtered events in the context's 'FILTERED_EVENTS' key and will
+create commissioning events for the EPCs in those events using the custom
+Template specified in the `Template` step parameter (this would be the name
+of a configured quartet_templates.models.Template instance) or it will
+use the defult 'optel/object_event.xml' template defined in the templates
+directory of this project.
+
 
 Parsers
 -------

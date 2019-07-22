@@ -23,7 +23,28 @@ from quartet_output import steps
 from gs123.conversion import URNConverter
 from quartet_templates.models import Template
 
-class AddCommissioningDataStep(steps.AddCommissioningDataStep):
+
+class DynamicTemplateMixin:
+    def get_template(self, env):
+        """
+        Allows implementing steps to load a template from a Template parameter.
+        The template parameter would be the name of a given quartet_templates.model.Template
+        instance.
+        :param env: The jinja template Environment object.
+        :return: Returns none if no template parameter was found or the default
+        object_event.xml template in this package.
+        """
+        template_name = self.get_parameter('Template', None)
+        if template_name:
+            template_model = Template.objects.get(name=template_name)
+            template = env.from_string(template_model.content)
+        else:
+            template = env.get_template('optel/object_event.xml')
+        return template
+
+
+class AddCommissioningDataStep(steps.AddCommissioningDataStep,
+                               DynamicTemplateMixin):
     """
     Changes the default template and environment for the EPCPyYes
     object events.  Will first attempt to use a defined QU4RTET template
@@ -32,16 +53,11 @@ class AddCommissioningDataStep(steps.AddCommissioningDataStep):
 
     To define a QU4RTET template use the Template step parameter and assign
     it the name of a given QU4RTET template.  This template will then be used
-    to render object events.
     """
+
     def process_events(self, events: list):
         env = get_default_environment()
-        template_name = self.get_parameter('Template',None)
-        if template_name:
-            template_model = Template.objects.get(name=template_name)
-            template = env.from_string(template_model.content)
-        else:
-            template = env.get_template('optel/object_event.xml')
+        template = self.get_template(env)
         for event in events:
             for epc in event.epc_list:
                 if ':sscc:' in epc:
@@ -55,20 +71,20 @@ class AddCommissioningDataStep(steps.AddCommissioningDataStep):
         return events
 
 
-class AppendCommissioningStep(steps.AppendCommissioningStep):
+class AppendCommissioningStep(steps.AppendCommissioningStep,
+                              DynamicTemplateMixin):
     """
-    Overrides the defautl AppendCommissioningDataStep to provide object
+    Overrides the default AppendCommissioningDataStep to provide object
     events that use the optel template for object events.  This template
     uses the optel linemaster format from the 2013/14 time frame.
     """
 
     def get_object_events(self, epcs):
         env = get_default_environment()
+        template = self.get_template(env)
         object_events = super().get_object_events(epcs)
         for object_event in object_events:
-            object_event.template = env.get_template(
-                'optel/object_event.xml'
-            )
+            object_event.template = template
             object_event._env = env
         return object_events
 
@@ -123,8 +139,9 @@ class EPCPyYesOutputStep(steps.EPCPyYesOutputStep):
         env = get_default_environment()
         template = env.get_template('optel/epcis_events_document.xml')
         context_search_value = self.get_parameter('Context Search Value', None)
-        context_reverse_search = self.get_boolean_parameter('Context Reverse Search',
-                                                    False)
+        context_reverse_search = self.get_boolean_parameter(
+            'Context Reverse Search',
+            False)
         additional_context = self.get_parameter('Additional Context')
         if additional_context or context_search_value:
             additional_context = {'object_ilmd': additional_context,
@@ -136,20 +153,18 @@ class EPCPyYesOutputStep(steps.EPCPyYesOutputStep):
         document.template = template
         return document
 
-
     def declared_parameters(self):
         return {
             'Additional Context': 'Any additional data to insert into the'
                                   ' ilmd area of the message.',
             'Context Search Value': 'The value to look for in a given serial '
-                              'number to produce the aditional context '
-                              'within a message. Default is None',
-            'Context Reverse Search': 'Whether or not to include the ' 
-                                      'Additional Context if the search value' 
+                                    'number to produce the aditional context '
+                                    'within a message. Default is None',
+            'Context Reverse Search': 'Whether or not to include the '
+                                      'Additional Context if the search value'
                                       'is found or whether to include it if'
                                       ' the search value is not found.  Set '
                                       'to True to set additional context '
                                       'when the value is no found. Default '
                                       'is False.'
         }
-
