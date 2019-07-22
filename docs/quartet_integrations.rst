@@ -6,6 +6,10 @@ Subpackages
 
 .. toctree::
 
+    quartet_integrations.divinci
+    quartet_integrations.numberranges
+    quartet_integrations.optel
+    quartet_integrations.rocit
     quartet_integrations.sap
 
 Submodules
