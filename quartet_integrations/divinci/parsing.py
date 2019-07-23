@@ -22,7 +22,7 @@ from EPCPyYes.core.v1_2.events import AggregationEvent, ObjectEvent, \
     TransactionEvent
 from gs123.conversion import BarcodeConverter
 from quartet_epcis.models import Entry
-from quartet_epcis.parsing.json import JSONParser as EPCISJSONParser
+from quartet_output.parsing import JSONParser as EPCISJSONParser
 from quartet_masterdata.models import TradeItem, Company
 from quartet_output.models import EPCISOutputCriteria
 logger = getLogger(__name__)
