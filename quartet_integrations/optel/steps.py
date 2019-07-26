@@ -12,39 +12,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-import io
 
+from gs123.conversion import URNConverter
 from quartet_capture import models
-from quartet_integrations.sap.steps import SAPParsingStep
+from quartet_integrations.optel.epcpyyes import get_default_environment
 from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
     ConsolidationParser
-from quartet_integrations.optel.epcpyyes import get_default_environment
+from quartet_integrations.sap.steps import SAPParsingStep
 from quartet_output import steps
-from gs123.conversion import URNConverter
-from quartet_templates.models import Template
-
-
-class DynamicTemplateMixin:
-    def get_template(self, env):
-        """
-        Allows implementing steps to load a template from a Template parameter.
-        The template parameter would be the name of a given quartet_templates.model.Template
-        instance.
-        :param env: The jinja template Environment object.
-        :return: Returns none if no template parameter was found or the default
-        object_event.xml template in this package.
-        """
-        template_name = self.get_parameter('Template', None)
-        if template_name:
-            template_model = Template.objects.get(name=template_name)
-            template = env.from_string(template_model.content)
-        else:
-            template = env.get_template('optel/object_event.xml')
-        return template
 
 
 class AddCommissioningDataStep(steps.AddCommissioningDataStep,
-                               DynamicTemplateMixin):
+                               steps.DynamicTemplateMixin):
     """
     Changes the default template and environment for the EPCPyYes
     object events.  Will first attempt to use a defined QU4RTET template
@@ -57,7 +36,7 @@ class AddCommissioningDataStep(steps.AddCommissioningDataStep,
 
     def process_events(self, events: list):
         env = get_default_environment()
-        template = self.get_template(env)
+        template = self.get_template(env, 'optel/object_event.xml')
         for event in events:
             for epc in event.epc_list:
                 if ':sscc:' in epc:
@@ -72,7 +51,8 @@ class AddCommissioningDataStep(steps.AddCommissioningDataStep,
 
 
 class AppendCommissioningStep(steps.AppendCommissioningStep,
-                              DynamicTemplateMixin):
+                              steps.DynamicTemplateMixin,
+                              steps.FilterEPCsMixin):
     """
     Overrides the default AppendCommissioningDataStep to provide object
     events that use the optel template for object events.  This template
@@ -80,13 +60,54 @@ class AppendCommissioningStep(steps.AppendCommissioningStep,
     """
 
     def get_object_events(self, epcs):
+        """
+        Overrides the default function to apply filtering based on the regex
+        and append step parameter values.
+        :param epcs: The
+        :return:
+        """
+        self.info('Looking for the EPC Filter Search parameter.')
+        filter_regex = self.get_parameter('EPC Filter Search', None)
+        filter_action = self.get_parameter('Filter Event Action', 'OBSERVE')
+        append_all = self.get_parameter('Append All Object Events', True)
+        if filter_regex:
+            reverse = self.get_boolean_parameter('Reverse Filter', False)
+            self.info('Found Search Value %s. Filter event action '
+                      'is %s', filter_regex, filter_action)
         env = get_default_environment()
-        template = self.get_template(env)
+        template = self.get_template(env, 'optel/object_event.xml')
         object_events = super().get_object_events(epcs)
+        if not append_all:
+            self.info('Filtering out any non commissioning events...')
+            object_events = [object_event for object_event in
+                             object_events if object_event.action == 'ADD']
         for object_event in object_events:
             object_event.template = template
             object_event._env = env
+            if filter_regex and object_event.action == filter_action:
+                object_event.epc_list = self.filter(object_event.epc_list,
+                                                    filter_regex,
+                                                    reverse=reverse)
         return object_events
+
+    def declared_parameters(self):
+        return {
+            'Template': 'The name of the QU4RTET template to use if you '
+                        'want to override the default template.',
+            'EPC Filter Search': 'A search value that is used to filter '
+                                'out EPC values during processing.  Typically '
+                                'used to remove redundant EPC data.',
+            'Reverse Filter': 'Set to True if you want to use the regex '
+                              'parameter to identify EPCs to include rather '
+                              'than filter out.',
+            'Filter Event Action': 'The action of the events to apply the EPC '
+                                   'filter against.  Can '
+                                   'be ADD, DELETE, or OBSERVE (case '
+                                   ' sensitive). Default is OBSERVE.',
+            'Append All Object Events': 'Whether or not to append events'
+                                        ' that are not commissioning events. '
+                                        'default is True.'
+        }
 
 
 class OptelLineParsingStep(SAPParsingStep):

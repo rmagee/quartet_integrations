@@ -1,18 +1,30 @@
 import os
+from io import StringIO, BytesIO
 
 from django.test import TestCase
 from django.conf import settings
-
+from EPCPyYes.core.v1_2 import events as yes_events
 from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
 from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
 from EPCPyYes.core.v1_2.events import EventType
 from quartet_capture.models import Rule, Step, StepParameter, Task
 from quartet_capture.tasks import execute_rule, execute_queued_task
 from quartet_epcis.parsing.business_parser import BusinessEPCISParser
+from quartet_epcis.parsing.parser import QuartetParser
 from quartet_output import models
 from quartet_output.models import EPCISOutputCriteria
 from quartet_output.steps import ContextKeys
 from quartet_templates.models import Template
+
+
+class UnitTestParser(QuartetParser):
+
+    def handle_object_event(self, epcis_event: yes_events.ObjectEvent):
+        if epcis_event.action == 'OBSERVE':
+            for epc in epcis_event.epc_list:
+                if '.000101.' in epc:
+                    raise AssertionError('The epc %s was not filtered out'
+                                         % epc)
 
 
 class TestOutputParsing(TestCase):
@@ -64,7 +76,6 @@ class TestOutputParsing(TestCase):
                                 description='a unit test template'
                                 )
 
-
     def _create_good_ouput_criterion(self):
         endpoint = self._create_endpoint()
         auth = self._create_auth()
@@ -94,7 +105,8 @@ class TestOutputParsing(TestCase):
         step_parameter.save()
         return step
 
-    def _create_comm_step(self, rule, use_template=False):
+    def _create_comm_step(self, rule, use_template=False, filter_epcs=False,
+                          reverse_filter=False):
         step = Step()
         step.rule = rule
         step.order = 3
@@ -108,6 +120,19 @@ class TestOutputParsing(TestCase):
                 value='Unit Test Template',
                 step=step
             )
+        if filter_epcs:
+            StepParameter.objects.create(
+                name='EPC Filter Search',
+                value='.500106.',
+                description='unit test regex filter',
+                step=step
+            )
+            if reverse_filter:
+                StepParameter.objects.create(
+                    name='Reverse Filter',
+                    value='True',
+                    step=step
+                )
 
     def _create_epcpyyes_step(self, rule, json=False, reverse_search=False,
                               create_data=True):
@@ -244,27 +269,35 @@ class TestOutputParsing(TestCase):
         self._create_good_ouput_criterion()
         db_rule = self._create_rule()
         self._create_step(db_rule)
-        self._create_comm_step(db_rule)
-        self._create_epcpyyes_step(db_rule, create_data=True)
+        self._create_comm_step(db_rule, filter_epcs=True, reverse_filter=True)
+        self._create_epcpyyes_step(db_rule, create_data=True,
+                                   reverse_search=False)
         self._create_task_step(db_rule)
         db_rule2 = self._create_transport_rule()
         self._create_transport_step(db_rule2)
         db_task = self._create_task(db_rule)
         curpath = os.path.dirname(__file__)
         # prepopulate the db
-        self._parse_test_data('data/commissioning.xml')
-        data_path = os.path.join(curpath, 'data/aggregation.xml')
+        self._parse_test_data('data/sn-commissioning.xml')
+        data_path = os.path.join(curpath, 'data/sn-aggregation.xml')
         with open(data_path, 'r') as data_file:
             context = execute_rule(data_file.read().encode(), db_task)
             self.assertEqual(
                 len(context.context[ContextKeys.FILTERED_EVENTS_KEY.value]),
-                12,
+                13,
                 "There should be twelve filtered events."
             )
             task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY]
             execute_queued_task(task_name=task_name)
             task = Task.objects.get(name=task_name)
             self.assertEqual(task.status, 'FINISHED')
+            parser = UnitTestParser(
+                BytesIO(
+                    context.context[
+                        ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value].encode('utf-8')
+                )
+            )
+            parser.parse()
             print(
                 context.context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value])
 
@@ -310,8 +343,8 @@ class TestOutputParsing(TestCase):
         db_task = self._create_task(db_rule)
         curpath = os.path.dirname(__file__)
         # prepopulate the db
-        self._parse_test_data('data/sun-commissioning.xml')
-        data_path = os.path.join(curpath, 'data/sun-aggregation.xml')
+        self._parse_test_data('data/commissioning.xml')
+        data_path = os.path.join(curpath, 'data/aggregation.xml')
         with open(data_path, 'r') as data_file:
             context = execute_rule(data_file.read().encode(), db_task)
             self.assertEqual(
