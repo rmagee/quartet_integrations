@@ -53,6 +53,7 @@ quartet-capture==2.7.0
 quartet-epcis==1.6.8
 quartet-masterdata==1.4.0
 quartet-output==2.2.7
+quartet-templates==1.0.5
 recommonmark==0.5.0
 requests==2.22.0
 six==1.12.0
