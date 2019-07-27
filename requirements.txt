@@ -15,13 +15,13 @@ future==0.17.1            # via commonmark
 gs123==1.0.13
 haikunator==2.1.0         # via quartet-capture
 jinja2==2.10.1            # via epcpyyes
-lxml==4.3.4               # via eparsecis, epcpyyes
+lxml==4.4.0               # via eparsecis, epcpyyes
 markupsafe==1.1.1         # via jinja2
 python-dateutil==2.8.0    # via quartet-epcis
 pytz==2019.1              # via django
 quartet-capture==2.7.0
-quartet-epcis==1.6.7
+quartet-epcis==1.6.8
 quartet-masterdata==1.4.0
-quartet-output==2.2.5
+quartet-output==2.2.7
 six==1.12.0               # via python-dateutil
 sqlparse==0.3.0           # via django
