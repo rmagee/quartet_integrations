@@ -4,6 +4,7 @@ quartet_output
 quartet_epcis
 quartet_capture
 quartet_masterdata
+quartet_templates
 django
 djangorestframework
 gs123
