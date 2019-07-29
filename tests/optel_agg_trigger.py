@@ -76,6 +76,16 @@ class TestOutputParsing(TestCase):
                                 description='a unit test template'
                                 )
 
+    def _create_context_template(self):
+        content = """<gs1ushc:unitOfMeasure xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">Btl</gs1ushc:unitOfMeasure>
+<gs1ushc:additionalTradeItemIdentification xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">
+<gs1ushc:additionalTradeItemIdentificationValue>034390</gs1ushc:additionalTradeItemIdentificationValue>
+</gs1ushc:additionalTradeItemIdentification>"""
+        Template.objects.create(name='Additional Context Template',
+                                content=content,
+                                description='a unit test template'
+                                )
+
     def _create_good_ouput_criterion(self):
         endpoint = self._create_endpoint()
         auth = self._create_auth()
@@ -156,14 +166,10 @@ class TestOutputParsing(TestCase):
         self._create_search_direction_step(step, reverse_search)
 
     def create_gs1ushc_data(self, step):
+        self._create_context_template()
         param = StepParameter()
         param.name = 'Additional Context'
-        param.value = (
-            '<gs1ushc:unitOfMeasure xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">Btl</gs1ushc:unitOfMeasure>'
-            '<gs1ushc:additionalTradeItemIdentification xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">'
-            '<gs1ushc:additionalTradeItemIdentificationValue>034390</gs1ushc:additionalTradeItemIdentificationValue>'
-            '</gs1ushc:additionalTradeItemIdentification>'
-        )
+        param.value = 'Additional Context Template'
         param.step = step
         param.save()
 
@@ -294,7 +300,8 @@ class TestOutputParsing(TestCase):
             parser = UnitTestParser(
                 BytesIO(
                     context.context[
-                        ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value].encode('utf-8')
+                        ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value].encode(
+                        'utf-8')
                 )
             )
             parser.parse()

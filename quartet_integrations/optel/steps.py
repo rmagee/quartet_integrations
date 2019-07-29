@@ -20,7 +20,7 @@ from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
     ConsolidationParser
 from quartet_integrations.sap.steps import SAPParsingStep
 from quartet_output import steps
-
+from quartet_templates.models import Template
 
 class AddCommissioningDataStep(steps.AddCommissioningDataStep,
                                steps.DynamicTemplateMixin):
@@ -165,7 +165,8 @@ class EPCPyYesOutputStep(steps.EPCPyYesOutputStep):
             False)
         additional_context = self.get_parameter('Additional Context')
         if additional_context or context_search_value:
-            additional_context = {'object_ilmd': additional_context,
+            object_ilmd = Template.objects.get(name=additional_context).content
+            additional_context = {'object_ilmd': object_ilmd,
                                   'search_value': context_search_value,
                                   'reverse_search': context_reverse_search
                                   }
@@ -176,8 +177,8 @@ class EPCPyYesOutputStep(steps.EPCPyYesOutputStep):
 
     def declared_parameters(self):
         return {
-            'Additional Context': 'Any additional data to insert into the'
-                                  ' ilmd area of the message.',
+            'Additional Context': 'The name of a quartet template containing '
+                                  'additional data to insert into the ILMD.',
             'Context Search Value': 'The value to look for in a given serial '
                                     'number to produce the aditional context '
                                     'within a message. Default is None',
