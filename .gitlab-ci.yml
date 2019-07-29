@@ -13,8 +13,6 @@ python3_5_unit_test:
   script:
   - apt-get install -y git
   - export PYTHONPATH=$PYTHONPATH:$CI_PROJECT_DIR
-  - pip install pip-tools
-  - . compile-requirements.sh
   - pip install -r requirements_test.txt
   - coverage run runtests.py
   - coverage report -m
@@ -29,8 +27,6 @@ python3_6_unit_test:
   script:
   - apt-get install -y git
   - export PYTHONPATH=$PYTHONPATH:$CI_PROJECT_DIR
-  - pip install pip-tools
-  - . compile-requirements.sh
   - pip install -r requirements_test.txt
   - coverage run runtests.py
   - coverage report -m
