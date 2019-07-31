@@ -9,11 +9,11 @@
         {% endif %}
         schemaVersion="1.0" creationDate="{{ created_date }}">
     {% block header %}
-    {% if header %}
-    <EPCISHeader>
-    {% include "epcis/sbdh.xml" %}
-    </EPCISHeader>
-    {% endif %}
+        {% if header %}
+            <EPCISHeader>
+                {% include "epcis/sbdh.xml" %}
+            </EPCISHeader>
+        {% endif %}
     {% endblock %}
     <EPCISBody>
         <EventList>
@@ -23,13 +23,13 @@
                         {% include event.template %}
                     {% endfor %}
                 {% endif %}
-                <extension>
                 {% if transformation_events|length > 0 %}
-                    {% for event in transformation_events %}
-                        {% include event.template %}
-                    {% endfor %}
+                    <extension>
+                        {% for event in transformation_events %}
+                            {% include event.template %}
+                        {% endfor %}
+                    </extension>
                 {% endif %}
-                </extension>
             {% endblock %}
         </EventList>
     </EPCISBody>
