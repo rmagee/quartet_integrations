@@ -305,8 +305,8 @@ class TestOutputParsing(TestCase):
                 )
             )
             parser.parse()
-            print(
-                context.context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value])
+            self.assertNotIn('<extension>', context.context[
+                ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value])
 
     def test_rule_with_agg_comm_output_reverse(self):
         self._create_good_ouput_criterion()
