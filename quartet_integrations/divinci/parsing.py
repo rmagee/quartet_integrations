@@ -12,14 +12,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
+from copy import copy
 from datetime import datetime
 from logging import getLogger
 from dateutil.parser import parse as parse_date
 from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
 from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
 from EPCPyYes.core.v1_2.events import Action
-from EPCPyYes.core.v1_2.events import AggregationEvent, ObjectEvent, \
-    TransactionEvent
+from EPCPyYes.core.v1_2.template_events import AggregationEvent, ObjectEvent
 from gs123.conversion import BarcodeConverter
 from quartet_epcis.models import Entry
 from quartet_output.parsing import JSONParser as EPCISJSONParser
@@ -74,16 +74,17 @@ class JSONParser(EPCISJSONParser):
         :param epcis_event: The inbound divinci event
         :return: None
         """
-        xact = TransactionEvent(datetime.utcnow(),
+        epcs = copy(epcis_event.child_epcs)
+        epcs.append(epcis_event.parent_id)
+        obj = ObjectEvent(datetime.utcnow(),
                                 '+00:00',
                                 datetime.utcnow(),
-                                parent_id=epcis_event.parent_id,
-                                epc_list=epcis_event.child_epcs,
+                                epc_list=epcs,
                                 action=Action.observe.value,
                                 biz_step=BusinessSteps.shipping.value,
                                 disposition=Disposition.in_transit.value
                                 )
-        super().handle_transaction_event(xact)
+        super().handle_object_event(obj)
 
     def _commission_new_parent(self, epcis_event):
         """

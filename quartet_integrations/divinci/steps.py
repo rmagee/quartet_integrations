@@ -33,6 +33,8 @@ class JSONParsingStep(OutputParsingStep):
         with transaction.atomic():
             parser = JSONParser(data, self.epc_output_criteria)
             parser.parse()
+            rule_context.context[
+                ContextKeys.FILTERED_EVENTS_KEY.value] = parser.filtered_events
         self.info('Parsing complete.')
 
     def get_data(self, data):

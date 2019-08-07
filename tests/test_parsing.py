@@ -14,18 +14,20 @@
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 
 import os
+
 from django.conf import settings
 from django.test import TestCase
-from quartet_masterdata import models
-from quartet_capture.models import Rule, Step, Task, StepParameter
-from quartet_capture.tasks import execute_rule
+
 from EPCPyYes.core.v1_2 import template_events as yes_events
 from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
-from quartet_integrations.sap.parsing import SAPParser
+from quartet_capture.models import Rule, Step, Task, StepParameter
+from quartet_capture.tasks import execute_rule
+from quartet_epcis.models import events
 from quartet_epcis.parsing.business_parser import BusinessEPCISParser
-from quartet_epcis.db_api.queries import EPCISDBProxy
-from quartet_epcis.models import events, entries
+from quartet_integrations.sap.parsing import SAPParser
+from quartet_masterdata import models
 from quartet_output.models import EPCISOutputCriteria, EndPoint
+from quartet_output.steps import ContextKeys
 
 class TestParser(SAPParser):
 
@@ -107,6 +109,9 @@ class TestDivinciRule(TestCase):
         db_task = self._create_task(rule)
         with open(data_path, 'r') as data_file:
             context = execute_rule(data_file.read().encode(), db_task)
+            event = (context.context[ContextKeys.FILTERED_EVENTS_KEY.value])[0]
+            print(event.render())
+            self.assertEqual(BusinessSteps.shipping.value, event.biz_step)
 
     def _create_good_output_criterion(self):
         criteria = EPCISOutputCriteria.objects.create(
@@ -125,11 +130,8 @@ class TestDivinciRule(TestCase):
 
     def test_divinci_step(self):
         self._test_divinci_step()
-        evs = events.Event.objects.filter(type='tx')
-        self.assertEqual(evs.count(), 1,
-                         'There should be one transaction event')
         evs = events.Event.objects.filter(type='ob')
-        self.assertEqual(evs.count(), 1)
+        self.assertEqual(evs.count(), 2)
         evs = events.Event.objects.filter(type='ag')
         self.assertEqual(evs.count(), 4)
 
