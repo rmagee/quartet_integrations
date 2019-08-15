@@ -25,6 +25,9 @@ from quartet_epcis.models import Entry
 from quartet_output.parsing import JSONParser as EPCISJSONParser
 from quartet_masterdata.models import TradeItem, Company
 from quartet_output.models import EPCISOutputCriteria
+from EPCPyYes.core.v1_2 import template_events
+from quartet_tracelink.parsing.epcpyyes import get_default_environment
+
 logger = getLogger(__name__)
 
 
@@ -42,6 +45,13 @@ class JSONParser(EPCISJSONParser):
         super(JSONParser, self).__init__(stream, epcis_output_criteria,
                                          event_cache_size,
                                          recursive_decommission)
+
+    def get_epcpyyes_object_event(self):
+        return template_events.ObjectEvent(
+            epc_list=[], quantity_list=[],
+            env=get_default_environment(),
+            template='quartet_tracelink/disposition_assigned.xml'
+        )
 
     def handle_aggregation_event(self, epcis_event: AggregationEvent):
         """
@@ -82,8 +92,12 @@ class JSONParser(EPCISJSONParser):
                                 epc_list=epcs,
                                 action=Action.observe.value,
                                 biz_step=BusinessSteps.shipping.value,
-                                disposition=Disposition.in_transit.value
-                                )
+                                disposition=Disposition.in_transit.value,
+                                env=get_default_environment(),
+                                template='quartet_tracelink/disposition_assigned.xml',
+                                source_list=epcis_event.source_list,
+                                destination_list=epcis_event.destination_list
+                            )
         super().handle_object_event(obj)
 
     def _commission_new_parent(self, epcis_event):
@@ -237,7 +251,7 @@ class JSONParser(EPCISJSONParser):
 
     def _parse_date(self, epcis_event):
         return self.get_event_time(epcis_event)
-    
+
     class TradeItemConfigurationError(Exception):
         pass
 

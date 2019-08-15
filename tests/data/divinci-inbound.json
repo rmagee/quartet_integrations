@@ -12,7 +12,9 @@
           "urn:epc:id:sgtin:10331722192016.276431236337"
         ],
         "childQuantityList": null,
-        "destinationList": null,
+        "destinationList": {
+          "urn:epcglobal:cbv:sdt:owning_party": "urn:epc:id:sgln:809999.111111.1"
+        },
         "disposition": "urn:epcglobal:cbv:disp:encoded",
         "errorDeclaration": null,
         "eventID": null,
@@ -22,8 +24,12 @@
         "parentID": "urn:epc:id:sscc:00003436020000000963",
         "readPoint": null,
         "recordTime": "2019-04-22 09:58:43",
-        "sourceList": null
+        "sourceList": {
+          "urn:epcglobal:cbv:sdt:owning_party": "urn:epc:id:sgln:309999.111111.0"
+        }
       }
     }
   ]
 }
+
+

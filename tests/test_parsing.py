@@ -28,6 +28,7 @@ from quartet_integrations.sap.parsing import SAPParser
 from quartet_masterdata import models
 from quartet_output.models import EPCISOutputCriteria, EndPoint
 from quartet_output.steps import ContextKeys
+from quartet_masterdata.models import Company, Location
 
 class TestParser(SAPParser):
 
@@ -101,9 +102,15 @@ class TestDivinciRule(TestCase):
         self._create_trade_item()
 
     def _test_divinci_step(self, file='data/divinci-inbound.json'):
+
+
+        self._create_company_from_sgln('urn:epc:id:sgln:309999.111111.0')
+        self._create_company_from_sgln('urn:epc:id:sgln:809999.111111.1')
+
         self._create_good_output_criterion()
         rule = self._create_rule()
         self._create_divinci_parsing_step(rule)
+        self._create_render_tracelink_step(rule)
         curpath = os.path.dirname(__file__)
         data_path = os.path.join(curpath, file)
         db_task = self._create_task(rule)
@@ -112,6 +119,8 @@ class TestDivinciRule(TestCase):
             event = (context.context[ContextKeys.FILTERED_EVENTS_KEY.value])[0]
             print(event.render())
             self.assertEqual(BusinessSteps.shipping.value, event.biz_step)
+
+        print(context.context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value])
 
     def _create_good_output_criterion(self):
         criteria = EPCISOutputCriteria.objects.create(
@@ -137,7 +146,7 @@ class TestDivinciRule(TestCase):
 
     def test_divinci_auto_commisssion(self):
         self._test_divinci_step('data/divinci-auto-commission.json')
-        evs = events.Event.objects.filter(type='tx')
+        evs = events.Event.objects.filter(type='ob')
         self.assertEqual(evs.count(), 1,
                          'There should be one transaction event')
         evs = events.Event.objects.filter(type='ob')
@@ -185,4 +194,51 @@ class TestDivinciRule(TestCase):
         models.Company.objects.create(
             name='test pharma',
             gs1_company_prefix='0343602'
+        )
+
+    def _create_render_tracelink_step(self, rule):
+        step = Step()
+        step.rule = rule
+        step.order = 4
+        step.name = 'Render Tracelink EPCIS XML'
+        step.step_class = 'quartet_tracelink.steps.DaVinciTracelinkOutputStep'
+        step.description = 'Creates TraceLink compliant EPCIS'
+        step.save()
+
+        StepParameter.objects.create(step=step,
+                                     name='Append Filtered Events',
+                                     value='True')
+
+    def _create_sftp_endpoint(self):
+        ep = models.EndPoint()
+        ep.urn = 'sftp://testsftphost:22/upload'
+        ep.name = 'Test SFTP EndPoint'
+        ep.save()
+        return ep
+
+    def _create_sftp_auth(self):
+        auth = models.AuthenticationInfo()
+        auth.description = 'Unit test auth.'
+        auth.username = 'foo'
+        auth.password = 'pass'
+        auth.save()
+        return auth
+
+    def _create_company_from_sgln(self, sgln, type=Company):
+        from gs123.check_digit import calculate_check_digit
+        gln13 = sgln.split(':')[-1]
+        gln13 = gln13.split('.')
+        gln13 = '%s%s' % (gln13[0], gln13[1])
+        gln13 = calculate_check_digit(gln13)
+        print('gln = %s', gln13)
+        type.objects.create(
+            name='unit test company %s' % gln13,
+            GLN13=gln13,
+            SGLN=sgln,
+            address1='123 Unit Test Street',
+            address2='Unit 2028',
+            postal_code='12345',
+            city='Unit Testville',
+            state_province='PA',
+            country='US'
         )

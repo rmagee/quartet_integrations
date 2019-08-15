@@ -1,0 +1,34 @@
+{
+  "createdDate": "2019-07-18T20:08:14Z",
+  "events": [
+    {
+      "aggregationEvent": {
+        "action": "ADD",
+        "bizLocation": null,
+        "bizStep": "urn:epcglobal:cbv:bizstep:packing",
+        "bizTransactionList": null,
+        "childEPCs": [
+          "urn:epc:id:sgtin:10331722917015.017558557108",
+          "urn:epc:id:sgtin:10331722917015.017566757195",
+          "urn:epc:id:sgtin:10331722917015.017576375683",
+          "urn:epc:id:sgtin:10331722917058.196967856257",
+          "urn:epc:id:sgtin:10331722917058.196972834511"
+        ],
+        "childQuantityList": null,
+        "destinationList": {
+          "urn:epcglobal:cbv:sdt:location": "urn:epc:id:sgln:CARDINALHEALTH"
+        },
+        "disposition": "urn:epcglobal:cbv:disp:encoded",
+        "errorDeclaration": null,
+        "eventID": null,
+        "eventTime": "2019-07-18T20:08:14Z",
+        "eventTimezoneOffset": "+00:00",
+        "id": [],
+        "parentID": "urn:epc:id:sscc:00003436020000200073",
+        "readPoint": null,
+        "recordTime": "2019-07-18T20:08:14Z",
+        "sourceList": null
+      }
+    }
+  ]
+}
