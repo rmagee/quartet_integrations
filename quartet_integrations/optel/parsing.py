@@ -16,6 +16,7 @@ import re
 from datetime import datetime
 from logging import getLogger
 from typing import List
+from quartet_masterdata.db import DBProxy
 from quartet_epcis.models import events, entries, choices, headers
 from quartet_epcis.parsing.business_parser import BusinessEPCISParser
 from EPCPyYes.core.v1_2 import template_events as yes_events, events
@@ -24,7 +25,9 @@ from EPCPyYes.core.v1_2.CBV.instance_lot_master_data import \
     LotLevelAttributeName, \
     ItemLevelAttributeName, \
     TradeItemLevelAttributeName
-
+from quartet_integrations.gs1ushc import mixins
+from EPCPyYes.core.v1_2.CBV import SourceDestinationTypes
+from EPCPyYes.core.v1_2.events import Source, Destination
 from EPCPyYes.core.v1_2 import template_events
 from quartet_output.parsing import BusinessOutputParser
 from quartet_integrations.optel.epcpyyes import get_default_environment
@@ -44,7 +47,8 @@ class OptelOutputEPCISParser(BusinessOutputParser):
             template='quartet_integrations/optel/object_event.xml'
         )
 
-class OptelEPCISLegacyParser(BusinessEPCISParser):
+
+class OptelEPCISLegacyParser(BusinessEPCISParser, mixins.ConversionMixin):
     """
     Parses the old Optel non-compliant epcis data and converts
     to use-able EPCIS data for QU4RTET.
@@ -60,43 +64,6 @@ class OptelEPCISLegacyParser(BusinessEPCISParser):
         """
         self._replace_timezone = replace_timezone
         return super().parse()
-
-    def parse_unexpected_obj_element(self, oevent: yes_events.ObjectEvent,
-                                     child):
-        """
-        Parses the optel ILMD elements that fall inside
-        the standard object events.
-        :param oevent: The object event EPCPyYes object.
-        :param child:
-        :return:
-        """
-        ilmd = None
-        if child.tag.endswith('lotNumber'):
-            ilmd = InstanceLotMasterDataAttribute(
-                ItemLevelAttributeName.lotNumber.value,
-                child.text.strip()
-            )
-        elif child.tag.endswith('itemExpirationDate'):
-            ilmd = InstanceLotMasterDataAttribute(
-                LotLevelAttributeName.itemExpirationDate.value,
-                child.text.strip()
-            )
-        elif child.tag.endswith('unitOfMeasure'):
-            ilmd = InstanceLotMasterDataAttribute(
-                ItemLevelAttributeName.measurementUnitCode.value,
-                child.text.strip()
-            )
-        elif child.tag.endswith('additionalTradeItemIdentificationValue'):
-            ilmd = InstanceLotMasterDataAttribute(
-                TradeItemLevelAttributeName
-                    .additionalTradeItemIdentification.value,
-                child.text.strip()
-            )
-        elif child.tag.endswith('additionalTradeItemIdentification'):
-            for sub_element in child:
-                self.parse_unexpected_obj_element(oevent, sub_element)
-        if ilmd:
-            oevent.ilmd.append(ilmd)
 
     def get_event_time(self, epcis_event: events.EPCISEvent) -> datetime:
         if self._replace_timezone and epcis_event.event_timezone_offset:
