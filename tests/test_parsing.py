@@ -147,8 +147,7 @@ class TestDivinciRule(TestCase):
     def test_divinci_auto_commisssion(self):
         self._test_divinci_step('data/divinci-auto-commission.json')
         evs = events.Event.objects.filter(type='ob')
-        self.assertEqual(evs.count(), 3,
-                         'There should be one object event')
+        self.assertEqual(evs.count(), 3)
 
     def _create_rule(self):
         rule = Rule()
