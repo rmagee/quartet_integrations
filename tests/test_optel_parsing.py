@@ -23,6 +23,7 @@ from EPCPyYes.core.v1_2.events import EventType
 from quartet_capture.models import Rule, Step, StepParameter, Task
 from quartet_capture.tasks import execute_rule, execute_queued_task
 from quartet_epcis.models import entries
+from quartet_epcis.db_api.queries import EPCISDBProxy
 from quartet_epcis.models.events import Event
 from quartet_epcis.parsing.business_parser import BusinessEPCISParser
 from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
@@ -153,7 +154,6 @@ class TestOutputParsing(TestCase):
         auth.save()
         return auth
 
-
     def _create_good_ouput_criterion(self):
         endpoint = self._create_endpoint()
         auth = self._create_auth()
@@ -169,12 +169,14 @@ class TestOutputParsing(TestCase):
         eoc.save()
         return eoc
 
-    def _create_step(self, rule):
+    def _create_step(self, rule,
+                     step_class='quartet_output.steps.OutputParsingStep'
+                     ):
         step = Step()
         step.rule = rule
         step.order = 1
         step.name = 'Output Determination'
-        step.step_class = 'quartet_output.steps.OutputParsingStep'
+        step.step_class = step_class
         step.description = 'unit test step'
         step.save()
         step_parameter = StepParameter()
@@ -183,6 +185,18 @@ class TestOutputParsing(TestCase):
         step_parameter.value = 'Test Criteria'
         step_parameter.save()
         return step
+
+    def _create_parsing_step(
+        self, rule,
+        step_class='quartet_integrations.optel.steps.ConsolidationParsingStep'
+    ):
+        step = Step()
+        step.rule = rule
+        step.order = 1
+        step.name = 'Parsing Step'
+        step.step_class = step_class
+        step.description = 'unit test step'
+        step.save()
 
     def _create_output_steps(self, rule):
         step = Step()
@@ -334,13 +348,34 @@ class TestOutputParsing(TestCase):
             )
             for event in context.context[
                 ContextKeys.AGGREGATION_EVENTS_KEY.value]:
-                if event.parent_id in ['urn:epc:id:sgtin:0555553.300106.259812595316',
-                                       'urn:epc:id:sgtin:0555553.300106.127892027084']:
+                if event.parent_id in [
+                    'urn:epc:id:sgtin:0555553.300106.259812595316',
+                    'urn:epc:id:sgtin:0555553.300106.127892027084']:
                     self.assertEqual(len(event.child_epcs), 4)
             task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY]
             execute_queued_task(task_name=task_name)
             task = Task.objects.get(name=task_name)
             self.assertEqual(task.status, 'FINISHED')
-            print(context.context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value])
+            print(
+                context.context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value])
 
-
+    def test_gs1ushc_shipping(self):
+        self._create_good_ouput_criterion()
+        db_rule = self._create_rule()
+        self._create_parsing_step(
+            db_rule
+        )
+        db_task = self._create_task(db_rule)
+        curpath = os.path.dirname(__file__)
+        # prepopulate the db
+        self._parse_test_data('data/commissioning.xml')
+        self._parse_test_data('data/aggregation.xml')
+        data_path = os.path.join(curpath, 'data/gs1ushc_ship.xml')
+        with open(data_path, 'r') as data_file:
+            context = execute_rule(data_file.read().encode(), db_task)
+        events = EPCISDBProxy().get_object_events_by_epcs([
+            'urn:epc:id:sgtin:0555553.000101.241082086825'
+        ])
+        for event in events:
+            if event.biz_step == 'urn:epcglobal:cbv:bizstep:shipping':
+                print(event.render())

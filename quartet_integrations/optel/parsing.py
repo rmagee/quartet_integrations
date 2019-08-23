@@ -48,10 +48,11 @@ class OptelOutputEPCISParser(BusinessOutputParser):
         )
 
 
-class OptelEPCISLegacyParser(BusinessEPCISParser, mixins.ConversionMixin):
+class OptelEPCISLegacyParser(mixins.ConversionMixin, BusinessEPCISParser):
     """
     Parses the old Optel non-compliant epcis data and converts
-    to use-able EPCIS data for QU4RTET.
+    to use-able EPCIS data for QU4RTET.  The conversion mixin handles
+    the gs1ushc namespace items.
     """
 
     def parse(self, replace_timezone=False):
