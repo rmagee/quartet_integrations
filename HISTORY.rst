@@ -7,3 +7,11 @@ History
 ++++++++++++++++++
 
 * First release on PyPI.
+
+
+3.0.10
+++++++
+
+Added support for generation of observation events to assign source/
+destination data to children during shipping and other transactional
+events.
