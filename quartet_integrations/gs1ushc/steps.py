@@ -14,6 +14,7 @@
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 from io import StringIO, BytesIO
 from EPCPyYes.core.v1_2 import template_events
+from EPCPyYes.core.v1_2.CBV import business_steps
 from quartet_capture import rules
 from quartet_output.steps import OutputParsingStep, ContextKeys
 from quartet_integrations.gs1ushc.parsing import SimpleOutputParser, \
@@ -66,6 +67,7 @@ class OutputParsingStep(mixins.ObserveChildrenMixin, OutputParsingStep):
             for event in filtered_events:
                 objEvent = self.create_observation_event(event, use_sources,
                                                          use_destinations)
+                objEvent.biz_step = business_steps.BusinessSteps.other.value
                 doc.object_events.append(objEvent)
             if len(doc.object_events) > 0:
                 parser = self.get_parser_type()

@@ -45,7 +45,7 @@ class ObserveChildrenMixin:
         child_entries = dbp.get_entries_by_parents(
             entries, select_for_update=False
         )
-        ob_event = events.ObjectEvent()
+        ob_event = events.ObjectEvent(datetime.utcnow().isoformat())
         ob_event.epc_list = [entry.identifier for entry in child_entries]
         ob_event.action = events.Action.observe.value
         ob_event.source_list = copy(event.source_list) if use_sources else []
