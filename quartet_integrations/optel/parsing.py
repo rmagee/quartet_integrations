@@ -14,23 +14,16 @@
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 import re
 from datetime import datetime
-from logging import getLogger
 from typing import List
-from quartet_masterdata.db import DBProxy
-from quartet_epcis.models import events, entries, choices, headers
-from quartet_epcis.parsing.business_parser import BusinessEPCISParser
-from EPCPyYes.core.v1_2 import template_events as yes_events, events
-from EPCPyYes.core.v1_2.CBV.instance_lot_master_data import \
-    InstanceLotMasterDataAttribute, \
-    LotLevelAttributeName, \
-    ItemLevelAttributeName, \
-    TradeItemLevelAttributeName
-from quartet_integrations.gs1ushc import mixins
-from EPCPyYes.core.v1_2.CBV import SourceDestinationTypes
-from EPCPyYes.core.v1_2.events import Source, Destination
+
 from EPCPyYes.core.v1_2 import template_events
-from quartet_output.parsing import BusinessOutputParser
+from EPCPyYes.core.v1_2 import template_events as yes_events, events
+from logging import getLogger
+from quartet_epcis.models import choices
+from quartet_epcis.parsing.business_parser import BusinessEPCISParser
+from quartet_integrations.gs1ushc import mixins
 from quartet_integrations.optel.epcpyyes import get_default_environment
+from quartet_output.parsing import BusinessOutputParser
 
 logger = getLogger(__name__)
 ilmd_list = List[yes_events.InstanceLotMasterDataAttribute]
