@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:sdoJava="commonj.sdo/java" xmlns="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/" sdoJava:package="oracle.apps.pas.serials.serialsService.view.common">
+	<xsd:import namespace="commonj.sdo/java" schemaLocation="http://192.168.100.78:8001/opsmservices-serials/PackagingHierarchyServiceAMService?XSD=/xml/sdoJava.xsd"/>
+	<xsd:complexType name="ProductInformationVOSDO">
+		<xsd:annotation>
+			<xsd:appinfo source="http://xmlns.oracle.com/adf/svc/metadata/">
+				<key xmlns="http://xmlns.oracle.com/adf/svc/metadata/">
+					<attribute>JoinerColumn</attribute>
+				</key>
+			</xsd:appinfo>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element minOccurs="0" name="Product" nillable="true" type="xsd:string"/>
+			<xsd:element minOccurs="0" name="Lot" nillable="true" type="xsd:string"/>
+			<xsd:element minOccurs="0" name="ExpiryDate" nillable="true" type="xsd:string"/>
+			<xsd:element minOccurs="0" name="Uom" nillable="true" type="xsd:string"/>
+			<xsd:element minOccurs="0" name="Quantity" nillable="true" type="xsd:int"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:element name="productInformationVOSDO" type="ProductInformationVOSDO"/>
+</xsd:schema>

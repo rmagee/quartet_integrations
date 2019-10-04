@@ -74,8 +74,19 @@ class RetrievePackagingHierarchyView(RocItBaseView):
         :return:
         """
         try:
+            try:
+                if request.GET["WSDL"]:
+                    return self.get_wsdl(request.GET["WSDL"])
+            except:
+                pass
+            try:
+                if request.GET["XSD"]:
+                    return self.get_wsdl(request.GET["XSD"])
+            except:
+                pass
+
             if len(request.body) == 0:
-                raise Exception('Request was empty')
+                return Response("Request was empty", status.HTTP_400_BAD_REQUEST, content_type="application/xml")
             root = etree.fromstring(request.body)
             body = root.find('{http://schemas.xmlsoap.org/soap/envelope/}Body')
             query = body.find('{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/}retrievePackagingHierarchy')
@@ -110,4 +121,11 @@ class RetrievePackagingHierarchyView(RocItBaseView):
 
 
 
+    def get_wsdl(self, resource_path):
+        import os
+        resource_name = os.path.basename(resource_path)
+        template = loader.get_template("rocit/wsdl/{0}".format(resource_name))
+        xml = template.render({})
 
+        ret_val = Response(xml, status.HTTP_200_OK, content_type="application/xml")
+        return ret_val
