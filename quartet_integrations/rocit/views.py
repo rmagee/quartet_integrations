@@ -101,7 +101,7 @@ class RetrievePackagingHierarchyView(RocItBaseView):
 
             if tag_id is None:
                # Have to have the Tag Id
-               raise Exception('Missing TagId in Request')
+               return Response("Missing Tag ID", status.HTTP_400_BAD_REQUEST, content_type="application/xml")
             data =  RocItQuery.RetrievePackagingHierarchy(tag_id, send_children, send_product_info)
 
 

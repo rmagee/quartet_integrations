@@ -4,6 +4,6 @@ from quartet_integrations.rocit.views import RetrievePackagingHierarchyView
 
 urlpatterns = [
     url(
-        r'PackagingHierarchyServiceAMService', RetrievePackagingHierarchyView.as_view()
+        r'PackagingHierarchyServiceAMService', RetrievePackagingHierarchyView.as_view(), name='retrievePackagingHierarchyResponse'
     )
 ]

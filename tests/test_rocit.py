@@ -36,13 +36,13 @@ class TestRocIt(APITestCase):
         '''
         url = reverse("retrievePackagingHierarchyResponse")
         response = self.client.post(url)
-        self.assertEquals(response.status_code, 500)
+        self.assertEquals(response.status_code, 400)
 
     def test_missing_tagId(self):
         url = reverse("retrievePackagingHierarchyResponse")
         data = self._get_test_data('rocit-search-missing-tagid.xml')
         response = self.client.post(url, data, content_type='application/xml')
-        self.assertEquals(response.status_code, 500)
+        self.assertEquals(response.status_code, 400)
 
     def test_rocit_container1_query(self):
         '''
