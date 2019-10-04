@@ -159,3 +159,4 @@ class ParsingMixin:
                         child.text.strip
                     )
                 )
+

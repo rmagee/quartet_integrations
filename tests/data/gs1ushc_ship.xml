@@ -7,10 +7,8 @@
         <recordTime>2019-08-13T15:15:29.045000+00:00</recordTime>
         <eventTimeZoneOffset>-06:00</eventTimeZoneOffset>
         <epcList>
-            <epc>urn:epc:id:sgtin:0555553.000101.221380541997</epc>
-            <epc>urn:epc:id:sgtin:0555553.000101.593808963396</epc>
-            <epc>urn:epc:id:sgtin:0555553.500106.132059675134</epc>
-            <epc>urn:epc:id:sgtin:0555553.000101.241082086825</epc>
+            <epc>urn:epc:id:sgtin:0555553.500106.117888771458</epc>
+            <epc>urn:epc:id:sgtin:0555553.500106.191004921395</epc>
         </epcList>
         <action>OBSERVE</action>
         <bizStep>urn:epcglobal:cbv:bizstep:shipping</bizStep>
