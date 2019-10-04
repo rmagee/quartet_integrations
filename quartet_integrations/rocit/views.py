@@ -119,7 +119,20 @@ class RetrievePackagingHierarchyView(RocItBaseView):
 
         return ret_val
 
+    def get(self, request):
+        try:
+            if request.GET["WSDL"]:
+                return self.get_wsdl(request.GET["WSDL"])
+        except:
+            pass
+        try:
+            if request.GET["XSD"]:
+                return self.get_wsdl(request.GET["XSD"])
+        except:
+            pass
 
+        return Response("Resource not found.",
+                 status.HTTP_404_NOT_FOUND, content_type="application/xml")
 
     def get_wsdl(self, resource_path):
         import os
