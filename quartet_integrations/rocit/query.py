@@ -46,7 +46,7 @@ class RocItQuery():
         # Create the DBProxy
         query = EPCISDBProxy()
         # Get the entry, then get the last Event the entry participated in.
-        entry = query.get_entries_by_epcs(epcs=[tag_id])[0]
+        entry = query.get_entries_by_epcs(epcs=[tag_id], select_for_update=False)[0]
         last_event = entry.last_event
 
         if last_event is not None:
@@ -66,7 +66,7 @@ class RocItQuery():
             # The request is to return the children.
             try:
                 # get the children of tag_id
-                children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=True)
+                children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
                 # get the count of the children
                 child_tag_count = len(children)
                 # build the child_tags array witht he children of tag_id
