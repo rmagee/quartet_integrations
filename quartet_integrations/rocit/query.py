@@ -98,7 +98,7 @@ class RocItQuery():
                 if len(lot) > 0 and len(expiry) > 0:
                     break
         ret_val = {
-                    "msg_id": uuid.uuid1(),
+                    "message_id": str(uuid.uuid4()),
                     "tag_id": tag_id,
                     "parent_tag": parent_tag,
                     "status": status.upper(),
