@@ -12,17 +12,27 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-from rest_framework.response import Response
-from rest_framework_xml import parsers
-from rest_framework.views import APIView
-from rest_framework import status
+
 from lxml import etree
-from jinja2.environment import Environment
-from jinja2.loaders import ChoiceLoader, PackageLoader
+from rest_framework.views import APIView
+from rest_framework_xml import parsers
+
+from quartet_integrations.opsm import opsm_settings
+
+from logging import getLogger
+from serialbox.models import Pool
+
+logger = getLogger(__name__)
 
 from quartet_integrations.rocit.views import DefaultXMLContent
 
+
 class OPSMNumberRangeView(APIView):
+    """
+    Accepts an inbound request from an external system that thinks it's talking
+    to an Oracle OPSM EPCIS 1.0 system.  This is basically part of an OPSM
+    emulation layer.
+    """
     content_negotiation_class = DefaultXMLContent
 
     parser_classes = [parsers.XMLParser]
@@ -37,9 +47,12 @@ class OPSMNumberRangeView(APIView):
             'typ': 'http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common/types/',
             'com': 'http://xmlns.oracle.com/apps/pas/transactions/transactionsService/view/common/'
         }
+        scheme = opsm_settings.OPSM_SERIALBOX_SCHEME
+        host = opsm_settings.OPSM_SERIALBOX_HOST
+        port = opsm_settings.OPSM_SERIALBOX_PORT
         root = etree.fromstring(request.body)
         pool_result = root.xpath('%scom:Location' % xpath_prefix,
-                            namespaces=namespaces)
+                                 namespaces=namespaces)
         if len(pool_result) > 0:
             pool_name = pool_result[0].text
         # TODO: Handle exception
@@ -52,9 +65,13 @@ class OPSMNumberRangeView(APIView):
         if len(gtin_result) > 0:
             gtin = gtin_result[0].text
 
-        print(pool_name)
-        print(count)
-        if gtin:
-            print(gtin)
-        return Response("I'm not a teapot.", status.HTTP_200_OK)
+        logger.debug('Looking up pool with machine name %s', pool_name)
+
+        if gtin_result:
+            pool = Pool.objects.get(machine_name=gtin)
+        else:
+            pool = Pool.objects.get(machine_name=pool_name)
+
+        # now that we have everything we should be able to just invoke serialbox
+
 

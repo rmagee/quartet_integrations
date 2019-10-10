@@ -1,0 +1,17 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:typ="http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common/types/"
+                  xmlns:com="http://xmlns.oracle.com/apps/pas/transactions/transactionsService/view/common/">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <typ:createProcessSerialGenerationRequest>
+            <typ:serialGenerationRequest>
+                <!--Optional:-->
+                <com:SerialQuantity>1</com:SerialQuantity>
+                <!--Optional:-->
+                <com:Location>03130000000-GTIN</com:Location>
+                <!--Optional:-->
+                <com:Gtin>00313000007772</com:Gtin>
+            </typ:serialGenerationRequest>
+        </typ:createProcessSerialGenerationRequest>
+    </soapenv:Body>
+</soapenv:Envelope>
