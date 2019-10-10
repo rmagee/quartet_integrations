@@ -15,6 +15,7 @@
 import traceback
 import logging
 import uuid
+import random
 from rest_framework import status
 from rest_framework.response import Response
 from EPCPyYes.core.v1_2 import helpers
@@ -32,12 +33,13 @@ class RocItQuery():
         parent_tag = ""
         product = ""
         lot = ""
-        uom=""
+        uom="Bdl"
         expiry = ""
         status = ""
         state = ""
-        document_id = ""
-        document_type = ""
+
+        document_id = str(random.randrange(1111111, 9999999))
+        document_type = "RECADV"
         child_tag_count = 0
         child_tags = []
         send_product_info = (send_product_info is not None and send_product_info.lower() == 'true')
