@@ -12,15 +12,3 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-
-from rest_framework import views
-
-class TLSerialNumberRequest(views.APIView):
-    def post(self, request):
-        """
-        Emulates a common number range request.
-        :param request: The HTTP request object.
-        :return: Returns a formatted number range response using one
-        of the number range response templates.
-        """
-        sending_xpath = ''
