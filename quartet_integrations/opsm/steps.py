@@ -48,36 +48,35 @@ class SerialBoxConversion(Step):
         :param rule_context: The rule context.
         """
         # convert the JSON to a python object
-        self.info('Parsing the JSON...')
-        sb_response = json.loads(data)
+        task_params = self.get_task_parameters(rule_context)
+        pool = task_params['pool']
         # first make sure we have a company prefix length we can use
         # check for a step parameter first, then look for the company
         # prefix in the master material if not declared in the step
         self.info('Looking for company prefix information...')
-        cp_length = self.get_integer_parameter('Company Prefix Length')
+        cp_length = self.get_integer_parameter('Company Prefix Length', 0)
         padding_length = self.get_integer_parameter('Serial Number Length', 12)
         if cp_length == 0:
-            self.info('Trying to get the company prefix by using the region '
-                      'machine name / API Key value %s', sb_response.region)
-            cp_length = DBProxy().get_company_prefix_length(sb_response.region)
+            self.info('Trying to get the company prefix by using the pool '
+                      'machine name / API Key value %s', pool)
+            cp_length = DBProxy().get_company_prefix_length(pool)
         else:
             self.info('Company prefix length = %s', cp_length)
-        numbers = sb_response.numbers
         # if we are dealing with gtins we need to make urn values sans the
         # epc declaration
         return_vals = []
-        if len(sb_response.region) == 14:
-            self.handle_gtins(cp_length, numbers, return_vals, sb_response)
-        elif len(sb_response.region) == 18:
-            self.handle_ssccs(cp_length, numbers, return_vals, sb_response)
+        if len(pool) == 14:
+            self.handle_gtins(cp_length, data, return_vals, pool)
+        elif len(pool) == 18:
+            self.handle_ssccs(cp_length, data, return_vals, pool)
 
         return return_vals
 
-    def handle_gtins(self, cp_length, numbers, return_vals, sb_response):
+    def handle_gtins(self, cp_length, numbers, return_vals, pool):
         self.info('Formatting for GTIN response.')
         # provide a dummy serial number so we can just quickly parse the company prefix
         converter = BarcodeConverter(
-            '01%s21%s' % (sb_response.region, '000000000001'), cp_length)
+            '01%s21%s' % (pool, '000000000001'), cp_length)
         for number in numbers:
             return_vals.append(
                 self.format_gtin_urn(

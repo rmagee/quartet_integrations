@@ -6,7 +6,7 @@
         <typ:createProcessSerialGenerationRequest>
             <typ:serialGenerationRequest>
                 <!--Optional:-->
-                <com:SerialQuantity>1</com:SerialQuantity>
+                <com:SerialQuantity>20</com:SerialQuantity>
                 <!--Optional:-->
                 <com:Location>03130000000-GTIN</com:Location>
                 <!--Optional:-->

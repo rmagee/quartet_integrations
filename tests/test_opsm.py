@@ -7,12 +7,26 @@ from quartet_templates.models import Template
 from django.db import transaction
 from django.urls import reverse
 from rest_framework.test import APITestCase
-
+from random_flavorpack.management.commands.load_random_flavorpack_auth import \
+    Command
+from django.contrib.auth.models import User, Permission, Group
+from quartet_masterdata.models import TradeItem, Company
 
 class OPSMTestCase(APITestCase):
     def setUp(self):
         self.create_random_range()
         self.create_response_rule()
+        self.create_trade_item()
+        user = User.objects.create_user(username='testuser',
+                                        password='unittest',
+                                        email='testuser@seriallab.local')
+        Command().handle()
+        for permission in Permission.objects.all():
+            print(permission.name, permission.codename)
+        group = Group.objects.get(name='Pool API Access')
+        user.groups.add(group)
+        user.save()
+        self.client.force_authenticate(user=user)
 
     def create_response_rule(self):
         rule, created = Rule.objects.get_or_create(
@@ -48,7 +62,20 @@ class OPSMTestCase(APITestCase):
         response_rule = ResponseRule.objects.get_or_create(
             rule=rule,
             pool=pool,
-            content_type='json'
+            content_type='xml'
+        )
+
+    def create_trade_item(self):
+        company = Company.objects.create(
+            name='Pharma Co',
+            GLN13='0313000000011',
+            SGLN='urn:epc:id:sgln:031300.1.0',
+            gs1_company_prefix='031300',
+        )
+        TradeItem.objects.create(
+            company=company,
+            GTIN14='00313000007772',
+            NDC_pattern='4-4-2'
         )
 
     def create_template(self):
@@ -106,4 +133,4 @@ class OPSMTestCase(APITestCase):
             url = reverse('numberRangeService')
             result = self.client.post(url, request,
                                       content_type='application/xml')
-            print(result)
+            print(result.data)

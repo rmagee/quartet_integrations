@@ -12,10 +12,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-
+import requests
+from rest_framework.request import HttpRequest
+from rest_framework.renderers import JSONRenderer
 from lxml import etree
 from rest_framework.views import APIView
 from rest_framework_xml import parsers
+from serialbox.api.views import AllocateView
 
 from quartet_integrations.opsm import opsm_settings
 
@@ -27,7 +30,7 @@ logger = getLogger(__name__)
 from quartet_integrations.rocit.views import DefaultXMLContent
 
 
-class OPSMNumberRangeView(APIView):
+class OPSMNumberRangeView(AllocateView):
     """
     Accepts an inbound request from an external system that thinks it's talking
     to an Oracle OPSM EPCIS 1.0 system.  This is basically part of an OPSM
@@ -47,14 +50,12 @@ class OPSMNumberRangeView(APIView):
             'typ': 'http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common/types/',
             'com': 'http://xmlns.oracle.com/apps/pas/transactions/transactionsService/view/common/'
         }
-        scheme = opsm_settings.OPSM_SERIALBOX_SCHEME
-        host = opsm_settings.OPSM_SERIALBOX_HOST
-        port = opsm_settings.OPSM_SERIALBOX_PORT
+
         root = etree.fromstring(request.body)
         pool_result = root.xpath('%scom:Location' % xpath_prefix,
                                  namespaces=namespaces)
         if len(pool_result) > 0:
-            pool_name = pool_result[0].text
+            pool = pool_result[0].text
         # TODO: Handle exception
         count_result = root.xpath('%scom:SerialQuantity' % xpath_prefix,
                                   namespaces=namespaces)
@@ -65,13 +66,49 @@ class OPSMNumberRangeView(APIView):
         if len(gtin_result) > 0:
             gtin = gtin_result[0].text
 
-        logger.debug('Looking up pool with machine name %s', pool_name)
-
         if gtin_result:
-            pool = Pool.objects.get(machine_name=gtin)
+            pool = gtin
+
+        return super().get(request, pool, count)
+
+        # # get the url - default is http://127.0.0.1/serialbox/allocate/pool/count/
+        # url = self.build_url(count, pool)
+        #
+        # # execute the call
+        # response = requests.get(
+        #     url,
+        #     auth=request.auth
+        # )
+
+
+
+    def buil_request(self, current_request: HttpRequest):
+        new_request = HttpRequest()
+        new_request.accepted_renderer = JSONRenderer()
+        new_request.GET = current_request.GET
+
+
+    def build_url(self, count, pool):
+        """
+        Builds the default URL based on settings.  To change any of the
+        defualt connectivity settings, use the following:
+
+        OPSM_SERIALBOX_SCHEME - set http or https. Default is http.
+        OPSM_SERIALBOX_HOST - set the host to connect to (defaults to the
+        local loopback IP address)
+        OPSM_SERIALBOX_PORT - set the port for the server/host to connect to
+        default is none.
+        :param count: The number of serial numbers to request.
+        :param pool: The pool to request numbers from.
+        :return: A properly formatted serialbox Allocate API URL.
+        """
+        scheme = opsm_settings.OPSM_SERIALBOX_SCHEME
+        host = opsm_settings.OPSM_SERIALBOX_HOST
+        port = opsm_settings.OPSM_SERIALBOX_PORT
+        if not port:
+            url = "%s://%s/serialbox/allocate/%s/%d/?format=json" % (
+                scheme, host, pool.machine_name, int(count))
         else:
-            pool = Pool.objects.get(machine_name=pool_name)
-
-        # now that we have everything we should be able to just invoke serialbox
-
-
+            url = "%s://%s:%s/serialbox/allocate/%s/%d/?format=json" % (
+                scheme, host, port, pool.machine_name, int(count))
+        return url

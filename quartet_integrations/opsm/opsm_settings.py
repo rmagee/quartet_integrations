@@ -17,7 +17,7 @@ from django.conf import settings
 OPSM_SERIALBOX_SCHEME = getattr(
     settings,
     'OPSM_SERIALBOX_SCHEME',
-    None
+    'http'
 )
 
 OPSM_SERIALBOX_PORT = getattr(
