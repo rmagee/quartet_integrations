@@ -55,6 +55,9 @@ class RocItQuery():
         last_event = entry.last_event
         parent_tag = query.get_parent_epc(last_event)
 
+        if parent_tag == tag_id:
+           parent_tag = None
+
         if last_event is not None:
             # If there was a last_event, then get the bizStep (state in the response)
             # And disposition (status in the response)
