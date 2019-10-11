@@ -1,28 +1,28 @@
 <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsa="http://www.w3.org/2005/08/addressing" xmlns:typ="http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common/types/">
    <env:Header>
       <wsa:Action>http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common//SerialGenRequestServiceAMService/createProcessSerialGenerationRequestResponse</wsa:Action>
-      <wsa:MessageID>urn:uuid:0a1c58e2-b434-4c37-a557-29a8c0672b73</wsa:MessageID>
+      <wsa:MessageID>urn:uuid:{{ UUID }}</wsa:MessageID>
    </env:Header>
    <env:Body>
       <ns0:createProcessSerialGenerationRequestResponse xmlns:ns0="http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common/types/">
          <ns2:result xsi:type="ns0:SerialGenerationRequestResponse" xmlns:ns2="http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common/types/" xmlns:ns1="http://xmlns.oracle.com/adf/svc/types/" xmlns:ns0="http://xmlns.oracle.com/oracle/apps/pas/transactions/transactionsService/view/common/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <ns0:GenerationStatus>SUCCESS</ns0:GenerationStatus>
             <ns0:SourceSystem>OPSM</ns0:SourceSystem>
-            <ns0:SerialQuantity>{{ quantity }}</ns0:SerialQuantity>
+            <ns0:SerialQuantity>{{ data|length }}</ns0:SerialQuantity>
             <ns0:StartingSerialNumber xsi:nil="true"/>
             <ns0:EndingSerialNumber xsi:nil="true"/>
             <ns0:IgnoreOverageFlag>0</ns0:IgnoreOverageFlag>
-            <ns0:SaleableUnitFlag>{{ saleable_unit }}</ns0:SaleableUnitFlag>
-            <ns0:EpcNumber>{{ gtin }}</ns0:EpcNumber>
-            <ns0:GlobalLocationNumber>03422910000</ns0:GlobalLocationNumber>
+            <ns0:SaleableUnitFlag>{{ rule_context.context.saleable_unit_flag }}</ns0:SaleableUnitFlag>
+            <ns0:EpcNumber>{{ task_parameters.pool }}</ns0:EpcNumber>
+            <ns0:GlobalLocationNumber>{{ rule_context.context.trade_item.company.GLN13[:11] }}</ns0:GlobalLocationNumber>
             <ns0:LocationId>1148</ns0:LocationId>
-            <ns0:Location>03422910000-GTIN</ns0:Location>
+            <ns0:Location>{{ rule_context.context.trade_item.company.GLN13[:11] }}-GTIN</ns0:Location>
             <ns0:SerialUsage xsi:nil="true"/>
             <ns0:ProductDetailId>2911</ns0:ProductDetailId>
-            <ns0:ProductCode>{{ gtin }}</ns0:ProductCode>
-            <ns0:ProductCodeType>{{ ndc_pattern }}</ns0:ProductCodeType>
+            <ns0:ProductCode>{{ rule_context.context.trade_item.NDC_11_digit | replace("-","") }}</ns0:ProductCode>
+            <ns0:ProductCodeType>NDC542</ns0:ProductCodeType>
             <ns0:ProductCodeVariant>NOVARIANT</ns0:ProductCodeVariant>
-            <ns0:ProductUom>EA</ns0:ProductUom>
+            <ns0:ProductUom>{{ rule_context.context.trade_item.package_uom }}</ns0:ProductUom>
             <ns0:ItemNumber xsi:nil="true"/>
             <ns0:ItemSource/>
             <ns0:SerializedUom xsi:nil="true"/>

@@ -75,7 +75,9 @@ class OPSMTestCase(APITestCase):
         TradeItem.objects.create(
             company=company,
             GTIN14='00313000007772',
-            NDC_pattern='4-4-2'
+            NDC_pattern='4-4-2',
+            NDC='1300-0007-77',
+            package_uom='EA'
         )
 
     def create_template(self):

@@ -41,7 +41,6 @@ class OPSMNumberRangeView(AllocateView):
     parser_classes = [parsers.XMLParser]
 
     def post(self, request):
-        pool_name = None
         count = None
         gtin = None
         xpath_prefix = '//soapenv:Body/typ:createProcessSerialGenerationRequest/typ:serialGenerationRequest/'
@@ -79,8 +78,6 @@ class OPSMNumberRangeView(AllocateView):
         #     url,
         #     auth=request.auth
         # )
-
-
 
     def buil_request(self, current_request: HttpRequest):
         new_request = HttpRequest()

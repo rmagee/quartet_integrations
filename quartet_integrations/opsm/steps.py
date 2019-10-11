@@ -16,7 +16,7 @@ import json
 
 from quartet_capture import models
 from quartet_capture.rules import Step, RuleContext
-from quartet_masterdata.db import DBProxy
+from quartet_masterdata.db import DBProxy, TradeItem
 from gs123.conversion import BarcodeConverter, URNConverter
 
 
@@ -62,11 +62,20 @@ class SerialBoxConversion(Step):
             cp_length = DBProxy().get_company_prefix_length(pool)
         else:
             self.info('Company prefix length = %s', cp_length)
+        rule_context.context['company_prefix_length'] = cp_length
         # if we are dealing with gtins we need to make urn values sans the
         # epc declaration
         return_vals = []
         if len(pool) == 14:
-            self.handle_gtins(cp_length, data, return_vals, pool)
+            converter = self.handle_gtins(cp_length, data, return_vals, pool)
+            # put some of the info on the context in case other steps may need
+            rule_context.context['trade_item'] = TradeItem.objects.get(
+                GTIN14=pool
+            )
+            rule_context.context['company_prefix'] = converter.company_prefix
+            rule_context.context['indicator_digit'] = converter.indicator_digit
+            rule_context.context['item_reference'] = converter.item_reference
+            rule_context.context['saleable_unit_flag'] = 1 if converter.indicator_digit == '0' else 0
         elif len(pool) == 18:
             self.handle_ssccs(cp_length, data, return_vals, pool)
 
@@ -86,6 +95,7 @@ class SerialBoxConversion(Step):
                     number
                 )
             )
+        return converter
 
     def handle_ssccs(self, cp_length, numbers, return_vals, sb_response):
         raise NotImplementedError('handle_ssccs is not currently implemented.')
