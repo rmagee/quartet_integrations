@@ -7,7 +7,7 @@
       <ns0:retrievePackagingHierarchyResponse xmlns:ns0="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/">
          <ns1:result xsi:type="ns0:PackagingHierarchyResponseVOSDO" xmlns:ns1="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/" xmlns:ns0="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <ns0:TagId>{{ tag_id }}</ns0:TagId>
-             {%  if parent_tag_id %}<ns0:ParentTagId>{{ parent_tag }}</ns0:ParentTagId>{% endif %}
+             {%  if parent_tag %}<ns0:ParentTagId>{{ parent_tag }}</ns0:ParentTagId>{% endif %}
             <ns0:Status>{{ status }}</ns0:Status>
             <ns0:State>{{ state }}</ns0:State>
             <ns0:DocumentId>{{ document_id }}</ns0:DocumentId>

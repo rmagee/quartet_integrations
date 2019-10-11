@@ -49,9 +49,11 @@ class RocItQuery():
 
         # Create the DBProxy
         query = EPCISDBProxy()
+
         # Get the entry, then get the last Event the entry participated in.
         entry = query.get_entries_by_epcs(epcs=[tag_id], select_for_update=False)[0]
         last_event = entry.last_event
+        parent_tag = query.get_parent_epc(last_event)
 
         if last_event is not None:
             # If there was a last_event, then get the bizStep (state in the response)
@@ -71,11 +73,13 @@ class RocItQuery():
             try:
                 # get the children of tag_id
                 children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
+
                 # get the count of the children
                 child_tag_count = len(children)
                 # build the child_tags array witht he children of tag_id
                 for child in children:
                     child_tags.append(child)
+
 
             except entries.Entry.DoesNotExist:
                 # No Children found. This can be ignored.
