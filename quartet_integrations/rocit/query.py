@@ -39,7 +39,7 @@ class RocItQuery():
         expiry = ""
         status = ""
         state = ""
-
+        trade_item = None
         document_id = str(random.randrange(1111111, 9999999))
         document_type = "RECADV"
         child_tag_count = 0
@@ -79,30 +79,25 @@ class RocItQuery():
                 # build the child_tags array witht he children of tag_id
                 for child in children:
                     child_tags.append(child)
-
+                    if str(child).find('sgtin') > 0 and trade_item is None:
+                        gtin = child.split(':')
+                        gtin = gtin[4].split('.')
+                        gtin = "{0}{1}{2}".format(gtin[1][:1], gtin[0], gtin[1][1:])
+                        gtin = check_digit.calculate_check_digit(gtin)
+                        try:
+                            trade_item = TradeItem.objects.get(GTIN14=gtin)
+                            product = trade_item.additional_id
+                            uom = trade_item.tradeitemfield_set.get(name='uom').value
+                        except TradeItem.DoesNotExist:
+                            trade_item = None
+                        except:
+                            raise Exception('Trade Item or Unit of Measure not configured in QU4RTET')
 
             except entries.Entry.DoesNotExist:
                 # No Children found. This can be ignored.
                 pass
 
         if send_product_info:
-
-            if str(tag_id).find('sgtin') > 0:
-                gtin = tag_id.split(':')
-                gtin = gtin[4].split('.')
-                gtin = "{0}{1}{2}".format(gtin[1][:1], gtin[0], gtin[1][1:])
-                gtin = check_digit.calculate_check_digit(gtin)
-
-
-            try:
-                trade_item = TradeItem.objects.get(GTIN14=gtin)
-                product = trade_item.additional_id
-                uom = trade_item.tradeitemfield_set.get(name='uom').value
-            except TradeItem.DoesNotExist:
-                raise Exception('Trade Item not configured in QU4RTET')
-            except:
-                raise Exception('Trade Item or Unit of Measure not configured in QU4RTET')
-
             events = query.get_events_by_entry_identifer(entry_identifier=tag_id)
             for event in events:
                 ilmds = query.get_ilmd(db_event=event.event)
