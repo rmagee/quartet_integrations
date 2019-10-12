@@ -12,18 +12,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-import requests
-from rest_framework.request import HttpRequest
-from rest_framework.renderers import JSONRenderer
 from lxml import etree
-from rest_framework.views import APIView
 from rest_framework_xml import parsers
-from serialbox.api.views import AllocateView
-
-from quartet_integrations.opsm import opsm_settings
-
+from rest_framework import status
+from rest_framework.response import Response
 from logging import getLogger
-from serialbox.models import Pool
+from serialbox.api.views import AllocateView
+from django.db.models import ObjectDoesNotExist
 
 logger = getLogger(__name__)
 
@@ -50,62 +45,46 @@ class OPSMNumberRangeView(AllocateView):
             'com': 'http://xmlns.oracle.com/apps/pas/transactions/transactionsService/view/common/'
         }
 
-        root = etree.fromstring(request.body)
-        pool_result = root.xpath('%scom:Location' % xpath_prefix,
-                                 namespaces=namespaces)
-        if len(pool_result) > 0:
-            pool = pool_result[0].text
-        # TODO: Handle exception
-        count_result = root.xpath('%scom:SerialQuantity' % xpath_prefix,
-                                  namespaces=namespaces)
-        if len(count_result) > 0:
-            count = count_result[0].text
-        gtin_result = root.xpath('%scom:Gtin' % xpath_prefix,
-                                 namespaces=namespaces)
-        if len(gtin_result) > 0:
-            gtin = gtin_result[0].text
+        try:
+            root = etree.fromstring(request.body)
+            pool_result = root.xpath('%scom:Location' % xpath_prefix,
+                                     namespaces=namespaces)
+            if len(pool_result) > 0:
+                pool = pool_result[0].text
+            # TODO: Handle exception
+            count_result = root.xpath('%scom:SerialQuantity' % xpath_prefix,
+                                      namespaces=namespaces)
+            if len(count_result) > 0:
+                count = count_result[0].text
+            gtin_result = root.xpath('%scom:Gtin' % xpath_prefix,
+                                     namespaces=namespaces)
+            if len(gtin_result) > 0:
+                gtin = gtin_result[0].text
 
-        if gtin_result:
-            pool = gtin
+            if gtin_result:
+                pool = gtin
 
-        return super().get(request, pool, count)
-
-        # # get the url - default is http://127.0.0.1/serialbox/allocate/pool/count/
-        # url = self.build_url(count, pool)
-        #
-        # # execute the call
-        # response = requests.get(
-        #     url,
-        #     auth=request.auth
-        # )
-
-    def buil_request(self, current_request: HttpRequest):
-        new_request = HttpRequest()
-        new_request.accepted_renderer = JSONRenderer()
-        new_request.GET = current_request.GET
-
-
-    def build_url(self, count, pool):
-        """
-        Builds the default URL based on settings.  To change any of the
-        defualt connectivity settings, use the following:
-
-        OPSM_SERIALBOX_SCHEME - set http or https. Default is http.
-        OPSM_SERIALBOX_HOST - set the host to connect to (defaults to the
-        local loopback IP address)
-        OPSM_SERIALBOX_PORT - set the port for the server/host to connect to
-        default is none.
-        :param count: The number of serial numbers to request.
-        :param pool: The pool to request numbers from.
-        :return: A properly formatted serialbox Allocate API URL.
-        """
-        scheme = opsm_settings.OPSM_SERIALBOX_SCHEME
-        host = opsm_settings.OPSM_SERIALBOX_HOST
-        port = opsm_settings.OPSM_SERIALBOX_PORT
-        if not port:
-            url = "%s://%s/serialbox/allocate/%s/%d/?format=json" % (
-                scheme, host, pool.machine_name, int(count))
-        else:
-            url = "%s://%s:%s/serialbox/allocate/%s/%d/?format=json" % (
-                scheme, host, port, pool.machine_name, int(count))
-        return url
+            ret = super().get(request, pool, count)
+        except ObjectDoesNotExist as e:
+            ret = Response(
+                'An item that was expected to be '
+                'configured could not be found. '
+                'This is likely to be a Trade Item or '
+                'Company linked to the '
+                'SerialBox Pool name or Pool API '
+                'Key/machine_name for master data '
+                'purposes. Check your master data configurations '
+                'or explicity set the Company Prefix Length step '
+                'parameter.'
+                'Detail: %s' %
+                str(e), status.HTTP_400_BAD_REQUEST, exception=True
+            )
+        except etree.XMLSyntaxError as e:
+            ret = Response('The submitted data was either not XML '
+                           'or it was malformed and unable to process: %s' %
+                           str(e))
+        except UnboundLocalError as e:
+            ret = Response('One of the values (SerialQuantity, Location, or '
+                           'Gtin) were missing from the message and/or '
+                           'improper namespaces were supplied.')
+        return ret
