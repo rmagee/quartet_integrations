@@ -110,7 +110,7 @@ class SerialBoxConversion(Step):
         :param serial_number: The serial number
         :return: Returns an SGTIN URN.
         """
-        return '%s.%s.%s%s.%s' % (
+        return '%s%s.%s%s.%s' % (
             'urn:epc:id:sgtin:', company_prefix, indicator, item_reference,
             serial_number
         )
