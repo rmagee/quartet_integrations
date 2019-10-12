@@ -64,11 +64,9 @@ class ListToUrnConversionStep(Step):
         # epc declaration
         return_vals = []
         if len(pool) == 14:
-            converter = self.handle_gtins(cp_length, data, return_vals, pool)
+            converter = self.handle_gtins(cp_length, data, return_vals, pool,
+                                          rule_context)
             # put some of the info on the context in case other steps may need
-            rule_context.context['trade_item'] = TradeItem.objects.get(
-                GTIN14=pool
-            )
             rule_context.context['company_prefix'] = converter.company_prefix
             rule_context.context['indicator_digit'] = converter.indicator_digit
             rule_context.context['item_reference'] = converter.item_reference
@@ -79,7 +77,27 @@ class ListToUrnConversionStep(Step):
 
         return return_vals
 
-    def handle_gtins(self, cp_length, numbers, return_vals, pool):
+    def handle_gtins(self, cp_length, numbers, return_vals, pool, rule_context):
+        """
+        Override this function to look up trade item information, and to
+        handle inbound GTIN requests.  This function adds the TradeItem matching
+        the pool.machine_name to the context for downstream Steps (such as
+        a template step) to use the trade item information for rendering, etc.
+
+        This cuntion will also determine the company prefix. Indicator digit
+        and item reference number for the given request in order to render
+        accurate URN values.
+        :param cp_length: The company prefix length.
+        :param numbers: The list of numbers to convert to SGTIN URNs
+        :param return_vals: The list that will hold the converted URNs
+        :param pool: The pool.machine name that was used to get the numbers...
+            this should correlate to a Trade Item.
+        :param rule_context: The rule context to place the Trade Item django
+            model instance onto.
+        """
+        rule_context.context['trade_item'] = TradeItem.objects.get(
+            GTIN14=pool
+        )
         self.info('Formatting for GTIN response.')
         # provide a dummy serial number so we can just quickly parse the company prefix
         converter = BarcodeConverter(
