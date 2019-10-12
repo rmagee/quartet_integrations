@@ -12,16 +12,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-import json
 
-from quartet_capture import models
-from quartet_capture.rules import Step, RuleContext
-from quartet_masterdata.db import DBProxy, TradeItem
-from gs123.conversion import BarcodeConverter, URNConverter
-from quartet_integrations.serialbox.steps import ListToUrnConversionStep
+from quartet_integrations.serialbox.steps import \
+    ListToUrnConversionStep as SBLTU
 
 
-class SerialBoxConversion(ListToUrnConversionStep):
+class ListToUrnConversionStep(SBLTU):
     """
     Converts serialbox lists to OPSM URNs using the data in the result.
     """
@@ -32,3 +28,6 @@ class SerialBoxConversion(ListToUrnConversionStep):
             company_prefix, indicator, item_reference,
             serial_number
         )
+
+class ListToBarcodeConversionStep:
+    pass

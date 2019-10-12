@@ -53,7 +53,7 @@ def create_response_rule():
     conversion_step, created = Step.objects.get_or_create(
         rule = rule,
         name='List Conversion',
-        step_class='quartet_integrations.opsm.steps.SerialBoxConversion',
+        step_class='quartet_integrations.opsm.steps.ListToUrnConversionStep',
         order=1
     )
     if not created:
