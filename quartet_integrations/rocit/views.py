@@ -74,8 +74,9 @@ class RetrievePackagingHierarchyView(RocItBaseView):
         :return:
         """
         try:
+
             if len(request.body) == 0:
-                raise Exception('Request was empty')
+                return Response("Request was empty", status.HTTP_400_BAD_REQUEST, content_type="application/xml")
             root = etree.fromstring(request.body)
             body = root.find('{http://schemas.xmlsoap.org/soap/envelope/}Body')
             query = body.find('{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/}retrievePackagingHierarchy')
@@ -90,24 +91,53 @@ class RetrievePackagingHierarchyView(RocItBaseView):
 
             if tag_id is None:
                # Have to have the Tag Id
-               raise Exception('Missing TagId in Request')
+               return Response("Missing Tag ID", status.HTTP_400_BAD_REQUEST, content_type="application/xml")
             data =  RocItQuery.RetrievePackagingHierarchy(tag_id, send_children, send_product_info)
 
 
             template = loader.get_template("rocit/rocit-search-response.xml")
             xml = template.render(data)
 
-            ret_val = Response(xml, status.HTTP_200_OK, content_type="application/xml")
+            ret_val = Response(xml, status.HTTP_200_OK, content_type="text/xml")
 
         except Exception:
             # Unexpected error, return HTTP 500 Server Error and log the exception
             data = traceback.format_exc()
             logger.error('Exception in qu4rtet_integrations.rocit.RetrievePackagingHierarchyView.post().\r\n%s' % data)
             ret_val = Response({"error": "A Server Error occurred servicing this request"},
-                               status.HTTP_500_INTERNAL_SERVER_ERROR, content_type="application/xml")
+                               status.HTTP_500_INTERNAL_SERVER_ERROR, content_type="*/*")
 
         return ret_val
 
+    def get(self, request):
+        try:
+            if 'wsdl' in request.GET:
+                return self.get_wsdl('wsdl')
+        except:
+            pass
+        try:
+            if request.GET["WSDL"]:
+                return self.get_wsdl(request.GET["WSDL"])
+        except:
+            pass
+        try:
+            if request.GET["XSD"]:
+                return self.get_wsdl(request.GET["XSD"])
+        except:
+            pass
 
+        return Response("Resource not found.",
+                 status.HTTP_404_NOT_FOUND, content_type="*/*")
 
+    def get_wsdl(self, resource_path):
+        import os
+        if resource_path == 'wsdl':
+            template = loader.get_template("rocit/wsdl/{0}".format('RetrievePackagingHierarchy.wsdl'))
+            xml = template.render({})
+        else:
+            resource_name = os.path.basename(resource_path)
+            template = loader.get_template("rocit/wsdl/{0}".format(resource_name))
+            xml = template.render({})
 
+        ret_val = Response(xml, status.HTTP_200_OK, content_type="application/xml")
+        return ret_val

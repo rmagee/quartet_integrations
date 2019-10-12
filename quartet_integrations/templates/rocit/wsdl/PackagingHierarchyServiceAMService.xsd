@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schema xmlns:ns0="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/" xmlns:ns1="http://xmlns.oracle.com/adf/svc/errors/" xmlns:tns="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/" xmlns="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/">
+	<import namespace="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/" schemaLocation="http://192.168.100.78:8001/opsmservices-serials/PackagingHierarchyServiceAMService?XSD=/oracle/apps/pas/serials/serialsService/view/common/PackagingHierarchyResponseVOSDO.xsd"/>
+	<import namespace="http://xmlns.oracle.com/adf/svc/errors/" schemaLocation="http://192.168.100.78:8001/opsmservices-serials/PackagingHierarchyServiceAMService?XSD=/META-INF/wsdl/ServiceException.xsd"/>
+	<import namespace="http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/" schemaLocation="http://192.168.100.78:8001/opsmservices-serials/PackagingHierarchyServiceAMService?XSD=/oracle/apps/pas/serials/serialsService/view/common/RetrievePackagingHierarchyVOSDO.xsd"/>
+	<element name="retrievePackagingHierarchy">
+		<complexType>
+			<sequence>
+				<element name="voRow" type="ns0:RetrievePackagingHierarchyVOSDO"/>
+			</sequence>
+		</complexType>
+	</element>
+	<element name="retrievePackagingHierarchyResponse">
+		<complexType>
+			<sequence>
+				<element name="result" type="ns0:PackagingHierarchyResponseVOSDO"/>
+			</sequence>
+		</complexType>
+	</element>
+	<element name="retrievePackagingHierarchyAsync">
+		<complexType>
+			<sequence>
+				<element name="voRow" type="ns0:RetrievePackagingHierarchyVOSDO"/>
+			</sequence>
+		</complexType>
+	</element>
+	<element name="retrievePackagingHierarchyAsyncResponse">
+		<complexType>
+			<sequence>
+				<element name="result" type="ns0:PackagingHierarchyResponseVOSDO"/>
+			</sequence>
+		</complexType>
+	</element>
+</schema>
