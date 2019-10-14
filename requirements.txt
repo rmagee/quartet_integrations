@@ -10,5 +10,6 @@ django
 djangorestframework
 gs123
 list_based_flavorpack
+random_flavorpack
 serialbox
 
