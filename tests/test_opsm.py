@@ -76,12 +76,26 @@ class OPSMTestCase(APITestCase):
         conversion_step, created = Step.objects.get_or_create(
             rule=rule,
             name='List Conversion',
-            step_class='quartet_integrations.opsm.steps.ListToBarcodeConversionStep',
+            step_class='quartet_integrations.serialbox.steps.ListToBarcodeConversionStep',
             order=1
         )
         if not created:
             conversion_step.description = 'Convert the list of numbers to ' \
                                           'SSCCs for use by OPSM.',
+
+        cp = StepParameter.objects.create(
+            name='Company Prefix',
+            value='031300',
+            description='Unit test prefix.',
+            step=conversion_step
+        )
+
+        ed = StepParameter.objects.create(
+            name='Indicator Digit',
+            value='0',
+            description='Unit test indicator',
+            step=conversion_step
+        )
 
         format_step, created = Step.objects.get_or_create(
             rule=rule,
@@ -97,12 +111,12 @@ class OPSMTestCase(APITestCase):
         )
 
         self.create_sscc_template()
-        pool = Pool.objects.get(machine_name='00313000007772')
-        response_rule = ResponseRule.objects.get_or_create(
+        pool = Pool.objects.get(machine_name='03130000077-SSCC')
+        return ResponseRule.objects.get_or_create(
             rule=rule,
             pool=pool,
             content_type='xml'
-        )
+        )[0]
 
     def create_trade_item(self):
         company = Company.objects.create(
@@ -170,7 +184,7 @@ class OPSMTestCase(APITestCase):
         # the max length of the serial number is 99999999999
         models.RandomizedRegion.objects.create(
             readable_name='Pharmaprod 20mcg Pills',
-            machine_name='00313000007772',
+            machine_name='03130000077-SSCC',
             start=239380,
             active=True,
             order=1,
@@ -190,7 +204,7 @@ class OPSMTestCase(APITestCase):
         # the max length of the serial number is 99999999999
         SequentialRegion.objects.create(
             readable_name='Pharmaprod 20mcg Pills',
-            machine_name='00313000007772',
+            machine_name='03130000077-SSCC',
             start=1,
             active=True,
             order=1,
@@ -207,12 +221,14 @@ class OPSMTestCase(APITestCase):
         curpath = os.path.dirname(__file__)
         file_path = os.path.join(curpath, 'data/opsm_sscc_request.xml')
         self.create_sequential_sscc_range()
+        self.create_sscc_template()
+        self.create_SSCC_response_rule()
         with open(file_path, 'r') as f:
             request = f.read()
             url = reverse('numberRangeService')
             result = self.client.post(url, request,
                                       content_type='application/xml')
-            print(result)
+            print(result.data)
 
     def test_post_gtin_request(self):
         """

@@ -61,7 +61,7 @@ class OPSMNumberRangeView(AllocateView):
             if len(gtin_result) > 0:
                 gtin = gtin_result[0].text
 
-            if gtin_result:
+            if gtin:
                 pool = gtin
 
             ret = super().get(request, pool, count)

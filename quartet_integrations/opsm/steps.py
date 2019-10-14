@@ -29,5 +29,4 @@ class ListToUrnConversionStep(SBLTU):
             serial_number
         )
 
-class ListToBarcodeConversionStep:
-    pass
+

@@ -7,7 +7,7 @@
       <ns0:createProcessSerialGenerationRequestResponse xmlns:ns0="http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common/types/">
          <ns2:result xsi:type="ns0:SerialGenerationRequestResponse" xmlns:ns2="http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common/types/" xmlns:ns1="http://xmlns.oracle.com/adf/svc/types/" xmlns:ns0="http://xmlns.oracle.com/oracle/apps/pas/transactions/transactionsService/view/common/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <ns0:GenerationStatus>SUCCESS</ns0:GenerationStatus>
-            <ns0:SourceSystem>OPSM</ns0:SourceSystem>
+            <ns0:SourceSystem>QU4RTET</ns0:SourceSystem>
             <ns0:SerialQuantity>{{ data|length }}</ns0:SerialQuantity>
             <ns0:StartingSerialNumber xsi:nil="true"/>
             <ns0:EndingSerialNumber xsi:nil="true"/>
