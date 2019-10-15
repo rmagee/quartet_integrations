@@ -111,7 +111,7 @@ class OPSMTestCase(APITestCase):
         )
 
         self.create_sscc_template()
-        pool = Pool.objects.get(machine_name='03130000077-SSCC')
+        pool = Pool.objects.get(machine_name='031300000770000001-SSCC')
         return ResponseRule.objects.get_or_create(
             rule=rule,
             pool=pool,
@@ -176,7 +176,7 @@ class OPSMTestCase(APITestCase):
     def create_random_sscc_range(self):
         sp1 = Pool.objects.create(
             readable_name='Pharmaprod SSCC',
-            machine_name='03130000077-SSCC',
+            machine_name='031300000770000001-SSCC',
             active=True,
             request_threshold=1000
         )
@@ -184,7 +184,7 @@ class OPSMTestCase(APITestCase):
         # the max length of the serial number is 99999999999
         models.RandomizedRegion.objects.create(
             readable_name='Pharmaprod 20mcg Pills',
-            machine_name='03130000077-SSCC',
+            machine_name='031300000770000001-SSCC',
             start=239380,
             active=True,
             order=1,
@@ -196,7 +196,7 @@ class OPSMTestCase(APITestCase):
     def create_sequential_sscc_range(self):
         sp1 = Pool.objects.create(
             readable_name='Pharmaprod SSCC',
-            machine_name='03130000077-SSCC',
+            machine_name='031300000770000001-SSCC',
             active=True,
             request_threshold=1000
         )
@@ -204,7 +204,7 @@ class OPSMTestCase(APITestCase):
         # the max length of the serial number is 99999999999
         SequentialRegion.objects.create(
             readable_name='Pharmaprod 20mcg Pills',
-            machine_name='03130000077-SSCC',
+            machine_name='031300000770000001-SSCC',
             start=1,
             active=True,
             order=1,
@@ -229,6 +229,7 @@ class OPSMTestCase(APITestCase):
             result = self.client.post(url, request,
                                       content_type='application/xml')
             print(result.data)
+            self.assertEqual(result.status_code, 200)
 
     def test_post_gtin_request(self):
         """
@@ -243,3 +244,4 @@ class OPSMTestCase(APITestCase):
             result = self.client.post(url, request,
                                       content_type='application/xml')
             print(result.data)
+            self.assertEqual(result.status_code, 200)
