@@ -12,31 +12,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-import os
 
-from django.core.management import call_command, base
-from django.db.utils import IntegrityError
+from django.core.management import base
 
-from quartet_capture.models import Rule, Step, StepParameter
-from quartet_templates.models import Template
-from serialbox.models import Pool, ResponseRule
-from random_flavorpack import models
 from quartet_integrations.management.commands import utils
+
 
 class Command(base.BaseCommand):
     help = 'Creates a reference implementation of a SSCC OPSM number ' \
            'range integrated ' \
            'with SerialBox/QU4RTET.'
-    try:
-        utils.create_sequential_sscc_range()
-    except Exception as e:
-        'SSCC sequential range not created %s.' % str(e)
-    try:
-        utils.create_sscc_template()
-    except Exception as e:
-        'SSCC template not created: %s' % str(e)
-    try:
-        utils.create_SSCC_response_rule()
-    except Exception as e:
-        'Response Rule not created: %s' % str(e)
 
+    def handle(self, *args, **options):
+
+        try:
+            utils.create_sequential_sscc_range()
+        except Exception as e:
+            'SSCC sequential range not created %s.' % str(e)
+        try:
+            utils.create_sscc_template()
+        except Exception as e:
+            'SSCC template not created: %s' % str(e)
+        try:
+            utils.create_SSCC_response_rule()
+        except Exception as e:
+            'Response Rule not created: %s' % str(e)
