@@ -20,7 +20,7 @@ app_name = 'quartet_integrations'
 # SerialGenRequestServiceAMServiceSoapHttpPort
 urlpatterns = [
     url(
-        r'^/opsmservices-transactions/SerialGenRequestServiceAMService',
+        r'^opsmservices-transactions/SerialGenRequestServiceAMService',
         OPSMNumberRangeView.as_view(), name="numberRangeService"
     )
 ]
