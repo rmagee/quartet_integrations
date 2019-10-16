@@ -14,9 +14,9 @@
             <ns0:IgnoreOverageFlag>0</ns0:IgnoreOverageFlag>
             <ns0:SaleableUnitFlag>{{ rule_context.context.saleable_unit_flag }}</ns0:SaleableUnitFlag>
             <ns0:EpcNumber>{{ task_parameters.pool }}</ns0:EpcNumber>
-            <ns0:GlobalLocationNumber>{{ rule_context.context.trade_item.company.GLN13[:11] }}</ns0:GlobalLocationNumber>
+            <ns0:GlobalLocationNumber>{{ task_parameters.pool }}</ns0:GlobalLocationNumber>
             <ns0:LocationId>1148</ns0:LocationId>
-            <ns0:Location>{{ rule_context.context.trade_item.company.GLN13[:11] }}-GTIN</ns0:Location>
+            <ns0:Location>{{ task_parameters.location_name }}</ns0:Location>
             <ns0:SerialUsage xsi:nil="true"/>
             <ns0:ProductDetailId>2911</ns0:ProductDetailId>
             <ns0:ProductCode>{{ rule_context.context.trade_item.NDC_11_digit | replace("-","") }}</ns0:ProductCode>

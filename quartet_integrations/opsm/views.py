@@ -19,6 +19,7 @@ from rest_framework.response import Response
 from logging import getLogger
 from serialbox.api.views import AllocateView
 from django.db.models import ObjectDoesNotExist
+from quartet_capture.models import TaskParameter
 
 logger = getLogger(__name__)
 
@@ -35,6 +36,10 @@ class OPSMNumberRangeView(AllocateView):
 
     parser_classes = [parsers.XMLParser]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.location_name = None
+
     def post(self, request):
         count = None
         gtin = None
@@ -50,7 +55,9 @@ class OPSMNumberRangeView(AllocateView):
             pool_result = root.xpath('%scom:Location' % xpath_prefix,
                                      namespaces=namespaces)
             if len(pool_result) > 0:
+                self.location_name = pool_result[0].text
                 pool = pool_result[0].text.replace('-SSCC', '')
+
             # TODO: Handle exception
             count_result = root.xpath('%scom:SerialQuantity' % xpath_prefix,
                                       namespaces=namespaces)
@@ -88,3 +95,14 @@ class OPSMNumberRangeView(AllocateView):
                            'Gtin) were missing from the message and/or '
                            'improper namespaces were supplied.')
         return ret
+
+    def _set_task_parameters(self, pool, region, response_rule, size, request):
+        db_task = super()._set_task_parameters(pool, region, response_rule, size,
+                                            request)
+        tp = TaskParameter.objects.create(
+            task=db_task,
+            name='location_name',
+            value=self.location_name,
+            description='The name of the location passed in the request.'
+        )
+        return db_task
