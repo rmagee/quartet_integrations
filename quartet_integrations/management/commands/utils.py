@@ -90,7 +90,7 @@ def create_SSCC_response_rule():
     )
 
     create_sscc_template()
-    pool = Pool.objects.get(machine_name='031300000770000001-SSCC')
+    pool = Pool.objects.get(machine_name='031300000770000001')
     return ResponseRule.objects.get_or_create(
         rule=rule,
         pool=pool,
@@ -160,7 +160,7 @@ def create_random_range():
 def create_random_sscc_range():
     sp1 = Pool.objects.create(
         readable_name='Pharmaprod SSCC',
-        machine_name='031300000770000001-SSCC',
+        machine_name='031300000770000001',
         active=True,
         request_threshold=1000
     )
@@ -168,7 +168,7 @@ def create_random_sscc_range():
     # the max length of the serial number is 99999999999
     models.RandomizedRegion.objects.create(
         readable_name='Pharmaprod 20mcg Pills',
-        machine_name='031300000770000001-SSCC',
+        machine_name='031300000770000001',
         start=239380,
         active=True,
         order=1,
@@ -181,7 +181,7 @@ def create_random_sscc_range():
 def create_sequential_sscc_range():
     sp1 = Pool.objects.create(
         readable_name='Pharmaprod SSCC',
-        machine_name='031300000770000001-SSCC',
+        machine_name='031300000770000001',
         active=True,
         request_threshold=1000
     )
@@ -189,7 +189,7 @@ def create_sequential_sscc_range():
     # the max length of the serial number is 99999999999
     SequentialRegion.objects.create(
         readable_name='Pharmaprod 20mcg Pills',
-        machine_name='031300000770000001-SSCC',
+        machine_name='031300000770000001',
         start=1,
         active=True,
         order=1,
