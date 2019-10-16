@@ -12,16 +12,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-from django.conf.urls import url
-from quartet_integrations.opsm.views import OPSMNumberRangeView
+from django.core.management.base import BaseCommand
+from django.utils.translation import gettext as _
 
-app_name = 'quartet_integrations'
-# /opsmservices-transactions/SerialGenRequestServiceAMService?wsdl
-# SerialGenRequestServiceAMServiceSoapHttpPort
-urlpatterns = [
-    url(
-        r'^/opsmservices-transactions/SerialGenRequestServiceAMService',
-        OPSMNumberRangeView.as_view(), name="numberRangeService"
-    )
-]
 
+class Command(BaseCommand):
+    help = _('Clones a list-based pool by machine name')
+
+    def handle(self, *args, **options):
+        print(_('Clones a list-based pool by machine name'))
+        clone_list_based_pool(options['machine_name'],
+                              options['new_machine_name'])
