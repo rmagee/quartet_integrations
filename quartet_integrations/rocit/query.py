@@ -41,7 +41,7 @@ class RocItQuery():
         parent_tag = ""
         product = ""
         lot = ""
-        uom="Bx"
+        uom=""
         expiry = ""
         status = ""
         state = ""
@@ -114,8 +114,7 @@ class RocItQuery():
                         except TradeItem.DoesNotExist:
                             trade_item = None
                         except:
-                            pass
-                            #raise Exception('Trade Item or Unit of Measure not configured in QU4RTET')
+                            raise Exception('Trade Item or Unit of Measure not configured in QU4RTET')
 
 
             except entries.Entry.DoesNotExist:
@@ -146,8 +145,8 @@ class RocItQuery():
                     "document_type":document_type,
                     "expiry": expiry,
                     "lot": lot,
-                    "uom": "Bx",
-                    "product": "123456" #product
+                    "uom": uom,
+                    "product": product
                 }
 
         return ret_val
