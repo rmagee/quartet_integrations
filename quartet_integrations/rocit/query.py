@@ -102,8 +102,8 @@ class RocItQuery():
                 # build the child_tags array witht he children of tag_id
                 for child in children:
                     child_tags.append(child)
-                    if str(child).find('sgtin') > 0 and trade_item is None:
-                        gtin = child.split(':')
+                    if str(tag_id).find('sgtin') > 0 and trade_item is None:
+                        gtin = tag_id.split(':')
                         gtin = gtin[4].split('.')
                         gtin = "{0}{1}{2}".format(gtin[1][:1], gtin[0], gtin[1][1:])
                         gtin = check_digit.calculate_check_digit(gtin)
@@ -137,8 +137,8 @@ class RocItQuery():
                     "message_id": str(uuid.uuid4()),
                     "tag_id": tag_id,
                     "parent_tag": parent_tag,
-                    "status": 'ACTIVE', # status.upper(),
-                    "state": "COMMISSIONING", #state.upper(),
+                    "status": status.upper(),
+                    "state": state.upper(),
                     "child_tag_count": child_tag_count,
                     "child_tags": child_tags,
                     "document_id":document_id,
