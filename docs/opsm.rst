@@ -36,3 +36,8 @@ Add a random region to the pool
 
 
 
+SSCC Example
+++++++++++++
+
+Extension digit & Company prefix in List Conversion step
+Explain App identifier & parenthesis parametersS

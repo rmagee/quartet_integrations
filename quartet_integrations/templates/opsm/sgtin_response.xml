@@ -57,11 +57,11 @@
             <ns0:AlternateSegment9 xsi:nil="true"/>
             <ns0:AlternateSegment10 xsi:nil="true"/>
             <ns0:StatusMessage xsi:nil="true"/>
-            <ns0:SerialNumberListVO>
-                {% for serial_number in data %}
+            {% for serial_number in data %}
+             <ns0:SerialNumberListVO>
                     <ns0:SerialNumber>{{ serial_number }}</ns0:SerialNumber>
-                {% endfor %}
             </ns0:SerialNumberListVO>
+            {% endfor %}
          </ns2:result>
       </ns0:createProcessSerialGenerationRequestResponse>
    </env:Body>

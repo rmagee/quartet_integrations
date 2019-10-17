@@ -15,11 +15,13 @@
 from lxml import etree
 from rest_framework_xml import parsers
 from rest_framework import status
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 from logging import getLogger
 from serialbox.api.views import AllocateView
 from django.db.models import ObjectDoesNotExist
 from quartet_capture.models import TaskParameter
+from django.contrib.auth import authenticate
 
 logger = getLogger(__name__)
 
@@ -36,9 +38,21 @@ class OPSMNumberRangeView(AllocateView):
 
     parser_classes = [parsers.XMLParser]
 
+    permission_classes = []
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.location_name = None
+
+    def auth_user(self, username, password):
+        """
+        Authenticate user.
+        """
+        user = authenticate(username=username, password=password)
+        if user:
+            return user
+        else:
+            raise AuthenticationFailed('Username/password invalid.')
 
     def post(self, request):
         count = None
@@ -47,11 +61,21 @@ class OPSMNumberRangeView(AllocateView):
         namespaces = {
             'soapenv': 'http://schemas.xmlsoap.org/soap/envelope/',
             'typ': 'http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common/types/',
-            'com': 'http://xmlns.oracle.com/apps/pas/transactions/transactionsService/view/common/'
+            'com': 'http://xmlns.oracle.com/apps/pas/transactions/transactionsService/view/common/',
+            'wsse': 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd'
         }
 
         try:
             root = etree.fromstring(request.body)
+            username = root.xpath(
+                '//soapenv:Header/wsse:Security/wsse:UsernameToken/wsse:Username',
+                namespaces=namespaces
+            )[0].text
+            password = root.xpath(
+                '//soapenv:Header/wsse:Security/wsse:UsernameToken/wsse:Password',
+                namespaces=namespaces
+            )[0].text
+            self.auth_user(username, password)
             pool_result = root.xpath('%scom:Location' % xpath_prefix,
                                      namespaces=namespaces)
             if len(pool_result) > 0:
@@ -97,8 +121,9 @@ class OPSMNumberRangeView(AllocateView):
         return ret
 
     def _set_task_parameters(self, pool, region, response_rule, size, request):
-        db_task = super()._set_task_parameters(pool, region, response_rule, size,
-                                            request)
+        db_task = super()._set_task_parameters(pool, region, response_rule,
+                                               size,
+                                               request)
         tp = TaskParameter.objects.create(
             task=db_task,
             name='location_name',
