@@ -13,7 +13,8 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 from django.conf.urls import url
-from quartet_integrations.opsm.views import OPSMNumberRangeView
+from quartet_integrations.opsm.views import OPSMNumberRangeView, \
+    CaptureInterface
 
 app_name = 'quartet_integrations'
 # /opsmservices-transactions/SerialGenRequestServiceAMService?wsdl
@@ -22,6 +23,9 @@ urlpatterns = [
     url(
         r'opsmservices-transactions/SerialGenRequestServiceAMService',
         OPSMNumberRangeView.as_view(), name="numberRangeService"
+    ),
+    url(
+        r'opsmservices-epcis/Capture',
+        CaptureInterface.as_view(), name='opsmCapture'
     )
 ]
-

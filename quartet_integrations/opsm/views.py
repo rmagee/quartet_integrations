@@ -12,16 +12,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
+from django.contrib.auth import authenticate
+from django.conf import settings
+from django.db.models import ObjectDoesNotExist
 from lxml import etree
-from rest_framework_xml import parsers
 from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework_xml import parsers
+
 from logging import getLogger
-from serialbox.api.views import AllocateView
-from django.db.models import ObjectDoesNotExist
+from quartet_capture import views as capture_views
 from quartet_capture.models import TaskParameter
-from django.contrib.auth import authenticate
+from serialbox.api.views import AllocateView
 
 logger = getLogger(__name__)
 
@@ -131,3 +135,16 @@ class OPSMNumberRangeView(AllocateView):
             description='The name of the location passed in the request.'
         )
         return db_task
+
+
+class CaptureInterface(capture_views.CaptureInterface):
+    """
+    Adds a reference to the OPSM filter with id "opsm"
+    that must be configured on a qu4rtet capture configuration.
+    """
+
+    def post(self, request: Request, format=None, epcis=False):
+        if not request.GET._mutable:
+            request.GET._mutable = True
+        request.GET['filter'] = 'opsm'
+        return super().post(request, format, epcis)
