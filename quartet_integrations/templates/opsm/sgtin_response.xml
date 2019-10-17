@@ -1,4 +1,4 @@
-<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsa="http://www.w3.org/2005/08/addressing" xmlns:typ="http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common/types/">
+<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsa="http://www.w3.org/2005/08/addressing">
    <env:Header>
       <wsa:Action>http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common//SerialGenRequestServiceAMService/createProcessSerialGenerationRequestResponse</wsa:Action>
       <wsa:MessageID>urn:uuid:{{ UUID }}</wsa:MessageID>
@@ -14,7 +14,7 @@
             <ns0:IgnoreOverageFlag>0</ns0:IgnoreOverageFlag>
             <ns0:SaleableUnitFlag>{{ rule_context.context.saleable_unit_flag }}</ns0:SaleableUnitFlag>
             <ns0:EpcNumber>{{ task_parameters.pool }}</ns0:EpcNumber>
-            <ns0:GlobalLocationNumber>{{ task_parameters.pool }}</ns0:GlobalLocationNumber>
+            <ns0:GlobalLocationNumber>{{ task_parameters.location_name|replace('-GTIN', '') }}</ns0:GlobalLocationNumber>
             <ns0:LocationId>1148</ns0:LocationId>
             <ns0:Location>{{ task_parameters.location_name }}</ns0:Location>
             <ns0:SerialUsage xsi:nil="true"/>
@@ -57,11 +57,11 @@
             <ns0:AlternateSegment9 xsi:nil="true"/>
             <ns0:AlternateSegment10 xsi:nil="true"/>
             <ns0:StatusMessage xsi:nil="true"/>
-            {% for serial_number in data %}
-             <ns0:SerialNumberListVO>
-                    <ns0:SerialNumber>{{ serial_number }}</ns0:SerialNumber>
-            </ns0:SerialNumberListVO>
-            {% endfor %}
+                {% for serial_number in data %}
+                 <ns0:SerialNumberListVO>
+                        <ns0:SerialNumber>{{ serial_number }}</ns0:SerialNumber>
+                </ns0:SerialNumberListVO>
+                {% endfor %}
          </ns2:result>
       </ns0:createProcessSerialGenerationRequestResponse>
    </env:Body>

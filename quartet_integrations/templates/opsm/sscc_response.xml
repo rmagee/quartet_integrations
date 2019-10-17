@@ -1,6 +1,5 @@
-<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/"
-              xmlns:wsa="http://www.w3.org/2005/08/addressing"
-              xmlns:typ="http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common/types/">
+<?xml version="1.0"?>
+<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsa="http://www.w3.org/2005/08/addressing">
     <env:Header>
         <wsa:Action>
             http://xmlns.oracle.com/apps/pas/transactions/transactionsService/applicationModule/common//SerialGenRequestServiceAMService/createProcessSerialGenerationRequestResponse
@@ -23,9 +22,9 @@
                 <ns0:IgnoreOverageFlag>0</ns0:IgnoreOverageFlag>
                 <ns0:SaleableUnitFlag>1</ns0:SaleableUnitFlag>
                 <ns0:EpcNumber xsi:nil="true"/>
-                <ns0:GlobalLocationNumber>{{ task_parameters.pool[:11] }}</ns0:GlobalLocationNumber>
-                <ns0:LocationId>1160</ns0:LocationId>
-                <ns0:Location>{{ task_parameters.pool }}</ns0:Location>
+                <ns0:GlobalLocationNumber>{{ task_parameters.location_name|replace('-SSCC', '') }}</ns0:GlobalLocationNumber>
+                <ns0:LocationId>1148</ns0:LocationId>
+                <ns0:Location>{{ task_parameters.location_name }}</ns0:Location>
                 <ns0:SerialUsage xsi:nil="true"/>
                 <ns0:ProductDetailId xsi:nil="true"/>
                 <ns0:ProductCode/>
