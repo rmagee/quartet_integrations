@@ -53,3 +53,7 @@ whichcraft
 coverage
 celery
 djangorestframework_xml
+coreschema
+coreapi
+
+
