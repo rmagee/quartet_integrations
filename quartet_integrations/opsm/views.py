@@ -147,4 +147,7 @@ class CaptureInterface(capture_views.CaptureInterface):
         if not request.GET._mutable:
             request.GET._mutable = True
         request.GET['filter'] = 'opsm'
-        return super().post(request, format, epcis)
+        ret = super().post(request, format, epcis)
+        if ret.status_code == 201:
+            ret = Response(status=status.HTTP_200_OK)
+        return ret
