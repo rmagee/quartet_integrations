@@ -39,13 +39,12 @@ class RocItQuery():
 
         gtin = None
         parent_tag = ""
-        product = ""
-        lot = ""
-        uom=""
-        expiry = ""
+        product = None
+        lot = None
+        uom=None
+        expiry = None
         status = ""
         state = ""
-        trade_item = None
         document_id = str(random.randrange(1111111, 9999999))
         document_type = "RECADV"
         child_tag_count = 0
@@ -63,20 +62,6 @@ class RocItQuery():
 
         if parent_tag == tag_id:
            parent_tag = None
-
-        if str(tag_id).find('sgtin') > 0:
-            gtin = tag_id.split(':')
-            gtin = gtin[4].split('.')
-            gtin = "{0}{1}{2}".format(gtin[1][:1], gtin[0], gtin[1][1:])
-            gtin = check_digit.calculate_check_digit(gtin)
-            try:
-                trade_item = TradeItem.objects.get(GTIN14=gtin)
-                product = trade_item.additional_id
-                uom = trade_item.tradeitemfield_set.get(name='uom').value
-            except TradeItem.DoesNotExist:
-                trade_item = None
-            except:
-                raise Exception('Trade Item or Unit of Measure not configured in QU4RTET')
 
         if last_event is not None:
             # If there was a last_event, then get the bizStep (state in the response)
@@ -102,37 +87,39 @@ class RocItQuery():
                 # build the child_tags array witht he children of tag_id
                 for child in children:
                     child_tags.append(child)
-                    if str(tag_id).find('sgtin') > 0 and trade_item is None:
-                        gtin = tag_id.split(':')
-                        gtin = gtin[4].split('.')
-                        gtin = "{0}{1}{2}".format(gtin[1][:1], gtin[0], gtin[1][1:])
-                        gtin = check_digit.calculate_check_digit(gtin)
-                        try:
-                            trade_item = TradeItem.objects.get(GTIN14=gtin)
-                            product = trade_item.additional_id
-                            uom = trade_item.tradeitemfield_set.get(name='uom').value
-                        except TradeItem.DoesNotExist:
-                            trade_item = None
-                        except:
-                            raise Exception('Trade Item or Unit of Measure not configured in QU4RTET')
+                    if send_product_info:
+                        if str(tag_id).find('sgtin') > 0 and product is None:
+                            gtin = tag_id.split(':')
+                            gtin = gtin[4].split('.')
+                            gtin = "{0}{1}{2}".format(gtin[1][:1], gtin[0], gtin[1][1:])
+                            gtin = check_digit.calculate_check_digit(gtin)
+                            product, uom = RocItQuery.get_product_info(gtin)
+                        elif str(tag_id).find('sscc') > 0 and product is None:
+                            gtin = child.split(':')
+                            gtin = gtin[4].split('.')
+                            gtin = "{0}{1}{2}".format(gtin[1][:1], gtin[0], gtin[1][1:])
+                            gtin = check_digit.calculate_check_digit(gtin)
+                            product, uom = RocItQuery.get_product_info(gtin)
 
+                    if lot is None and expiry is None:
+                        events = query.get_events_by_entry_identifer(entry_identifier=child)
+                        for event in events:
+                            ilmds = query.get_ilmd(db_event=event.event)
+                            for ilmd in ilmds:
+                                if ilmd.name == 'itemExpirationDate':
+                                    expiry = ilmd.value
+                                elif ilmd.name == 'lotNumber':
+                                    lot = ilmd.value
+
+                            if len(lot) > 0 and len(expiry) > 0:
+                                break
 
             except entries.Entry.DoesNotExist:
                 # No Children found. This can be ignored.
                 pass
 
-        if send_product_info:
-            events = query.get_events_by_entry_identifer(entry_identifier=tag_id)
-            for event in events:
-                ilmds = query.get_ilmd(db_event=event.event)
-                for ilmd in ilmds:
-                    if ilmd.name == 'itemExpirationDate':
-                      expiry = ilmd.value
-                    elif ilmd.name == 'lotNumber':
-                      lot = ilmd.value
 
-                if len(lot) > 0 and len(expiry) > 0:
-                    break
+
         ret_val = {
                     "message_id": str(uuid.uuid4()),
                     "tag_id": tag_id,
@@ -150,3 +137,20 @@ class RocItQuery():
                 }
 
         return ret_val
+
+    @staticmethod
+    def get_product_info(gtin):
+
+        trade_item = None
+        product = None
+        uom = None
+        try:
+            trade_item = TradeItem.objects.get(GTIN14=gtin)
+            product = trade_item.additional_id
+            uom = trade_item.tradeitemfield_set.get(name='uom').value
+        except TradeItem.DoesNotExist:
+            trade_item = None
+        except:
+            raise Exception('Trade Item or Unit of Measure not configured in QU4RTET')
+
+        return product, uom
