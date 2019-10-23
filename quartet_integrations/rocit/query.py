@@ -35,14 +35,24 @@ class RocItQuery():
         pass
 
     @staticmethod
+    def count_eaches(query, children):
+
+        cnt = 0
+        for child in children:
+            res = query.get_epcs_by_parent_identifier(identifier=child, select_for_update=False)
+            cnt =+ len(res)
+        return cnt
+
+    @staticmethod
     def RetrievePackagingHierarchy(tag_id, send_children, send_product_info):
 
         gtin = None
         parent_tag = ""
+        quantity = 0
         product = None
-        lot = None
+        lot = ""
         uom=None
-        expiry = None
+        expiry = ""
         status = ""
         state = ""
         document_id = str(random.randrange(1111111, 9999999))
@@ -81,7 +91,10 @@ class RocItQuery():
             try:
                 # get the children of tag_id
                 children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
-
+                if tag_id.find('sscc') > 0:
+                    quantity = RocItQuery.count_eaches(query, children)
+                else:
+                    quantity = len(children)
                 # get the count of the children
                 child_tag_count = len(children)
                 # build the child_tags array witht he children of tag_id
@@ -101,7 +114,7 @@ class RocItQuery():
                             gtin = check_digit.calculate_check_digit(gtin)
                             product, uom = RocItQuery.get_product_info(gtin)
 
-                    if lot is None and expiry is None:
+                    if len(lot) == 0 and len(expiry) == 0:
                         events = query.get_events_by_entry_identifer(entry_identifier=child)
                         for event in events:
                             ilmds = query.get_ilmd(db_event=event.event)
@@ -127,13 +140,14 @@ class RocItQuery():
                     "status": status.upper(),
                     "state": state.upper(),
                     "child_tag_count": child_tag_count,
+                    "quantity": quantity,
                     "child_tags": child_tags,
                     "document_id":document_id,
                     "document_type":document_type,
                     "expiry": expiry,
                     "lot": lot,
-                    "uom": uom,
-                    "product": product
+                    "uom": uom if uom else "" ,
+                    "product": product if product else ""
                 }
 
         return ret_val
@@ -147,10 +161,10 @@ class RocItQuery():
         try:
             trade_item = TradeItem.objects.get(GTIN14=gtin)
             product = trade_item.additional_id
-            uom = trade_item.tradeitemfield_set.get(name='uom').value
-        except TradeItem.DoesNotExist:
-            trade_item = None
+            uom = trade_item.package_uom
         except:
             raise Exception('Trade Item or Unit of Measure not configured in QU4RTET')
 
         return product, uom
+
+
