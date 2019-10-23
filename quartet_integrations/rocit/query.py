@@ -26,6 +26,7 @@ from quartet_masterdata.models import TradeItem, TradeItemField
 from gs123 import check_digit
 
 
+
 logger = getLogger(__name__)
 
 
@@ -35,12 +36,14 @@ class RocItQuery():
         pass
 
     @staticmethod
-    def count_eaches(query, children):
+    def count_eaches(query, tag_id):
 
         cnt = 0
-        for child in children:
-            res = query.get_epcs_by_parent_identifier(identifier=child, select_for_update=False)
-            cnt =+ len(res)
+        entry = entries.Entry.objects.get(identifier=tag_id)
+        agg_evt = query.get_epcis_event(entry.last_aggregation_event)
+        for child in agg_evt.child_epcs:
+            res = query.get_epcs_by_parent_identifier(child,False)
+            cnt = cnt + len(res)
         return cnt
 
     @staticmethod
@@ -90,13 +93,15 @@ class RocItQuery():
             # The request is to return the children.
             try:
                 # get the children of tag_id
+
                 children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
                 if tag_id.find('sscc') > 0:
-                    quantity = RocItQuery.count_eaches(query, children)
-                else:
+                    quantity = RocItQuery.count_eaches(query, tag_id)
+                    child_tag_count = len(children)
+                elif tag_id.find('sgtin') > 0:
                     quantity = len(children)
-                # get the count of the children
-                child_tag_count = len(children)
+                    child_tag_count = quantity
+
                 # build the child_tags array witht he children of tag_id
                 for child in children:
                     child_tags.append(child)
@@ -137,8 +142,8 @@ class RocItQuery():
                     "message_id": str(uuid.uuid4()),
                     "tag_id": tag_id,
                     "parent_tag": parent_tag,
-                    "status": status.upper(),
-                    "state": state.upper(),
+                    "status": "ACTIVE", #status.upper(),
+                    "state": "COMMISSIONING", #state.upper(),
                     "child_tag_count": child_tag_count,
                     "quantity": quantity,
                     "child_tags": child_tags,

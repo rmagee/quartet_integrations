@@ -28,7 +28,7 @@
                <ns0:Lot>{{ lot }}</ns0:Lot>
                <ns0:ExpiryDate>{{ expiry }}</ns0:ExpiryDate>
                <ns0:Uom>{{ uom }}</ns0:Uom>
-               <ns0:Quantity>{{ child_tag_count }}</ns0:Quantity>
+               <ns0:Quantity>{{ quantity }}</ns0:Quantity>
             </ns0:ProductInformationVO>
          </ns1:result>
       </ns0:retrievePackagingHierarchyResponse>
