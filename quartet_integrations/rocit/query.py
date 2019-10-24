@@ -81,13 +81,21 @@ class RocItQuery():
             # And disposition (status in the response)
             try:
                 state = last_event.biz_step.split(':')[4]
+                if state == 'receiving' or state == 'shipping':
+                   state = status.upper()
+                else:
+                   state = 'COMMISSIONING'
             except:
                 raise Exception('Invalid CBV bizStep urn found.')
             try:
                 status = last_event.disposition.split(':')[4]
+                if status == 'in_transit' or status == 'in_progress':
+                   status = status.upper()
+                else:
+                   status = 'ACTIVE'
             except:
                 # disposition may not have been sent in the EPCIS Doc, ignore
-                pass
+                status = 'ACTIVE'
 
         if send_children:
             # The request is to return the children.
@@ -142,8 +150,8 @@ class RocItQuery():
                     "message_id": str(uuid.uuid4()),
                     "tag_id": tag_id,
                     "parent_tag": parent_tag,
-                    "status": "ACTIVE", #status.upper(),
-                    "state": "COMMISSIONING", #state.upper(),
+                    "status": status,
+                    "state": state,
                     "child_tag_count": child_tag_count,
                     "quantity": quantity,
                     "child_tags": child_tags,
