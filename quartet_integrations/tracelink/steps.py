@@ -21,6 +21,7 @@ from lxml import etree
 from list_based_flavorpack.models import ListBasedRegion
 from quartet_capture import models
 from quartet_capture.rules import RuleContext, Step
+from list_based_flavorpack.processing_classes.third_party_processing.rules import get_region_table
 
 
 class NumberResponseStep(Step):
@@ -91,6 +92,6 @@ class DBResponseStep(NumberResponseStep):
         self.info('storing the numbers.')
         for id in number_elements:
             cursor.execute('insert into %s (serial_number, used) values '
-                           '(?, ?)' % region.machine_name, (id, 0))
+                           '(?, ?)' % get_region_table(region), (id, 0))
         cursor.execute('commit')
         self.info("Execution time: %.3f seconds." % (time.time() - start))
