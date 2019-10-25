@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
+<S:Body>
+  <ns2:serialNumbersRequestResponse xmlns:ns2="urn:tracelink:soap">
+	<SNResponse>
+	  <ReceivingSystem>0351754000007</ReceivingSystem>
+	  <SendingSystem>0301430000050</SendingSystem>
+	  <ActionCode>C</ActionCode>
+	  <EncodingType>SGTIN</EncodingType>
+	  <IDType>GS1_SER</IDType>
+	  <ObjectKey>
+		<Name>GTIN</Name>
+		<Value>00300077789102</Value>
+	  </ObjectKey>
+	  <RandomizedNumberList>
+		<SerialNo>01003000777891022110056421273895</SerialNo>
+		<SerialNo>01003000777891022110055410256911</SerialNo>
+		<SerialNo>01003000777891022110010800231111</SerialNo>
+		<SerialNo>01003000777891022110065005082777</SerialNo>
+		<SerialNo>01003000777891022110070768667888</SerialNo>
+		<SerialNo>01003000777891022110023415390265</SerialNo>
+		<SerialNo>01003000777891022110033335684619</SerialNo>
+		<SerialNo>01003000777891022110095107762657</SerialNo>
+		<SerialNo>01003000777891022110099102312168</SerialNo>
+		<SerialNo>01003000777891022110044492971031</SerialNo>
+		<SerialNo>01003000777891022110033247645876</SerialNo>
+		<SerialNo>01003000777891022110073302233814</SerialNo>
+		<SerialNo>01003000777891022110075377853984</SerialNo>
+		<SerialNo>01003000777891022110038419078734</SerialNo>
+		<SerialNo>01003000777891022110024497008316</SerialNo>
+	  </RandomizedNumberList>
+	</SNResponse>
+  </ns2:serialNumbersRequestResponse>
+</S:Body>
+</S:Envelope>

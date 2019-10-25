@@ -30,7 +30,8 @@ INSTALLED_APPS = [
     "quartet_templates",
     "quartet_tracelink",
     "serialbox",
-    "random_flavorpack"
+    "random_flavorpack",
+    "list_based_flavorpack"
 ]
 
 SETTINGS_PATH = os.path.normpath(os.path.dirname(__file__))

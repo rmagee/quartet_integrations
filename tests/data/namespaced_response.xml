@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<snm:SNMResponseMessage
+        xmlns:snm="urn:tracelink:mapper:sl:serial_number_manager"
+        xmlns:cmn="urn:tracelink:mapper:sl:commontypes">
+    <snm:ControlFileHeader>
+        <cmn:FileSenderNumber>0339822000005</cmn:FileSenderNumber>
+        <cmn:FileReceiverNumber>0351754000007</cmn:FileReceiverNumber>
+        <cmn:FileControlNumber>ZFPA0I97FF</cmn:FileControlNumber>
+        <cmn:FileDate>2019-10-25</cmn:FileDate>
+        <cmn:FileTime>11:17:09</cmn:FileTime>
+    </snm:ControlFileHeader>
+    <snm:MessageBody>
+        <cmn:RequestId>ZFPAXSDHD9MKILH2</cmn:RequestId>
+        <cmn:NumberEncoding>AI(01)+AI(21)</cmn:NumberEncoding>
+        <cmn:ObjectIdentifier>
+            <cmn:GTIN-14>00300077789102</cmn:GTIN-14>
+        </cmn:ObjectIdentifier>
+        <cmn:Quantity>10</cmn:Quantity>
+        <cmn:SerialNumberList>
+            <cmn:SerialNumber>01030007772070620212190390006939
+            </cmn:SerialNumber>
+            <cmn:SerialNumber>0100300077770620212190390006940
+            </cmn:SerialNumber>
+            <cmn:SerialNumber>0100300077770620212190390006941
+            </cmn:SerialNumber>
+            <cmn:SerialNumber>0100300077770620212190390006942
+            </cmn:SerialNumber>
+            <cmn:SerialNumber>0100300077770620212190390006943
+            </cmn:SerialNumber>
+            <cmn:SerialNumber>0100300077770620212190390006944
+            </cmn:SerialNumber>
+            <cmn:SerialNumber>0100300077770620212190390006945
+            </cmn:SerialNumber>
+            <cmn:SerialNumber>0100300077770620212190390006946
+            </cmn:SerialNumber>
+            <cmn:SerialNumber>0100300077770620212190390006947
+            </cmn:SerialNumber>
+            <cmn:SerialNumber>0100300077770620212190390006948
+            </cmn:SerialNumber>
+        </cmn:SerialNumberList>
+    </snm:MessageBody>
+</snm:SNMResponseMessage>
