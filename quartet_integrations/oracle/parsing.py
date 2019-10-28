@@ -44,14 +44,16 @@ class MasterMaterialParser:
         print(parsed_data)
         for row in parsed_data.values:
             self.create_trade_item(row[0], row[1], row[2], pallet_pack=row[9])
-            self.create_trade_item(row[0], row[3], row[4], row[5], row[9])
+            self.create_trade_item(row[0], row[3], row[4], row[5],
+                                   pallet_pack=row[9])
             if row[6]:
-                self.create_trade_item(row[0], row[6], row[7], row[9])
+                self.create_trade_item(row[0], row[6], row[7], pack_count=row[8],
+                                       pallet_pack=row[9])
 
     def create_trade_item(self, material_number, unit_of_measure, gtin14,
                           pack_count=None, pallet_pack=None):
         company = self.get_company(gtin14)
-        assert(company != None)
+        assert (company != None)
         trade_item = TradeItem.objects.get_or_create(
             company=company,
             additional_id=material_number,
