@@ -14,7 +14,8 @@
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 
 from django.core.management import base
-from quartet_capture.models import Filter, RuleFilter, Rule, Step,StepParameter
+from quartet_capture.models import Filter, RuleFilter, Rule, Step, \
+    StepParameter
 from quartet_masterdata.models import Company
 
 
@@ -53,12 +54,14 @@ class Command(base.BaseCommand):
 
     def create_rule(self):
         rule = Rule.objects.create(
-            name='Unit Test Rule',
-            description='Unit test rule..'
+            name='Oracle Master Material Import',
+            description='Imports oracle master material spreadsheet and '
+                        'creates Trade Item records.'
         )
         step = Step.objects.create(
             name='Import Spreadsheet Data',
-            description='Unit test step',
+            description='Convert the spreadsheet data to Trade Item '
+                        'records.',
             step_class='quartet_integrations.oracle.steps.TradeItemImportStep',
             rule=rule,
             order=1

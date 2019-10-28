@@ -48,9 +48,12 @@ class TradeItemImportStep(Step):
         company_records = {}
         for name, value in self.parameters.items():
             if name.startswith('Company Prefix'):
+                self.info('Looking for company with company prefix %s',
+                          value)
                 company_records[value] = Company.objects.get(
                     gs1_company_prefix=value
                 )
+                self.info('Company found.')
         return company_records
 
     @property
