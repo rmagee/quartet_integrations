@@ -34,7 +34,12 @@ class MasterMaterialParser:
         parsed_data = pandas.read_excel(
             file_stream,
             sheet_name='Sheet1',
-            dtype=str
+            dtype=str,
+            converters={
+                'GTIN': str,
+                'Level2 GTIN': str,
+                'Level3 GTIN': str
+            }
         )
         print(parsed_data)
         for row in parsed_data.values:
@@ -46,13 +51,14 @@ class MasterMaterialParser:
     def create_trade_item(self, material_number, unit_of_measure, gtin14,
                           pack_count=None, pallet_pack=None):
         company = self.get_company(gtin14)
+        assert(company != None)
         trade_item = TradeItem.objects.get_or_create(
             company=company,
             additional_id=material_number,
             package_uom=unit_of_measure,
             GTIN14=gtin14,
             pack_count=pack_count
-        )
+        )[0]
         TradeItemField.objects.get_or_create(
             trade_item=trade_item,
             name='pallet_pack_count',
