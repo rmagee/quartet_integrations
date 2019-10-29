@@ -25,3 +25,4 @@ Contents:
    sap
    optel
    modules
+   oracle_import
