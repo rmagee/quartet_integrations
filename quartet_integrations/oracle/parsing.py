@@ -13,9 +13,8 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 
-import pandas
-from io import BytesIO
-from copy import copy
+import csv
+from io import StringIO
 from quartet_capture.rules import Step, RuleContext
 from quartet_masterdata.models import TradeItem, Company, TradeItemField
 
@@ -28,44 +27,49 @@ class MasterMaterialParser:
 
     def __init__(self, company_records: dict):
         self.company_records = company_records
+        self.info_func = None
 
-    def parse(self, data: bytes, info_func, rule_context: RuleContext = None):
-        file_stream = BytesIO(data)
-        parsed_data = pandas.read_excel(
-            file_stream,
-            sheet_name='Sheet1',
-            dtype=str,
-            converters={
-                'GTIN': str,
-                'Level2 GTIN': str,
-                'Level3 GTIN': str
-            }
-        )
-        print(parsed_data)
-        for row in parsed_data.values:
-            self.create_trade_item(row[0], row[1], row[2], pallet_pack=row[9])
+    def parse(self, data, info_func):
+        file_stream = StringIO(data.decode('utf-8'))
+        self.info_func = info_func
+
+        parsed_data = csv.DictReader(file_stream)
+        for data in parsed_data:
+            row = list(data.values())
+            self.create_trade_item(row[0], row[1], row[2], pallet_pack=row[9],
+                                   name=row[10]
+                                   )
             self.create_trade_item(row[0], row[3], row[4], row[5],
-                                   pallet_pack=row[9])
+                                   pallet_pack=row[9], name=row[10])
             if row[6]:
                 self.create_trade_item(row[0], row[6], row[7], pack_count=row[8],
-                                       pallet_pack=row[9])
+                                       pallet_pack=row[9], name=row[10])
 
     def create_trade_item(self, material_number, unit_of_measure, gtin14,
-                          pack_count=None, pallet_pack=None):
+                          pack_count=None, pallet_pack=None, name=None):
         company = self.get_company(gtin14)
-        assert (company != None)
-        trade_item = TradeItem.objects.get_or_create(
-            company=company,
-            additional_id=material_number,
-            package_uom=unit_of_measure,
-            GTIN14=gtin14,
-            pack_count=pack_count
-        )[0]
-        TradeItemField.objects.get_or_create(
-            trade_item=trade_item,
-            name='pallet_pack_count',
-            value=pallet_pack
-        )
+        if company == None:
+            print('Company not found for record %s %s %s %s %s' % (name,
+                                                                   gtin14,
+                                                               material_number,
+                                                               unit_of_measure,
+                                                               pack_count))
+            self.info_func('Company not found for gtin %s- NOT CREATING'
+                           ' TRADE ITEM.', gtin14)
+        else:
+            trade_item = TradeItem.objects.get_or_create(
+                company=company,
+                additional_id=material_number,
+                package_uom=unit_of_measure,
+                GTIN14=gtin14,
+                pack_count=pack_count,
+                regulated_product_name=name
+            )[0]
+            TradeItemField.objects.get_or_create(
+                trade_item=trade_item,
+                name='pallet_pack_count',
+                value=pallet_pack
+            )
 
     def get_company(self, gtin: str):
         """

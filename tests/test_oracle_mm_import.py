@@ -79,7 +79,7 @@ class TestMasterMaterialImport(TestCase):
 
     def test_execute_task(self):
         curpath = os.path.dirname(__file__)
-        file_path = os.path.join(curpath, 'data/oracle_mm_export.xlsx')
+        file_path = os.path.join(curpath, 'data/oracle_mm_export.csv')
         with open(file_path, "rb") as f:
             rule = self.create_rule()
             create_and_queue_task(

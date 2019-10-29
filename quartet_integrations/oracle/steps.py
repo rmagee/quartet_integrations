@@ -41,7 +41,7 @@ class TradeItemImportStep(Step):
         self.info('Invoking the parser.')
         company_records = self.get_company_records()
         MasterMaterialParser(company_records).parse(
-            data, self.info, rule_context
+            data, info_func=self.info
         )
 
     def get_company_records(self):
