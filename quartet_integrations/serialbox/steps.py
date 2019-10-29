@@ -18,7 +18,8 @@ from serialbox.models import Pool, SequentialRegion
 
 from quartet_capture import models
 from quartet_capture.rules import Step, RuleContext
-from quartet_masterdata.db import DBProxy, TradeItem
+from quartet_masterdata.db import DBProxy
+from quartet_masterdata.models import TradeItem
 from gs123.conversion import BarcodeConverter, URNConverter
 from gs123 import check_digit
 
