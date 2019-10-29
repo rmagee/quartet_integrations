@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class ListToUrnConversionStep(Step):
     """
-    Converts serialbox lists to OPSM URNs using the data in the result.
+    Converts serialbox lists to EPCIS URNs using the data in the result.
     """
 
     def __init__(self, db_task: models.Task, **kwargs):
