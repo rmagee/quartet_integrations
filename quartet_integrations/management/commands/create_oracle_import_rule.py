@@ -24,33 +24,8 @@ class Command(base.BaseCommand):
            'data in an excel spreadsheet format.'
 
     def handle(self, *args, **options):
-        opsm_rule = Rule.objects.create(
-            name='OPSM Capture',
-            description='The OPSM Capture rule.'
-        )
-        Step.objects.create(
-            rule=opsm_rule,
-            name='Parse Optel Data',
-            step_class='quartet_integrations.optel.steps.ConsolidationParsingStep',
-            order=1,
-            description='Parses optel EPCIS and lot batch info into the '
-                        'database.  Consolidates all of the object events '
-                        'into one to make parsing more efficient.'
-        )
-        filter = Filter.objects.create(
-            name='opsm',
-            description='The default filter for OPSM.'
-        )
-        RuleFilter.objects.create(
-            filter=filter,
-            name='default',
-            search_value='<epcis',
-            search_type='search',
-            default=True,
-            break_on_true=True,
-            order=1,
-            rule=opsm_rule
-        )
+        self.create_companies()
+        self.create_rule()
 
     def create_rule(self):
         rule = Rule.objects.create(
