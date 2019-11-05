@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<epcis:EPCISDocument xmlns:epcis="urn:epcglobal:epcis:xsd:1" schemaVersion="1" creationDate="2019-10-24T20:03:16.603000+00:00">
+<EPCISBody>
+  <EventList>
+    <ObjectEvent>
+      <eventTime>2019-10-24T20:03:07.691000+00:00</eventTime>
+      <recordTime>2019-10-24T20:03:17.059000+00:00</recordTime>
+      <eventTimeZoneOffset>-05:00</eventTimeZoneOffset>
+      <epcList>
+        <epc>urn:epc:id:sscc:0347771.0000277860</epc>
+      </epcList>
+      <action>OBSERVE</action>
+      <bizStep>urn:epcglobal:cbv:bizstep:shipping</bizStep>
+      <disposition>urn:epcglobal:cbv:disp:in_transit</disposition>
+      <readPoint>
+        <id>urn:epc:id:sgln:07770530000.0.1</id>
+      </readPoint>
+      <bizLocation>
+        <id>urn:epc:id:sgln:07770530000.0.0</id>
+      </bizLocation>
+      <bizTransactionList>
+        <bizTransaction type="urn:epcglobal:cbv:btt:desadv">urn:epcglobal:cbv:bt:0777053000006:2749160</bizTransaction>
+      </bizTransactionList>
+      <gs1ushc:transferredById xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns" type="SGLN">urn:epc:id:sgln:07770530000.0.0</gs1ushc:transferredById>
+      <gs1ushc:transferredToId xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns" type="GLN">1074~R &amp; S NORTHEAST LLC</gs1ushc:transferredToId>
+      <gs1ushc:eventID xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">4bfe8578-f699-11e9-a5da-525400998437</gs1ushc:eventID>
+      <epcisid xmlns="http://www.oracle.com/idext">1336952</epcisid>
+    </ObjectEvent>
+  </EventList>
+</EPCISBody>
+</epcis:EPCISDocument>
