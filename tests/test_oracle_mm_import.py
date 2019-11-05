@@ -15,23 +15,11 @@
 
 import os
 
-from django.conf import settings
 from django.test import TestCase
-
-from EPCPyYes.core.v1_2 import template_events as yes_events
-from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
-from quartet_capture.models import Rule, Step, Task, StepParameter
-from quartet_capture.tasks import execute_rule, create_and_queue_task
-from quartet_capture.rules import RuleContext
-from quartet_epcis.models import events
-from quartet_epcis.parsing.business_parser import BusinessEPCISParser
-from quartet_integrations.sap.parsing import SAPParser
+from quartet_integrations.management.commands import utils
+from quartet_capture.models import Rule, Step, StepParameter
+from quartet_capture.tasks import create_and_queue_task
 from quartet_masterdata import models
-from quartet_output.models import EPCISOutputCriteria, EndPoint
-from quartet_output.steps import ContextKeys
-from quartet_masterdata.models import Company, Location
-from quartet_integrations.oracle.parsing import MasterMaterialParser
-
 
 
 class TestMasterMaterialImport(TestCase):
@@ -40,6 +28,10 @@ class TestMasterMaterialImport(TestCase):
     """
     def setUp(self) -> None:
         self.create_companies()
+        self.create_NR_rule()
+        self.create_rule()
+        utils.create_random_range()
+        utils.create_gtin_response_rule()
 
     def create_rule(self):
         rule = Rule.objects.create(
@@ -65,6 +57,31 @@ class TestMasterMaterialImport(TestCase):
         )
         return rule
 
+    def create_NR_rule(self):
+        rule = Rule.objects.create(
+            name='Unit Test NR Rule',
+            description='Unit test rule..'
+        )
+        step = Step.objects.create(
+            name='Import Spreadsheet Data',
+            description='Unit test step',
+            step_class='quartet_integrations.oracle.steps.TradeItemNumberRangeImportStep',
+            rule=rule,
+            order=1
+        )
+        StepParameter.objects.create(
+            name='Company Prefix 1',
+            value='0377777',
+            step=step
+        )
+        StepParameter.objects.create(
+            name='Company Prefix 2',
+            value='0347771',
+            step=step
+        )
+        return rule
+
+
     def create_companies(self):
         """
         creates the example company records
@@ -81,10 +98,19 @@ class TestMasterMaterialImport(TestCase):
         curpath = os.path.dirname(__file__)
         file_path = os.path.join(curpath, 'data/oracle_mm_export.csv')
         with open(file_path, "rb") as f:
-            rule = self.create_rule()
             create_and_queue_task(
                 data=f.read(),
                 rule_name='Unit Test Rule',
                 run_immediately=True
             )
 
+    def test_execute_task_with_NR(self):
+        curpath = os.path.dirname(__file__)
+        file_path = os.path.join(curpath, 'data/oracle_mm_export.csv')
+
+        with open(file_path, "rb") as f:
+            create_and_queue_task(
+                data=f.read(),
+                rule_name="Unit Test NR Rule",
+                run_immediately=True
+            )

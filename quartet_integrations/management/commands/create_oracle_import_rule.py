@@ -37,7 +37,7 @@ class Command(base.BaseCommand):
             name='Import Spreadsheet Data',
             description='Convert the spreadsheet data to Trade Item '
                         'records.',
-            step_class='quartet_integrations.oracle.steps.TradeItemImportStep',
+            step_class='quartet_integrations.oracle.steps.TradeItemNumberRangeImportStep',
             rule=rule,
             order=1
         )
