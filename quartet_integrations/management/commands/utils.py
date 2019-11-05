@@ -70,7 +70,7 @@ def create_SSCC_response_rule():
     )
 
     ed = StepParameter.objects.create(
-        name='Indicator Digit',
+        name='Extension Digit',
         value='0',
         description='Unit test indicator',
         step=conversion_step
