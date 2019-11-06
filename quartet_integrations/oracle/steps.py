@@ -15,9 +15,6 @@
 from quartet_capture import models
 from quartet_capture.rules import Step, RuleContext
 from quartet_integrations.oracle.parsing import MasterMaterialParser
-import pandas
-from io import BytesIO
-from quartet_capture.rules import Step, RuleContext
 from quartet_masterdata.models import Company
 
 
