@@ -165,7 +165,7 @@ class DBResponseStep(NumberResponseStep):
         for id in number_elements:
             cursor.execute('insert into %s (serial_number, used) values '
                            '(?, ?)' % get_region_table(region), (id.text, 0))
-        cursor.execute('commit')
+        connection.commit()
         self.info("Execution time: %.3f seconds." % (time.time() - start))
 
 
