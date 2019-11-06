@@ -104,15 +104,15 @@ class MasterMaterialParser:
                 trade_item.regulated_product_name, trade_item.package_uom
             )
             pool = Pool.objects.get_or_create(readable_name=readable_name,
-                                              machine_name=TradeItem.GTIN14,
+                                              machine_name=trade_item.GTIN14,
                                               active=True,
                                               request_threshold=self.threshold
                                               )[0]
             ResponseRule.objects.get_or_create(pool=pool, rule=rule,
                                                content_type='xml')
             RandomizedRegion.objects.get_or_create(
-                machine_name=TradeItem.GTIN14,
-                readable_name=TradeItem.GTIN14,
+                machine_name=trade_item.GTIN14,
+                readable_name=trade_item.GTIN14,
                 min=self.minimum,
                 max=self.maximum,
                 start=self.minimum,
