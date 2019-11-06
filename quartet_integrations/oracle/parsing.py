@@ -100,8 +100,9 @@ class MasterMaterialParser:
         """
         try:
             rule = Rule.objects.get(name=self.response_rule_name)
-            readable_name = "%s (%s)" % (
-                trade_item.regulated_product_name, trade_item.package_uom
+            readable_name = "%s (%s) %s" % (
+                trade_item.regulated_product_name, trade_item.package_uom,
+                trade_item.GTIN14
             )
             pool = Pool.objects.get_or_create(readable_name=readable_name,
                                               machine_name=trade_item.GTIN14,
@@ -117,7 +118,8 @@ class MasterMaterialParser:
                 max=self.maximum,
                 start=self.minimum,
                 order=1,
-                active=True
+                active=True,
+                pool=pool
             )
         except Rule.DoesNotExist:
             # noinspection PyCallByClass
