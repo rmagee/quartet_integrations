@@ -184,7 +184,7 @@ class DiscreteDBResponseStep(DBResponseStep):
             'The XPath location of the machine name '
             'in the inbound XML message.')
         self.is_sscc = self.get_or_create_parameter(
-            'SSCC Range', "True",
+            'SSCC Range', "False",
             "Whether or not this is an "
             "SSCC range.  If so, will "
             "use the extension digit"
