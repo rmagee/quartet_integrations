@@ -1,0 +1,74 @@
+<ObjectEvent >
+    {% include "epcis/event_times.xml" %}
+    {% include "epcis/base_extension.xml" %}
+    {% if event.epc_list %}
+        <epcList>
+            {% for epc in event.epc_list %}
+                <epc>{{ epc }}</epc>
+            {% endfor %}
+        </epcList>
+    {% endif %}
+    {% include "epcis/business_data.xml" %}
+    {% include "epcis/extension.xml" %}
+    <tl:shippingEventExtensions xmlns:tl="http://epcis.tracelink.com/ns">
+        <tl:transactionDate>2019-08-09</tl:transactionDate>
+        <tl:shipToCountryCode>US</tl:shipToCountryCode>
+        <tl:shipFromCountryCode>US</tl:shipFromCountryCode>
+        <tl:salesDistributionType>INCOUNTRYTRANSFER</tl:salesDistributionType>
+        <tl:orderItemList>
+            <tl:orderItem>
+                <tl:internalMaterialCode>0143-9689-10</tl:internalMaterialCode>
+                <tl:lot>P0000147</tl:lot>
+                <tl:quantity>1625</tl:quantity>
+            </tl:orderItem>
+        </tl:orderItemList>
+        <tl:fromBusiness>
+            <tl:businessId type="GLN">0351754000007</tl:businessId>
+            <tl:address>
+                <tl:businessName>Exela Pharmaceuticals</tl:businessName>
+                <tl:street1>1245 Blowing Rock Road</tl:street1>
+                <tl:city>Lenoir</tl:city>
+                <tl:district>NA</tl:district>
+                <tl:stateOrRegion>NC</tl:stateOrRegion>
+                <tl:postalCode>28645</tl:postalCode>
+                <tl:country>USA</tl:country>
+            </tl:address>
+        </tl:fromBusiness>
+        <tl:shipFromLocation>
+            <tl:facilityId type="GLN">0351754000007</tl:facilityId>
+            <tl:address>
+                <tl:businessName>Exela Pharmaceuticals</tl:businessName>
+                <tl:street1>1245 Blowing Rock Road</tl:street1>
+                <tl:city>Lenoir</tl:city>
+                <tl:district>NA</tl:district>
+                <tl:stateOrRegion>NC</tl:stateOrRegion>
+                <tl:postalCode>28645</tl:postalCode>
+                <tl:country>USA</tl:country>
+            </tl:address>
+        </tl:shipFromLocation>
+        <tl:toBusiness>
+            <tl:businessId type="GLN">0301430000050</tl:businessId>
+            <tl:address>
+                <tl:businessName>West-Ward Pharamaceuticals</tl:businessName>
+                <tl:street1>4750 Pleasant Hill Rd</tl:street1>
+                <tl:city>Memphis</tl:city>
+                <tl:district>NA</tl:district>
+                <tl:stateOrRegion>TN</tl:stateOrRegion>
+                <tl:postalCode>28645</tl:postalCode>
+                <tl:country>USA</tl:country>
+            </tl:address>
+        </tl:toBusiness>
+        <tl:shipToLocation>
+            <tl:facilityId type="GLN">0301430000050</tl:facilityId>
+            <tl:address>
+                <tl:businessName>West-Ward Pharamaceuticals</tl:businessName>
+                <tl:street1>4750 Pleasant Hill Rd</tl:street1>
+                <tl:city>Memphis</tl:city>
+                <tl:district>NA</tl:district>
+                <tl:stateOrRegion>TN</tl:stateOrRegion>
+                <tl:postalCode>28645</tl:postalCode>
+                <tl:country>USA</tl:country>
+            </tl:address>
+        </tl:shipToLocation>
+    </tl:shippingEventExtensions>
+</ObjectEvent>
