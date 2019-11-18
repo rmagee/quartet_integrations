@@ -175,6 +175,7 @@ class DiscreteDBResponseStep(DBResponseStep):
 
     This is good for manual uploading of numbers.
     """
+
     def __init__(self, db_task: models.Task, **kwargs):
         super().__init__(db_task, **kwargs)
         self.machine_name_path = self.get_or_create_parameter(
@@ -182,7 +183,21 @@ class DiscreteDBResponseStep(DBResponseStep):
             './/ObjectKey/Value',
             'The XPath location of the machine name '
             'in the inbound XML message.')
+        self.is_sscc = self.get_or_create_parameter(
+            'SSCC Range', "False",
+            "Whether or not this is an "
+            "SSCC range.  If so, will "
+            "use the extension digit"
+            " value found in the 'filter value'"
+            "field."
+        ).lower() in ('true',)
+        self.extension_digit = '0'
 
     def get_machine_name(self, root: etree.Element, rule_context: RuleContext):
         element = root.find(self.machine_name_path)
-        return element.text
+        if self.is_sscc:
+            self.extension_digit = element.attrib.get('filterValue', 0)
+            ret = '%s%s' % (self.extension_digit, element.text)
+        else:
+            ret = element.text
+        return ret

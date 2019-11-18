@@ -86,9 +86,9 @@ class MasterMaterialParser:
                 value=pallet_pack
             )
             if self.create_randomized_range:
-                self.create_random_pool(trade_item)
+                self.create_random_pool(trade_item, material_number)
 
-    def create_random_pool(self, trade_item: TradeItem
+    def create_random_pool(self, trade_item: TradeItem, material_number
                            ) -> None:
         """
         Will create a randomized range for the inbound material record.
@@ -100,8 +100,9 @@ class MasterMaterialParser:
         """
         try:
             rule = Rule.objects.get(name=self.response_rule_name)
-            readable_name = "%s (%s)" % (
-                trade_item.regulated_product_name, trade_item.package_uom
+            readable_name = "%s (%s) | %s" % (
+                trade_item.regulated_product_name, trade_item.package_uom,
+                material_number
             )
             pool = Pool.objects.get_or_create(readable_name=readable_name,
                                               machine_name=trade_item.GTIN14,
@@ -117,7 +118,8 @@ class MasterMaterialParser:
                 max=self.maximum,
                 start=self.minimum,
                 order=1,
-                active=True
+                active=True,
+                pool=pool
             )
         except Rule.DoesNotExist:
             # noinspection PyCallByClass
