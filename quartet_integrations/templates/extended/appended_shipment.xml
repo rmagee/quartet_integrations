@@ -19,7 +19,7 @@
             <tl:orderItem>
                 <tl:internalMaterialCode>0143-9689-10</tl:internalMaterialCode>
                 <tl:lot>P0000147</tl:lot>
-                <tl:quantity>{{ count }}</tl:quantity>
+                <tl:quantity>{{ event.count }}</tl:quantity>
             </tl:orderItem>
         </tl:orderItemList>
         <tl:fromBusiness>
