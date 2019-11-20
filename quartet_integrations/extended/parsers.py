@@ -2,14 +2,18 @@ import io
 import re
 from EPCPyYes.core.v1_2 import template_events
 from eparsecis.eparsecis import FlexibleNSParser
+
 """
     The SSCC Parser collects all SSCCs within Object Events
     It is called in execute method of the AppendShippingStep
 """
+
+
 class SSCCParser(FlexibleNSParser):
     """
         ctor
     """
+
     def __init__(self, data, reg_ex):
 
         self._ssccs = []  # internal list to hold collected SSCCs
@@ -26,11 +30,10 @@ class SSCCParser(FlexibleNSParser):
         is inspected for all SSCCs and, when an SSCC is found, the SSCC is
         placed into the internal _ssccs list
     """
+
     def handle_object_event(self, epcis_event: template_events.ObjectEvent):
 
-
-
-        if epcis_event.action  == "ADD":
+        if epcis_event.action == "ADD":
             for epc in epcis_event.epc_list:
                 if epc.startswith('urn:epc:id:sscc:'):
                     self._ssccs.append(epc)
@@ -40,7 +43,6 @@ class SSCCParser(FlexibleNSParser):
                         self._quantity = self._quantity + 1
 
             self._object_events.append(epcis_event)
-
 
     def handle_aggregation_event(
         self,
