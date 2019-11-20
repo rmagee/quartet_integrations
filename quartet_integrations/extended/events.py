@@ -53,12 +53,12 @@ class AppendedShippingObjectEvent(template_events.ObjectEvent):
                  business_transaction_list: list = None, ilmd: list = None,
                  quantity_list: list = None,
                  render_xml_declaration=None,
-                 template=None):
+                 template=None,
+                 qty=0):
 
+        self._qty = qty
         env = get_default_environment()
         template = template if template is not None else 'extended/appended_shipment.xml'
-
-
 
         super().__init__(event_time, event_timezone_offset, record_time,
                          action, epc_list, biz_step, disposition, read_point,
@@ -66,3 +66,12 @@ class AppendedShippingObjectEvent(template_events.ObjectEvent):
                          source_list, destination_list,
                          business_transaction_list, ilmd, quantity_list, env,
                          template, render_xml_declaration)
+
+
+
+
+
+    def render(self):
+        self._context['count'] = self._qty
+        return super().render()
+

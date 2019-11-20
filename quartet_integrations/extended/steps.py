@@ -12,6 +12,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2018 SerialLab Corp.  All rights reserved.
+import io
+from django.core.files.base import File
 from quartet_output.steps import ContextKeys
 from quartet_capture import models, rules, errors as capture_errors
 from quartet_capture.rules import RuleContext
@@ -29,13 +31,25 @@ class AppendShippingStep(rules.Step):
     def __init__(self, db_task: models.Task, **kwargs):
         super().__init__(db_task, **kwargs)
 
-        self.get_or_create_parameter('TemplateName', 'DEFAULT NAME OF TEMPLATE',
-                                     'The name of the template that will render the appended Shipping Event.')
+        self.get_or_create_parameter('Template Name', 'DEFAULT NAME OF TEMPLATE',
+                                     'The name of the template that will render the appended Shipping Event.',
+                                     )
+        self._regEx = self.get_or_create_parameter('Quantity RegEx', '^urn:epc:id:sgtin:[0-9]{6,12}\.0', 'RegEx that is used to count items in EPCIS')
+
 
     def execute(self, data, rule_context: RuleContext):
         # Parse EPCIS with the SSCCParser
-        parser = SSCCParser(data)
+        if isinstance(data, File):
+            parser = SSCCParser(data, reg_ex=self._regEx)
+
+        elif isinstance(data, str):
+            parser = SSCCParser(io.BytesIO(str.encode(data)), reg_ex=self._regEx)
+
+        else:
+            parser = SSCCParser(io.BytesIO(data), reg_ex=self._regEx)
+
         parser.parse()
+        qty = parser.quantity
 
         # All SSCCs found in the ObjectEvents of the EPCIS Document (data parameter)
         # are now in the SSCCParser's sscc_list
@@ -55,9 +69,10 @@ class AppendShippingStep(rules.Step):
             disposition=Disposition.in_transit.value,
             business_transaction_list=[bt1, bt2],
             read_point='urn:epc:id:sgln:0355555.00000.0',
-            template = self.get_parameter('TemplateName')
+            template = self.get_parameter('Template Name'),
+            qty=qty
         )
-
+        obj_event._context['count'] = qty
         rule_context.context[ContextKeys.FILTERED_EVENTS_KEY.value] = [obj_event,]
         rule_context.context[ContextKeys.OBJECT_EVENTS_KEY.value] =parser._object_events
         rule_context.context[ContextKeys.AGGREGATION_EVENTS_KEY.value] = parser._aggregation_events
@@ -66,7 +81,8 @@ class AppendShippingStep(rules.Step):
 
     def declared_parameters(self):
         return {
-            'TemplateName': 'The name of the template that will render the appended Shipping Event.'
+            'Template Name': 'The name of the template that will render the appended Shipping Event.',
+            'Quantity RegEx': '^urn:epc:id:sgtin:[0-9]{6,12}\.0'
         }
 
     def on_failure(self):
