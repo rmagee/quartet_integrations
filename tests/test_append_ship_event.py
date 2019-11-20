@@ -160,25 +160,25 @@ class TestRule():
                 rule=rule
             )
 
-            # output_step = models.Step.objects.create(
-            #     name=_('Queue Outbound Message'),
-            #     description=_('Creates a Task for sending any outbound data'),
-            #     step_class='quartet_output.steps.CreateOutputTaskStep',
-            #     order=5,
-            #     rule=rule
-            # )
+            output_step = models.Step.objects.create(
+                name=_('Queue Outbound Message'),
+                description=_('Creates a Task for sending any outbound data'),
+                step_class='quartet_output.steps.CreateOutputTaskStep',
+                order=5,
+                rule=rule
+            )
 
-            # models.StepParameter.objects.create(
-            #     step=output_step,
-            #     name='Output Rule',
-            #     value='Transport Rule'
-            # )
-            #
-            # models.StepParameter.objects.create(
-            #     step=output_step,
-            #     name='Run Immediately',
-            #     value=True
-            # )
+            models.StepParameter.objects.create(
+                step=output_step,
+                name='Output Rule',
+                value='Transport Rule'
+            )
+
+            models.StepParameter.objects.create(
+                step=output_step,
+                name='Run Immediately',
+                value=True
+            )
 
             self._create_transport_rule()
             return rule
