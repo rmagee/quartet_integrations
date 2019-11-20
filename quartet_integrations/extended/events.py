@@ -17,8 +17,9 @@ from datetime import datetime
 from jinja2.environment import Environment
 from jinja2.loaders import ChoiceLoader, PackageLoader
 
-from EPCPyYes.core.v1_2 import template_events
+from EPCPyYes.core.v1_2 import template_events, json_encoders
 from EPCPyYes.core.v1_2.events import ErrorDeclaration, Action
+from EPCPyYes.core.v1_2.template_events import TemplateMixin
 
 
 def get_default_environment():
@@ -55,10 +56,9 @@ class AppendedShippingObjectEvent(template_events.ObjectEvent):
                  render_xml_declaration=None,
                  template=None,
                  qty=0):
-
         self._qty = qty
         env = get_default_environment()
-        template = template if template is not None else 'extended/appended_shipment.xml'
+        template = env.from_string(template)
 
         super().__init__(event_time, event_timezone_offset, record_time,
                          action, epc_list, biz_step, disposition, read_point,
@@ -66,12 +66,4 @@ class AppendedShippingObjectEvent(template_events.ObjectEvent):
                          source_list, destination_list,
                          business_transaction_list, ilmd, quantity_list, env,
                          template, render_xml_declaration)
-
-
-
-
-
-    def render(self):
-        self._context['count'] = self._qty
-        return super().render()
 

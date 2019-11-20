@@ -10,6 +10,7 @@ from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
 from EPCPyYes.core.v1_2.events import BusinessTransaction
 from EPCPyYes.core.v1_2.events import Action
 from quartet_integrations.extended.events import AppendedShippingObjectEvent
+from quartet_templates.models import Template
 from quartet_integrations.extended.parsers import SSCCParser
 from quartet_capture.tasks import execute_rule
 from quartet_output.steps import ContextKeys
@@ -19,14 +20,16 @@ class TestAddShipping(TestCase):
 
     def _sscc_parser(self):
         curpath = os.path.dirname(__file__)
-        with open(os.path.join(curpath, 'data/comm_agg_epcis.xml'), 'rb') as file:
-            parser = SSCCParser(file.read(), '^urn:epc:id:sgtin:[0-9]{6,12}\.0')
+        with open(os.path.join(curpath, 'data/comm_agg_epcis.xml'),
+                  'rb') as file:
+            parser = SSCCParser(file.read(),
+                                '^urn:epc:id:sgtin:[0-9]{6,12}\.0')
             parser.parse()
 
         cnt = parser.quantity
         ssccs = parser.sscc_list
         list = parser.sscc_list
-        self.assertTrue(len(list)==1)
+        self.assertTrue(len(list) == 1)
 
         obj_event = AppendedShippingObjectEvent(
             epc_list=ssccs,
@@ -42,12 +45,10 @@ class TestAddShipping(TestCase):
         self.assertTrue(cnt == 8)
 
     def test_step(self):
-
-
-        epcis_rule = TestRule().create_rule(rule_name='Add Shipping Event')
-
+        tr = TestRule()
+        epcis_rule = tr.create_rule(rule_name='Add Shipping Event')
+        tr.create_template()
         curpath = os.path.dirname(__file__)
-
         data_path = os.path.join(curpath, 'data/comm_agg_epcis.xml')
         task = self._create_task(epcis_rule)
         with open(data_path, 'r') as data_file:
@@ -66,7 +67,18 @@ class TestAddShipping(TestCase):
         task.save()
         return task
 
+
 class TestRule():
+    def create_template(self):
+        curpath = os.path.dirname(__file__)
+        data_path = os.path.join(curpath, 'data/appended_shipment.xml')
+        with open(data_path, 'r') as f:
+            content = f.read()
+            Template.objects.create(
+                name='Shipping Event Template',
+                content=content,
+                description='The shipping event template'
+            )
 
     def create_rule(self, rule_name):
 
@@ -76,7 +88,6 @@ class TestRule():
         self._create_output_criteria(endpoint, auth)
 
         if not models.Rule.objects.filter(name=rule_name).exists():
-
             # The Rule
             rule = models.Rule.objects.create(
                 name=rule_name,
@@ -127,15 +138,17 @@ class TestRule():
             models.StepParameter.objects.create(
                 step=add_shipment_step,
                 name='Template Name',
-                value='extended/appended_shipment.xml',
-                description=_('The name and relative path of the template to use.')
+                value='Shipping Event Template',
+                description=_(
+                    'The name of the template to use.')
             )
 
             models.StepParameter.objects.create(
                 step=add_shipment_step,
                 name='Quantity RegEx',
                 value='^urn:epc:id:sgtin:[0-9]{6,12}\.0',
-                description=_('The name and relative path of the template to use.')
+                description=_(
+                    'The regex to look up item-levels with to determine count.')
             )
 
             models.Step.objects.create(
