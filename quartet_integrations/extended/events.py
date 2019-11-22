@@ -56,6 +56,7 @@ class AppendedShippingObjectEvent(template_events.ObjectEvent):
                  render_xml_declaration=None,
                  template=None,
                  qty=0):
+
         self._qty = qty
         env = get_default_environment()
         template = env.from_string(template)

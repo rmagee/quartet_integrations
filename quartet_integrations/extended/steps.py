@@ -45,6 +45,7 @@ class AppendShippingStep(rules.Step):
                                                    'RegEx that is used to count items in EPCIS')
 
     def execute(self, data, rule_context: RuleContext):
+
         # Parse EPCIS with the SSCCParser
         if isinstance(data, File):
             parser = SSCCParser(data, reg_ex=self._regEx)
@@ -56,12 +57,17 @@ class AppendShippingStep(rules.Step):
         else:
             parser = SSCCParser(io.BytesIO(data), reg_ex=self._regEx)
 
+        # parse
         parser.parse()
+        # Set qty, ndc, exp_date, and lot
         qty = parser.quantity
+        ndc = parser.NDC
+        lot = parser.lot_number
 
         # All SSCCs found in the ObjectEvents of the EPCIS Document (data parameter)
         # are now in the SSCCParser's sscc_list
         ssccs = parser.sscc_list
+
 
         bt1 = BusinessTransaction("urn:epcglobal:cbv:bt:0345555000050:16",
                                   "urn:epcglobal:cbv:btt:po")
@@ -82,7 +88,11 @@ class AppendShippingStep(rules.Step):
             template=self.get_template(),
             qty=qty
         )
+
         obj_event._context['count'] = qty
+        obj_event._context['ndc'] = ndc
+        obj_event._context['lot'] = lot
+
         rule_context.context[ContextKeys.FILTERED_EVENTS_KEY.value] = [
             obj_event, ]
         rule_context.context[

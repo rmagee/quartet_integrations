@@ -17,8 +17,8 @@
         <tl:salesDistributionType>INCOUNTRYTRANSFER</tl:salesDistributionType>
         <tl:orderItemList>
             <tl:orderItem>
-                <tl:internalMaterialCode>0777-9689-10</tl:internalMaterialCode>
-                <tl:lot>P0000147</tl:lot>
+                <tl:internalMaterialCode>{{ event._context.ndc }}</tl:internalMaterialCode>
+                <tl:lot>{{ event._context.lot }}</tl:lot>
                 <tl:quantity>{{ event._context.count }}</tl:quantity>
             </tl:orderItem>
         </tl:orderItemList>

@@ -1,52 +1,46 @@
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Copyright 2019 SerialLab Corp.  All rights reserved.
+
 import os
-from django.test import TestCase
-from django.utils.translation import gettext as _
 from django.db.utils import IntegrityError
+from django.core.management import base
 from quartet_capture import models
 from quartet_output.models import EndPoint, EPCISOutputCriteria, \
     AuthenticationInfo
 from quartet_templates.models import Template
-from quartet_capture.tasks import execute_rule
-from quartet_output.steps import ContextKeys
+
+class Command(base.BaseCommand):
+    help = 'Creates an Append Shipping Rule that appends an ObjectEvent with a Shipping bizStep ' \
+           'to an EPCIS Document.'
+
+    def handle(self, *args, **options):
+
+        cr = CreateRule()
+        cr.create_template()
+        cr.create_rule('Append Shipping Rule')
 
 
-class TestAddShipping(TestCase):
-
-
-    def test_add_shipping_step(self):
-
-        tr = TestRule()
-        epcis_rule = tr.create_rule(rule_name='Add Shipping Event')
-        tr.create_template()
-        curpath = os.path.dirname(__file__)
-        data_path = os.path.join(curpath, 'data/comm_agg_epcis.xml')
-        task = self._create_task(epcis_rule)
-        with open(data_path, 'r') as data_file:
-            context = execute_rule(data_file.read().encode(), task)
-
-        message = context.context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value]
-
-        self.assertTrue(str(message).index("ObjectEvent") > 0)
-        self.assertTrue(str(message).index("shipping") > 0)
-        self.assertTrue(str(message).index("in_transit") > 0)
-
-    def _create_task(self, rule):
-        task = models.Task()
-        task.rule = rule
-        task.name = 'unit test task'
-        task.save()
-        return task
-
-
-class TestRule():
+class CreateRule():
 
     def create_template(self):
-        curpath = os.path.dirname(__file__)
+        curpath = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '../../../', 'tests'))
         data_path = os.path.join(curpath, 'data/appended_shipment.xml')
         with open(data_path, 'r') as f:
             content = f.read()
-            Template.objects.create(
-                name='Shipping Event Template',
+            Template.objects.update_or_create(
+                name='Append Shippment Template',
                 content=content,
                 description='The shipping event template'
             )
@@ -60,125 +54,110 @@ class TestRule():
 
         if not models.Rule.objects.filter(name=rule_name).exists():
             # The Rule
-            rule = models.Rule.objects.create(
+            rule, _ = models.Rule.objects.update_or_create(
                 name=rule_name,
                 description='Will Proccess the Inbound Message for Processing.'
             )
 
             # Output Parsing Step
-            parse_step = models.Step.objects.create(
-                name=_('Parse EPCIS'),
-                description=_(
-                    'Parse and insepect EPCIS events using output criteria.'),
+            parse_step, _ = models.Step.objects.update_or_create(
+                name='Parse Append Shippment EPCIS',
+                description='Parse and insepect EPCIS events using output criteria.',
                 step_class='quartet_output.steps.OutputParsingStep',
                 order=1,
                 rule=rule
 
             )
 
-            models.StepParameter.objects.create(
-                step=parse_step,
-                name='Run Immediately',
-                value=True
-            )
-
             # Parameter for Output Criteria
-            models.StepParameter.objects.create(
-                name='EPCIS Output Criteria',
+            models.StepParameter.objects.update_or_create(
+                name='Output Criteria',
                 step=parse_step,
                 value='Add Shipment Output',
                 description='This is the name of the EPCIS Output Criteria record to use.'
 
             )
 
-            models.StepParameter.objects.create(
+            models.StepParameter.objects.update_or_create(
                 name='LooseEnforcement',
                 step=parse_step,
                 value=False,
                 description=''
             )
 
-            add_shipment_step = models.Step.objects.create(
-                name='Add Shipping Event',
+            add_shipment_step, _ = models.Step.objects.update_or_create(
+                name='Add Append Shippment Event',
                 description='Adds a Shipping Event to the Incoming EPCIS',
                 order=2,
                 step_class='quartet_integrations.extended.steps.AppendShippingStep',
                 rule=rule
             )
 
-            models.StepParameter.objects.create(
+            models.StepParameter.objects.update_or_create(
                 step=add_shipment_step,
                 name='Template Name',
                 value='Shipping Event Template',
-                description=_(
-                    'The name of the template to use.')
+                description='The name of the template to use.'
             )
 
-            models.StepParameter.objects.create(
+            models.StepParameter.objects.update_or_create(
                 step=add_shipment_step,
                 name='Quantity RegEx',
                 value='^urn:epc:id:sgtin:[0-9]{6,12}\.0',
-                description=_(
-                    'The regex to look up item-levels with to determine count.')
+                description='The regex to look up item-levels with to determine count.'
             )
 
-            models.Step.objects.create(
-                name=_('Render EPCIS XML'),
-                description=_(
-                    'Pulls any EPCPyYes objects from the context and creates an XML message'),
+            models.Step.objects.update_or_create(
+                name='Render Append Shippment EPCIS XML',
+                description=
+                    'Pulls any EPCPyYes objects from the context and creates an XML message',
                 step_class='quartet_output.steps.EPCPyYesOutputStep',
+                order=3,
+                rule=rule
+            )
+
+            output_step, _ = models.Step.objects.update_or_create(
+                name='Queue Append Shippment Outbound Message',
+                description='Creates a Task for sending any outbound data',
+                step_class='quartet_output.steps.CreateOutputTaskStep',
                 order=4,
                 rule=rule
             )
 
-            output_step = models.Step.objects.create(
-                name=_('Queue Outbound Message'),
-                description=_('Creates a Task for sending any outbound data'),
-                step_class='quartet_output.steps.CreateOutputTaskStep',
-                order=5,
-                rule=rule
-            )
-
-            models.StepParameter.objects.create(
+            models.StepParameter.objects.update_or_create(
                 step=output_step,
                 name='Output Rule',
-                value='Transport Rule'
+                value='Append Shippment Transport Rule'
             )
 
-            models.StepParameter.objects.create(
-                step=output_step,
-                name='Run Immediately',
-                value=True
-            )
 
             self._create_transport_rule()
             return rule
 
-    def _create_transport_rule(self, rule_name='Transport Rule'):
+    def _create_transport_rule(self):
+
         try:
-            trule = models.Rule.objects.create(
-                name=rule_name,
-                description=_(
-                    'An output Rule for any data filtered by EPCIS Output Criteria '
-                    'rules.')
+            trule, _ = models.Rule.objects.update_or_create(
+                name='Append Shippment Transport Rule',
+                description='An output Rule for any data filtered by EPCIS Output Criteria rules.'
             )
 
-            models.Step.objects.create(
-                name=_('Send Data'),
-                description=_(
+            models.Step.objects.update_or_create(
+                name='Send Data',
+                description=
                     'This will send the task message using the source EPCIS Output '
-                    'Critria EndPoint and Authentication Info.'),
+                    'Critria EndPoint and Authentication Info.',
                 step_class='quartet_output.steps.TransportStep',
                 order=1,
                 rule=trule
             )
         except IntegrityError:
-            trule = models.Rule.objects.get(name=rule_name)
+            trule = models.Rule.objects.get(name='Append Shippment Transport Rule')
         return trule
 
     def _create_output_criteria(self, endpoint, auth):
         try:
-            EPCISOutputCriteria.objects.create(
+            EPCISOutputCriteria.objects.update_or_create(
                 name='Add Shipment Output',
                 action='Observe',
                 event_type='Object',
@@ -191,9 +170,9 @@ class TestRule():
 
     def _create_endpoint(self):
         try:
-            endpoint = EndPoint.objects.create(
+            endpoint, _ = EndPoint.objects.update_or_create(
                 name='Local Server',
-                urn=_('http://localhost')
+                urn= 'http://localhost'
             )
         except IntegrityError:
             print('Endpoint already exists.')
@@ -203,11 +182,11 @@ class TestRule():
 
     def _create_authentication(self):
         try:
-            auth = AuthenticationInfo.objects.create(
+            auth, _ = AuthenticationInfo.objects.update_or_create(
                 username='Test User',
                 password='Password',
                 type='Digest',
-                description=_('A test user'))
+                description='A test user')
         except IntegrityError:
             print('Authentication info already exists.')
             auth = AuthenticationInfo.objects.get(username='Test User')
