@@ -8,7 +8,7 @@ from quartet_output.models import EndPoint, EPCISOutputCriteria, \
 from quartet_templates.models import Template
 from quartet_capture.tasks import execute_rule
 from quartet_output.steps import ContextKeys
-
+from django.conf import settings
 
 class TestAddShipping(TestCase):
 
@@ -184,7 +184,7 @@ class TestRule():
         try:
             endpoint = EndPoint.objects.create(
                 name='Local Server',
-                urn=_('http://localhost')
+                urn=getattr(settings, 'TEST_SERVER', 'http://testhost')
             )
         except IntegrityError:
             print('Endpoint already exists.')
