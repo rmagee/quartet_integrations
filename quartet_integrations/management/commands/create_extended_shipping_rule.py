@@ -36,7 +36,7 @@ class CreateRule():
 
     def create_template(self):
         curpath = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '../../../', 'tests'))
-        data_path = os.path.join(curpath, 'data/appended_shipment.xml')
+        data_path = os.path.join(curpath, 'data/ext-add-shipping.xml')
         with open(data_path, 'r') as f:
             content = f.read()
             Template.objects.update_or_create(
@@ -105,15 +105,6 @@ class CreateRule():
                 name='Quantity RegEx',
                 value='^urn:epc:id:sgtin:[0-9]{6,12}\.0',
                 description='The regex to look up item-levels with to determine count.'
-            )
-
-            models.Step.objects.update_or_create(
-                name='Render Append Shippment EPCIS XML',
-                description=
-                    'Pulls any EPCPyYes objects from the context and creates an XML message',
-                step_class='quartet_output.steps.EPCPyYesOutputStep',
-                order=3,
-                rule=rule
             )
 
             output_step, _ = models.Step.objects.update_or_create(

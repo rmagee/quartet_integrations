@@ -1,0 +1,22 @@
+<ObjectEvent>
+    {% include "epcis/event_times.xml" %}
+    {% include "epcis/base_extension.xml" %}
+    {% if event.epc_list %}
+        <epcList>
+            {% for epc in event.epc_list %}
+                <epc>{{ epc }}</epc>
+            {% endfor %}
+        </epcList>
+    {% endif %}
+    {% include "epcis/business_data.xml" %}
+    {% include "epcis/extension.xml" %}
+        <tl:commissionEventExtensions>
+            <tl:packagingLevel>{{ event._context.pack_level }}</tl:packagingLevel>
+            <tl:plantLocationId>{{ event._context.location_id }}</tl:plantLocationId>
+            <tl:itemDetail>
+                <tl:packagingItemCode type="GTIN-14">{{ event._context.product_code }}</tl:packagingItemCode>
+                <tl:lot>{{  event._context.lot }}</tl:lot>
+                <tl:expiry>{{ event._context.exp_date }}</tl:expiry>
+            </tl:itemDetail>
+    </tl:commissionEventExtensions>
+</ObjectEvent>

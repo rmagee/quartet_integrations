@@ -1,0 +1,81 @@
+<ObjectEvent>
+    <eventTime>{{ event.event_time }}</eventTime>
+    <eventTimeZoneOffset>{{ event.event_timezone_offset }}</eventTimeZoneOffset>
+    <epcList>
+         {% for epc in event.epc_list %}
+             <epc>{{ epc }}</epc>
+         {% endfor %}
+    </epcList>
+    <action>ADD</action>
+    <bizStep>urn:epcglobal:cbv:bizstep:shipping</bizStep>
+    <disposition>urn:epcglobal:cbv:disp:in_transit</disposition>
+    <readPoint>
+        <id>{{ event._context.read_point }}</id>
+    </readPoint>
+    <bizLocation>
+        <id>{{ event._context.biz_location }}</id>
+    </bizLocation>
+    <bizTransactionList>
+	    <bizTransaction type="urn:epcglobal:cbv:btt:po">{{ event._context.PO }}</bizTransaction>
+		<bizTransaction type="urn:epcglobal:cbv:btt:desadv">urn:epcglobal:cbv:bt:0399990000005:4d486a83-80f3-4f32-83af-44bddaf8f662</bizTransaction>
+    </bizTransactionList>
+    <tl:shippingEventExtensions>
+        <tl:transactionDate>{{ event._context.trans_date }}</tl:transactionDate>
+        <tl:shipToCountryCode>US</tl:shipToCountryCode>
+        <tl:shipFromCountryCode>US</tl:shipFromCountryCode>
+        <tl:salesDistributionType>INCOUNTRYTRANSFER</tl:salesDistributionType>
+        <tl:orderItemList>
+            <tl:orderItem>
+                <tl:internalMaterialCode>{{ event._context.product_code }}</tl:internalMaterialCode>
+                <tl:lot>{{ event._context.lot }}</tl:lot>
+                <tl:quantity>{{ event._context.count }}</tl:quantity>
+            </tl:orderItem>
+        </tl:orderItemList>
+        <tl:fromBusiness>
+            <tl:businessId type="GLN">0399990000005</tl:businessId>
+            <tl:address>
+                <tl:businessName>FARM Pharmaceuticals</tl:businessName>
+                <tl:street1>1234 Fake St</tl:street1>
+                <tl:city>This City</tl:city>
+                <tl:stateOrRegion>WA</tl:stateOrRegion>
+                <tl:postalCode>12345</tl:postalCode>
+                <tl:country>USA</tl:country>
+            </tl:address>
+        </tl:fromBusiness>
+        <tl:shipFromLocation>
+            <tl:facilityId type="GLN">0399990000005</tl:facilityId>
+            <tl:address>
+                <tl:businessName>FARM Pharmaceuticals</tl:businessName>
+                <tl:street1>1234 Fake St</tl:street1>
+                <tl:city>That City</tl:city>
+                <tl:stateOrRegion>WA</tl:stateOrRegion>
+                <tl:postalCode>12346</tl:postalCode>
+                <tl:country>USA</tl:country>
+            </tl:address>
+        </tl:shipFromLocation>
+        <tl:toBusiness>
+            <tl:businessId type="GLN">0388888000108</tl:businessId>
+            <tl:address>
+                <tl:businessName>Customer Pharmaceuticals, Inc.</tl:businessName>
+                <tl:street1>600 Beam Drive</tl:street1>
+                <tl:city>That City</tl:city>
+                <tl:stateOrRegion>WA</tl:stateOrRegion>
+                <tl:postalCode>12348</tl:postalCode>
+                <tl:country>US</tl:country>
+            </tl:address>
+        </tl:toBusiness>
+        <tl:shipToLocation>
+            <tl:facilityId type="GLN">0388888000108</tl:facilityId>
+            <tl:address>
+                <tl:businessName>Customer Pharmaceuticals, Inc.</tl:businessName>
+                <tl:street1>600 Beam Drive</tl:street1>
+                <tl:city>That City</tl:city>
+                <tl:stateOrRegion>WA</tl:stateOrRegion>
+                <tl:postalCode>12348</tl:postalCode>
+                <tl:country>US</tl:country>
+            </tl:address>
+        </tl:shipToLocation>
+    </tl:shippingEventExtensions>
+</ObjectEvent>
+
+

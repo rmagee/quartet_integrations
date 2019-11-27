@@ -14,32 +14,14 @@
 # Copyright 2018 SerialLab Corp.  All rights reserved.
 from datetime import datetime
 
-from jinja2.environment import Environment
-from jinja2.loaders import ChoiceLoader, PackageLoader
 
+from quartet_integrations.extended.environment import get_default_environment
 from EPCPyYes.core.v1_2 import template_events, json_encoders
 from EPCPyYes.core.v1_2.events import ErrorDeclaration, Action
 from EPCPyYes.core.v1_2.template_events import TemplateMixin
 
 
-def get_default_environment():
-    '''
-    Loads up the default Jinja2 environment so simple template names can
-    be passed in.  This includes the local templates on top of the
-    existing EPCPyYes templates.
 
-    :return: The defualt Jinja2 environment for this package.
-    '''
-    loader = ChoiceLoader(
-        [
-            PackageLoader('EPCPyYes', 'templates'),
-            PackageLoader('quartet_integrations', 'templates')
-        ]
-    )
-    env = Environment(loader=loader,
-                      extensions=['jinja2.ext.with_'], trim_blocks=True,
-                      lstrip_blocks=True)
-    return env
 
 
 class AppendedShippingObjectEvent(template_events.ObjectEvent):
