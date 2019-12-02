@@ -25,10 +25,7 @@ from quartet_epcis.models import events, entries, headers
 from quartet_masterdata.models import TradeItem, TradeItemField
 from gs123 import check_digit
 
-
-
 logger = getLogger(__name__)
-
 
 class RocItQuery():
 
@@ -41,6 +38,7 @@ class RocItQuery():
         cnt = 0
         entry = entries.Entry.objects.get(identifier=tag_id)
         agg_evt = query.get_epcis_event(entry.last_aggregation_event)
+        cnt = len(agg_evt.child_epcs)
         for child in agg_evt.child_epcs:
             res = query.get_epcs_by_parent_identifier(child,False)
             cnt = cnt + len(res)
@@ -52,9 +50,9 @@ class RocItQuery():
         gtin = None
         parent_tag = ""
         quantity = 0
-        product = None
+        product = ""
+        uom = ""
         lot = ""
-        uom=None
         expiry = ""
         status = ""
         state = ""
@@ -110,23 +108,10 @@ class RocItQuery():
                     quantity = len(children)
                     child_tag_count = quantity
 
-                # build the child_tags array witht he children of tag_id
-                for child in children:
-                    child_tags.append(child)
-                    if send_product_info:
-                        if str(tag_id).find('sgtin') > 0 and product is None:
-                            gtin = tag_id.split(':')
-                            gtin = gtin[4].split('.')
-                            gtin = "{0}{1}{2}".format(gtin[1][:1], gtin[0], gtin[1][1:])
-                            gtin = check_digit.calculate_check_digit(gtin)
-                            product, uom = RocItQuery.get_product_info(gtin)
-                        elif str(tag_id).find('sscc') > 0 and product is None:
-                            gtin = child.split(':')
-                            gtin = gtin[4].split('.')
-                            gtin = "{0}{1}{2}".format(gtin[1][:1], gtin[0], gtin[1][1:])
-                            gtin = check_digit.calculate_check_digit(gtin)
-                            product, uom = RocItQuery.get_product_info(gtin)
+                # retrieve all children from the tag_id
+                child_tags = RocItQuery.get_all_children(query, tag_id)
 
+                for child in child_tags:
                     if len(lot) == 0 and len(expiry) == 0:
                         events = query.get_events_by_entry_identifer(entry_identifier=child)
                         for event in events:
@@ -136,9 +121,27 @@ class RocItQuery():
                                     expiry = ilmd.value
                                 elif ilmd.name == 'lotNumber':
                                     lot = ilmd.value
-
                             if len(lot) > 0 and len(expiry) > 0:
                                 break
+
+
+                # get the product info
+                if len(product) == 0 and len(uom) == 0:
+                    for child in child_tags:
+                        gtin = child.split(':')
+                        gtin = gtin[4].split('.')
+                        gtin = "{0}{1}{2}".format(gtin[1][:1], gtin[0], gtin[1][1:])
+                        gtin = check_digit.calculate_check_digit(gtin)
+                        try:
+                            product, uom = RocItQuery.get_product_info(gtin)
+                            if len(product) > 0 and len(uom) > 0:
+                                break
+                        except:
+                            # This entry may not be configured in the master material.
+                            # For example, this entry is not an Each. Just ignore
+                            pass
+
+
 
             except entries.Entry.DoesNotExist:
                 # No Children found. This can be ignored.
@@ -165,6 +168,22 @@ class RocItQuery():
 
         return ret_val
 
+    @staticmethod
+    def get_all_children(query, tag_id):
+        """
+        Recursive, traverses the hierarchy of tag_id of all child entries looking for more children
+        :return: A list of child entries
+        """
+        ret_val = []
+        children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
+        for child in children:
+            ret_val.append(child)
+            res = RocItQuery.get_all_children(query, child)
+            if len(res) > 0:
+                ret_val = ret_val + res
+
+
+        return ret_val
     @staticmethod
     def get_product_info(gtin):
 

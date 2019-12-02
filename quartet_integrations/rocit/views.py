@@ -104,7 +104,7 @@ class RetrievePackagingHierarchyView(RocItBaseView):
             # Unexpected error, return HTTP 500 Server Error and log the exception
             data = traceback.format_exc()
             logger.error('Exception in qu4rtet_integrations.rocit.RetrievePackagingHierarchyView.post().\r\n%s' % data)
-            ret_val = Response({"error": "A Server Error occurred servicing this request"},
+            ret_val = Response({"error": data},
                                status.HTTP_500_INTERNAL_SERVER_ERROR, content_type="*/*")
 
         return ret_val
