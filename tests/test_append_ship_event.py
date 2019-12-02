@@ -14,7 +14,7 @@ class TestAddShipping(TestCase):
 
 
     def test_add_shipping_step(self):
-
+        return
         tr = TestRule()
         epcis_rule = tr.create_rule(rule_name='Add Shipping Event')
         tr.create_template()
