@@ -40,7 +40,7 @@ class OPSMNumberRangeView(AllocateView):
     emulation layer.
     """
     content_negotiation_class = DefaultXMLContent
-    authentication_classes = [BasicAuthentication]
+
     parser_classes = [parsers.XMLParser]
 
     permission_classes = []
@@ -143,7 +143,7 @@ class CaptureInterface(capture_views.CaptureInterface):
     Adds a reference to the OPSM filter with id "opsm"
     that must be configured on a qu4rtet capture configuration.
     """
-
+    authentication_classes = [BasicAuthentication]
     def post(self, request: Request, format=None, epcis=False):
         if not request.GET._mutable:
             request.GET._mutable = True
