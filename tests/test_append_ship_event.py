@@ -14,7 +14,7 @@ class TestAddShipping(TestCase):
 
 
     def test_add_shipping_step(self):
-        return
+
         tr = TestRule()
         epcis_rule = tr.create_rule(rule_name='Add Shipping Event')
         tr.create_template()
@@ -184,7 +184,7 @@ class TestRule():
         try:
             endpoint = EndPoint.objects.create(
                 name='Local Server',
-                urn='http://localhost'
+                urn='http://localhost:777'
             )
         except IntegrityError:
             print('Endpoint already exists.')

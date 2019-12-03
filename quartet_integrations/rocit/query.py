@@ -60,6 +60,7 @@ class RocItQuery():
         document_type = "RECADV"
         child_tag_count = 0
         child_tags = []
+        saleable_units = []
         send_product_info = (send_product_info is not None and send_product_info.lower() == 'true')
         send_children = (send_children is not None and send_children.lower() == 'true')
 
@@ -68,7 +69,7 @@ class RocItQuery():
 
         # Get the entry, then get the last Event the entry participated in.
         entry = query.get_entries_by_epcs(epcs=[tag_id], select_for_update=False)[0]
-        last_event = entry.last_event
+        last_event = entry.last_aggregation_event
         parent_tag = query.get_parent_epc(last_event)
 
         if parent_tag == tag_id:
@@ -97,57 +98,49 @@ class RocItQuery():
 
         if send_children:
             # The request is to return the children.
-            try:
-                # get the children of tag_id
+            # get the children of tag_id
 
-                children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
-                if tag_id.find('sscc') > 0:
-                    quantity = RocItQuery.count_eaches(query, tag_id)
-                    child_tag_count = len(children)
-                elif tag_id.find('sgtin') > 0:
-                    quantity = len(children)
-                    child_tag_count = quantity
-
+            children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
+            child_tag_count = len(children)
+            tags = []
+            for child in children:
                 # retrieve all children from the tag_id
-                child_tags = RocItQuery.get_all_children(query, tag_id)
+                tags = tags + RocItQuery.get_all_children(query, child)
+                if len(tags) == 0:
+                    # if no tags then no children for the child - add the child to saleable_units
+                    saleable_units.append(child)
+                else:
+                    # there are children for this child, set the returned tags to the saleable units
+                    saleable_units = tags
+                # add the child to the child_tags. This list will be returned in the Response to ROC-IT
+                child_tags.append(child)
 
-                for child in child_tags:
-                    if len(lot) == 0 and len(expiry) == 0:
-                        events = query.get_events_by_entry_identifer(entry_identifier=child)
-                        for event in events:
-                            ilmds = query.get_ilmd(db_event=event.event)
-                            for ilmd in ilmds:
-                                if ilmd.name == 'itemExpirationDate':
-                                    expiry = ilmd.value
-                                elif ilmd.name == 'lotNumber':
-                                    lot = ilmd.value
-                            if len(lot) > 0 and len(expiry) > 0:
-                                break
+            # use saleable_units list to get Quantity count and ILMD information
 
+            quantity = len(saleable_units)
+            if quantity == 0:
+                # The tag_id parameter is a saleable_unit
+                saleable_unit = tag_id
+            else:
+                saleable_unit = saleable_units[0]
 
-                # get the product info
-                if len(product) == 0 and len(uom) == 0:
-                    for child in child_tags:
-                        gtin = child.split(':')
-                        gtin = gtin[4].split('.')
-                        gtin = "{0}{1}{2}".format(gtin[1][:1], gtin[0], gtin[1][1:])
-                        gtin = check_digit.calculate_check_digit(gtin)
-                        try:
-                            product, uom = RocItQuery.get_product_info(gtin)
-                            if len(product) > 0 and len(uom) > 0:
-                                break
-                        except:
-                            # This entry may not be configured in the master material.
-                            # For example, this entry is not an Each. Just ignore
-                            pass
+            events = query.get_events_by_entry_identifer(entry_identifier=saleable_unit)
 
+            for event in events:
+                ilmds = query.get_ilmd(db_event=event.event)
+                for ilmd in ilmds:
+                    if ilmd.name == 'itemExpirationDate':
+                        expiry = ilmd.value
+                    elif ilmd.name == 'lotNumber':
+                        lot = ilmd.value
+                    elif ilmd.name == 'additionalTradeItemIdentification':
+                        product = ilmd.value
+                    elif ilmd.name == 'measurementUnitCode':
+                        uom = ilmd.value
 
-
-            except entries.Entry.DoesNotExist:
-                # No Children found. This can be ignored.
-                pass
-
-
+                # if have both lot and expiry, stop going through events
+                if len(lot) > 0 and len(expiry) > 0 and len(uom) > 0 and len(product) > 0:
+                    break
 
         ret_val = {
                     "message_id": str(uuid.uuid4()),
@@ -176,6 +169,7 @@ class RocItQuery():
         """
         ret_val = []
         children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
+
         for child in children:
             ret_val.append(child)
             res = RocItQuery.get_all_children(query, child)
