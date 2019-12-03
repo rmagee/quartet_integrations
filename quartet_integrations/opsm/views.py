@@ -20,6 +20,7 @@ from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.authentication import BasicAuthentication
 from rest_framework_xml import parsers
 
 from logging import getLogger
@@ -39,7 +40,7 @@ class OPSMNumberRangeView(AllocateView):
     emulation layer.
     """
     content_negotiation_class = DefaultXMLContent
-
+    authentication_classes = [BasicAuthentication]
     parser_classes = [parsers.XMLParser]
 
     permission_classes = []
