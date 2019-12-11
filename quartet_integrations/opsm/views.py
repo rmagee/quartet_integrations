@@ -20,6 +20,7 @@ from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.authentication import BasicAuthentication
 from rest_framework_xml import parsers
 
 from logging import getLogger
@@ -142,7 +143,7 @@ class CaptureInterface(capture_views.CaptureInterface):
     Adds a reference to the OPSM filter with id "opsm"
     that must be configured on a qu4rtet capture configuration.
     """
-
+    authentication_classes = [BasicAuthentication]
     def post(self, request: Request, format=None, epcis=False):
         if not request.GET._mutable:
             request.GET._mutable = True
