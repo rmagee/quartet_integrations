@@ -176,8 +176,8 @@ class RocItQuery():
             if len(res) > 0:
                 ret_val = ret_val + res
 
-
         return ret_val
+
     @staticmethod
     def get_product_info(gtin):
 
