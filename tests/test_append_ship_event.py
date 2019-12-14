@@ -184,7 +184,7 @@ class TestRule():
         try:
             endpoint = EndPoint.objects.create(
                 name='Local Server',
-                urn='http://localhost:777'
+                urn=getattr(settings, 'TEST_SERVER', 'http://testhost')
             )
         except IntegrityError:
             print('Endpoint already exists.')
