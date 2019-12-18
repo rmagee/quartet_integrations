@@ -12,7 +12,6 @@
     {% include "epcis/extension.xml" %}
         <tl:packagingLevel>{{ event._context.pack_level }}</tl:packagingLevel>
         <tl:commonAttributes>
-            <tl:productionLineId>PLA1</tl:productionLineId>
             <tl:itemDetail>
                 <tl:internalMaterialCode>{{ event._context.ndc }}</tl:internalMaterialCode>
                 <tl:packagingItemCode type="GTIN-14">{{ event._context.gtin }}</tl:packagingItemCode>

@@ -82,7 +82,7 @@ class ProcessTraxeedStep(rules.Step):
             all_events,
             None,
             template=env.get_template(
-                'extended/ext_epcis_document.xml'
+                'traxeed/tx_hk_epcis_document.xml'
             ),
             additional_context=additional_context
         )
@@ -151,7 +151,7 @@ class ShipTraxeedStep(rules.Step):
             all_events,
             None,
             template=env.get_template(
-                'extended/ext_epcis_document.xml'
+                'traxeed/tx_hk_epcis_document.xml'
             ),
             additional_context=additional_context
         )

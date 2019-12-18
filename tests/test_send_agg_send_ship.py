@@ -19,7 +19,7 @@ class TestTraxeed2Tracelink(TestCase):
         epcis_rule = tr.create_rule()
         tr.create_template()
         curpath = os.path.dirname(__file__)
-        data_path = os.path.join(curpath, 'data/tx_hk_comm_agg_epcis.xml')
+        data_path = os.path.join(curpath, 'data/tx_hk_comm_agg_epcis2.xml')
         task = self._create_task(epcis_rule)
         with open(data_path, 'r') as data_file:
             context = execute_rule(data_file.read().encode(), task)
@@ -65,7 +65,7 @@ class TestRule():
             # The Rule
             rule = models.Rule.objects.create(
                 name=rule_name,
-                description='Will Proccess the Inbound Message.'
+                description='Process inbound EPCIS Create and Send Comm/Agg ObjectEvents then Send Shipping ObjectEvents'
             )
 
             # Output Parsing Step
@@ -147,7 +147,7 @@ class TestRule():
             )
 
             shipping_step = models.Step.objects.create(
-                name=_('Shipping'),
+                name='Shipping',
                 description=_('Puts together the Shipping EPCIS Document'),
                 step_class='quartet_integrations.traxeed.steps.ShipTraxeedStep',
                 order=5,
@@ -172,8 +172,8 @@ class TestRule():
             )
 
             output_step2 = models.Step.objects.create(
-                name=_('Queue Outbound Message'),
-                description=_('Creates a Task for sending any outbound data'),
+                name='Queue Outbound Message',
+                description='Creates a Task for sending any outbound data',
                 step_class='quartet_output.steps.CreateOutputTaskStep',
                 order=6,
                 rule=rule

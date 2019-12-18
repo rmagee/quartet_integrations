@@ -46,13 +46,14 @@ class TraxeedParser(FlexibleNSParser):
         self._aggregation_events = []
         self.comm_eaches_event = None
         self.comm_cartons_event = None
+        self.comm_partial_event = None
         self.comm_pallets_event = None
         self._pack_levels = pack_levels.split(',') if pack_levels and len(pack_levels) > 0 else []
         env = get_default_environment()
         temp = env.get_template('traxeed/tx_hk_object_events.xml')
         self._obj_template = temp
-        # temp = env.get_template('traxeed/tx_hk_agg_events.xml')
-        # self._agg_template = temp
+        temp = env.get_template('traxeed/tx_hk_object_pallet.xml')
+        self._pallet_template = temp
         # call the base constructor with the stream
         super(TraxeedParser, self).__init__(stream=data)
 
@@ -107,8 +108,9 @@ class TraxeedParser(FlexibleNSParser):
                if epc in self._ssccs:
                   self._ssccs.remove(epc)
                   if epc in self.comm_pallets_event.epc_list:
+                      self.comm_partial_event =  self._add_partial(epcis_event, epc)
                       self.comm_pallets_event.epc_list.remove(epc)
-                      self.comm_cartons_event.epc_list.append(epc)
+
 
         self._time_zone_offset = epcis_event.event_timezone_offset
         self._record_time = epcis_event.record_time
@@ -127,18 +129,7 @@ class TraxeedParser(FlexibleNSParser):
         if self.comm_eaches_event is None:
            # A commissioning event for the Eaches does not exist
            # Create one
-            self.comm_eaches_event = template_events.ObjectEvent(
-                             epc_list=[epc],
-                             record_time=epcis_event.record_time,
-                             event_time=epcis_event.event_time,
-                             event_timezone_offset=epcis_event.event_timezone_offset,
-                             action = epcis_event.action,
-                             biz_step = BusinessSteps.commissioning.value,
-                             disposition = Disposition.active.value,
-                             read_point = epcis_event.read_point,
-                             biz_location = epcis_event.biz_location,
-                             template=self._obj_template
-                        )
+            self.comm_eaches_event = self._create_comm_eaches(epcis_event, epc)
 
             self.comm_eaches_event._context['gtin'] = self.gtin
             self.comm_eaches_event._context['ndc'] = self.ndc
@@ -155,24 +146,33 @@ class TraxeedParser(FlexibleNSParser):
             # Add the epc to the epc_list of the event.
             self.comm_eaches_event.epc_list.append(epc)
 
+    def _create_comm_eaches(self, epcis_event, epc):
+        ret_val = template_events.ObjectEvent(
+            epc_list=[epc],
+            record_time=epcis_event.record_time,
+            event_time=epcis_event.event_time,
+            event_timezone_offset=epcis_event.event_timezone_offset,
+            action=epcis_event.action,
+            biz_step=BusinessSteps.commissioning.value,
+            disposition=Disposition.active.value,
+            read_point=epcis_event.read_point,
+            biz_location=epcis_event.biz_location,
+            template=self._obj_template
+        )
+
+        return ret_val
+
     def _add_carton(self, epcis_event, epc):
 
         if self.comm_cartons_event is None:
            # A commissioning event for the Cartons does not exist
            # Create one
-            self.comm_cartons_event = template_events.ObjectEvent(
-                             epc_list=[epc],
-                             record_time=epcis_event.record_time,
-                             event_time=epcis_event.event_time,
-                             event_timezone_offset=epcis_event.event_timezone_offset,
-                             action = epcis_event.action,
-                             biz_step = BusinessSteps.commissioning.value,
-                             disposition = Disposition.active.value,
-                             read_point = epcis_event.read_point,
-                             biz_location = epcis_event.biz_location,
-                             template=self._obj_template
-                        )
-            self.comm_cartons_event._context['gtin'] = self.gtin
+            self.comm_cartons_event = self._create_comm_cartons_event(epcis_event, epc)
+            gtin = self.gtin[1:13]
+            # change indicator
+            gtin = "5{0}".format(gtin)
+            gtin = calculate_check_digit(gtin)
+            self.comm_cartons_event._context['gtin'] = gtin
             self.comm_cartons_event._context['ndc'] = self.ndc
             self.comm_cartons_event._context['lot'] = self.lot_number
             self.comm_cartons_event._context['exp_date'] = self.exp_date
@@ -187,10 +187,70 @@ class TraxeedParser(FlexibleNSParser):
             # Add the epc to the epc_list of the event.
             self.comm_cartons_event.epc_list.append(epc)
 
+    def _create_comm_cartons_event(self, epcis_event, epc):
+
+        ret_val = template_events.ObjectEvent(
+            epc_list=[epc],
+            record_time=epcis_event.record_time,
+            event_time=epcis_event.event_time,
+            event_timezone_offset=epcis_event.event_timezone_offset,
+            action=epcis_event.action,
+            biz_step=BusinessSteps.commissioning.value,
+            disposition=Disposition.active.value,
+            read_point=epcis_event.read_point,
+            biz_location=epcis_event.biz_location,
+            template=self._obj_template
+        )
+
+        return ret_val
+
+    def _add_partial(self, epcis_event, epc):
+
+        if self.comm_partial_event is None:
+            # A commissioning event for the Partial Cartons does not exist
+            # Create one
+            self.comm_partial_event = self._create_comm_cartons_event(epcis_event, epc)
+            gtin = self.gtin[1:13]
+            # change indicator
+            gtin = "5{0}".format(gtin)
+            gtin = calculate_check_digit(gtin)
+            self.comm_partial_event._context['gtin'] = gtin
+            self.comm_partial_event._context['ndc'] = self.ndc
+            self.comm_partial_event._context['lot'] = self.lot_number
+            self.comm_partial_event._context['exp_date'] = self.exp_date
+            self.comm_partial_event._context['pack_level'] = "CA"
+            self.comm_partial_event._context['po'] = self.PO
+            self.comm_partial_event._context['location_id'] = epcis_event.biz_location.replace('urn:epc:id:sgln:', '')
+
+            # Add to the Object Events List of the Parser
+            self._object_events.append(self.comm_partial_event)
+        else:
+            # A commissioning event for the Cartons does exist
+            # Add the epc to the epc_list of the event.
+            self.comm_partial_event.epc_list.append(epc)
+
+
+    def _create_comm_partial_event(self, epcis_event, epc):
+
+        ret_val = template_events.ObjectEvent(
+            epc_list=[epc],
+            record_time=epcis_event.record_time,
+            event_time=epcis_event.event_time,
+            event_timezone_offset=epcis_event.event_timezone_offset,
+            action=epcis_event.action,
+            biz_step=BusinessSteps.commissioning.value,
+            disposition=Disposition.active.value,
+            read_point=epcis_event.read_point,
+            biz_location=epcis_event.biz_location,
+            template=self._obj_template
+        )
+
+        return ret_val
+
     def _add_pallet(self, epcis_event, epc):
 
         if self.comm_pallets_event is None:
-           # A commissioning event for the Cartons does not exist
+           # A commissioning event for the Pallets does not exist
            # Create one
             self.comm_pallets_event = template_events.ObjectEvent(
                              epc_list=[epc],
@@ -202,12 +262,15 @@ class TraxeedParser(FlexibleNSParser):
                              disposition = Disposition.active.value,
                              read_point = epcis_event.read_point,
                              biz_location = epcis_event.biz_location,
-                             template=self._obj_template
+                             template=self._pallet_template
                         )
-            self.comm_pallets_event._context['gtin'] = self.gtin
-            self.comm_pallets_event._context['ndc'] = self.ndc
-            self.comm_pallets_event._context['lot'] = self.lot_number
-            self.comm_pallets_event._context['exp_date'] = self.exp_date
+            val = epc.split(':')
+            val = val[4].split('.')
+            company_prefix = val[0]
+            filter = val[1][0]
+
+            self.comm_pallets_event._context['company_prefix'] = company_prefix
+            self.comm_pallets_event._context['filter'] = filter
             self.comm_pallets_event._context['pack_level'] = "PL"
             self.comm_pallets_event._context['po'] = self.PO
             self.comm_pallets_event._context['location_id'] = epcis_event.biz_location.replace('urn:epc:id:sgln:','')
