@@ -54,6 +54,8 @@ class TraxeedParser(FlexibleNSParser):
         self._obj_template = temp
         temp = env.get_template('traxeed/tx_hk_object_pallet.xml')
         self._pallet_template = temp
+        temp = env.get_template('traxeed/tx_hk_object_partial.xml')
+        self._partial_template = temp
         # call the base constructor with the stream
         super(TraxeedParser, self).__init__(stream=data)
 
@@ -209,18 +211,20 @@ class TraxeedParser(FlexibleNSParser):
         if self.comm_partial_event is None:
             # A commissioning event for the Partial Cartons does not exist
             # Create one
-            self.comm_partial_event = self._create_comm_cartons_event(epcis_event, epc)
-            gtin = self.gtin[1:13]
-            # change indicator
-            gtin = "5{0}".format(gtin)
-            gtin = calculate_check_digit(gtin)
-            self.comm_partial_event._context['gtin'] = gtin
-            self.comm_partial_event._context['ndc'] = self.ndc
-            self.comm_partial_event._context['lot'] = self.lot_number
-            self.comm_partial_event._context['exp_date'] = self.exp_date
+            self.comm_partial_event = self._create_comm_partial_event(epcis_event, epc)
+
+            val = epc.split(':')
+            val = val[4].split('.')
+            company_prefix = val[0]
+            filter = val[1][0]
+
+            self.comm_partial_event._context['company_prefix'] = company_prefix
+            self.comm_partial_event._context['filter'] = filter
             self.comm_partial_event._context['pack_level'] = "CA"
             self.comm_partial_event._context['po'] = self.PO
             self.comm_partial_event._context['location_id'] = epcis_event.biz_location.replace('urn:epc:id:sgln:', '')
+
+
 
             # Add to the Object Events List of the Parser
             self._object_events.append(self.comm_partial_event)
@@ -242,7 +246,7 @@ class TraxeedParser(FlexibleNSParser):
             disposition=Disposition.active.value,
             read_point=epcis_event.read_point,
             biz_location=epcis_event.biz_location,
-            template=self._obj_template
+            template=self._partial_template
         )
 
         return ret_val
