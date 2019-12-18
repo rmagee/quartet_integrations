@@ -13,6 +13,8 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 import re
+import datetime
+from datetime import timedelta
 from gs123.check_digit import calculate_check_digit
 from EPCPyYes.core.v1_2 import template_events
 from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
@@ -115,8 +117,12 @@ class TraxeedParser(FlexibleNSParser):
 
 
         self._time_zone_offset = epcis_event.event_timezone_offset
-        self._record_time = epcis_event.record_time
-        self._event_time = epcis_event.event_time
+        t = datetime.datetime.strptime(epcis_event.record_time,'%Y-%m-%dT%H:%M:%SZ')
+        dt = t + timedelta(seconds=10)
+        epcis_event.record_time = dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+        epcis_event.event_time = dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+        self._record_time = dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+        self._event_time = dt.strftime('%Y-%m-%dT%H:%M:%SZ')
         self._aggregation_events.append(epcis_event)
 
     def _convert_ndc_gtin(self, ndc):
