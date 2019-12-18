@@ -24,7 +24,7 @@ from quartet_integrations.generic import mixins
 
 class OutputParsingStep(mixins.ObserveChildrenMixin, OutputParsingStep):
 
-    def get_parser_type(self):
+    def get_parser_type(self, *args):
         """
         Override to provide a different parser type.
         :return: The `type` of parser to use.
