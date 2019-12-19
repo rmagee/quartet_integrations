@@ -91,11 +91,12 @@ class TraxeedParser(FlexibleNSParser):
                 else:
                     m = self._regEx.match(epc)
                     if m:
-                        # adjust the quantity
-                        self._quantity = self._quantity + 1
+
                         parts = epc.split('.')
                         if parts[1].startswith('0'):
                             # Add to Eaches commissioning Event
+                            # adjust the quantity
+                            self._quantity = self._quantity + 1
                             self._add_each(epcis_event, epc)
                         elif parts[1].startswith('5'):
                             # Add to Cartons commissioning Event
@@ -242,16 +243,33 @@ class TraxeedParser(FlexibleNSParser):
 
     def _create_comm_partial_event(self, epcis_event, epc):
 
+        # the event comming in is an AggregationEvent because the partial can only be discovered
+        # by watching the aggregation events in the handle_aggregation method. So to make sure
+        # the record and event times are in sync with the commissioning events, get a ref to
+        # the first object event and use that record and event time.
+        try:
+            evt = self._object_events[0]
+            record_time = evt.record_time
+            event_time = evt.event_time
+        except:
+            # if there are no events in _object_events
+            # fall back to the epcis_event and adjust the times down
+            evt = epcis_event
+            t = datetime.datetime.strptime(epcis_event.record_time, '%Y-%m-%dT%H:%M:%SZ')
+            dt = t - timedelta(seconds=10)
+            record_time = dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+            event_time = record_time
+
         ret_val = template_events.ObjectEvent(
             epc_list=[epc],
-            record_time=epcis_event.record_time,
-            event_time=epcis_event.event_time,
-            event_timezone_offset=epcis_event.event_timezone_offset,
-            action=epcis_event.action,
+            record_time=record_time,
+            event_time=event_time,
+            event_timezone_offset=evt.event_timezone_offset,
+            action=evt.action,
             biz_step=BusinessSteps.commissioning.value,
             disposition=Disposition.active.value,
-            read_point=epcis_event.read_point,
-            biz_location=epcis_event.biz_location,
+            read_point=evt.read_point,
+            biz_location=evt.biz_location,
             template=self._partial_template
         )
 
