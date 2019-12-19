@@ -4,11 +4,11 @@ quartet_integrations
 
 .. image:: https://gitlab.com/serial-lab/quartet_integrations/badges/master/coverage.svg
    :target: https://gitlab.com/serial-lab/quartet_integrations/pipelines
-.. image:: https://gitlab.com/serial-lab/quartet_integrations/badges/master/build.svg
+.. image:: https://gitlab.com/serial-lab/quartet_integrations/badges/master/pipeline.svg
    :target: https://gitlab.com/serial-lab/quartet_integrations/commits/master
 .. image:: https://badge.fury.io/py/quartet_integrations.svg
     :target: https://badge.fury.io/py/quartet_integrations
-
+    
 Third party integrations for the QU4RTET open-source EPCIS platform.  For
 more on QU4RTET and SerialLab, see `the SerialLab website`_
 

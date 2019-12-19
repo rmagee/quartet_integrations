@@ -16,15 +16,15 @@ from io import StringIO, BytesIO
 from EPCPyYes.core.v1_2 import template_events
 from EPCPyYes.core.v1_2.CBV import business_steps
 from quartet_capture import rules
-from quartet_output.steps import OutputParsingStep, ContextKeys
+from quartet_output.steps import OutputParsingStep as QOPS, ContextKeys
 from quartet_integrations.gs1ushc.parsing import SimpleOutputParser, \
     BusinessOutputParser
 from quartet_integrations.generic import mixins
 
 
-class OutputParsingStep(mixins.ObserveChildrenMixin, OutputParsingStep):
+class OutputParsingStep(mixins.ObserveChildrenMixin, QOPS):
 
-    def get_parser_type(self):
+    def get_parser_type(self, *args):
         """
         Override to provide a different parser type.
         :return: The `type` of parser to use.
