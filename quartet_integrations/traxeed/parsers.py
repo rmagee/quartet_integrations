@@ -401,6 +401,12 @@ class TraxeedRfxcelParser(FlexibleNSParser):
 
     def handle_object_event(self, epcis_event: template_events.ObjectEvent):
 
+        if epcis_event.ilmd is not None:
+            for item in epcis_event.ilmd:
+                if item.name == 'lotNumber':
+                    self._lot_number = item.value
+                elif item.name == "itemExpirationDate":
+                    self._exp_date = item.value
 
         self._biz_location = epcis_event.biz_location
         self._read_point = epcis_event.read_point
@@ -457,6 +463,10 @@ class TraxeedRfxcelParser(FlexibleNSParser):
            # Create one
             self.comm_cartons_event = self._create_comm_cartons_event(epcis_event, epc)
 
+            self.comm_cartons_event._context['lot'] = self.lot_number
+            self.comm_cartons_event._context['exp_date'] = self.exp_date
+
+
             # Add to the Object Events List of the Parser
             self._object_events.append(self.comm_cartons_event)
         else:
@@ -487,7 +497,8 @@ class TraxeedRfxcelParser(FlexibleNSParser):
             # A commissioning event for the Partial Cartons does not exist
             # Create one
             self.comm_partial_event = self._create_comm_partial_event(epcis_event, epc)
-
+            self.comm_partial_event._context['lot'] = self.lot_number
+            self.comm_partial_event._context['exp_date'] = self.exp_date
             # Add to the Object Events List of the Parser
             self._object_events.append(self.comm_partial_event)
         else:
@@ -548,6 +559,9 @@ class TraxeedRfxcelParser(FlexibleNSParser):
                              template=self._obj_template
                         )
 
+            self.comm_pallets_event._context['lot'] = self.lot_number
+            self.comm_pallets_event._context['exp_date'] = self.exp_date
+
             # Add to the Object Events List of the Parser
             self._object_events.append(self.comm_pallets_event)
         else:
@@ -561,7 +575,8 @@ class TraxeedRfxcelParser(FlexibleNSParser):
            # A commissioning event for the Eaches does not exist
            # Create one
             self.comm_eaches_event = self._create_comm_eaches(epcis_event, epc)
-
+            self.comm_eaches_event._context['lot'] = self.lot_number
+            self.comm_eaches_event._context['exp_date'] = self.exp_date
             # Add to the Object Events List of the Parser
             self._object_events.append(self.comm_eaches_event)
         else:
@@ -676,6 +691,12 @@ class TraxeedIRISParser(FlexibleNSParser):
 
     def handle_object_event(self, epcis_event: template_events.ObjectEvent):
 
+        if epcis_event.ilmd is not None:
+            for item in epcis_event.ilmd:
+                if item.name == 'lotNumber':
+                    self._lot_number = item.value
+                elif item.name == "itemExpirationDate":
+                    self._exp_date = item.value
 
         self._biz_location = epcis_event.biz_location
         self._read_point = epcis_event.read_point
@@ -734,7 +755,8 @@ class TraxeedIRISParser(FlexibleNSParser):
            # A commissioning event for the Cartons does not exist
            # Create one
             self.comm_cartons_event = self._create_comm_cartons_event(epcis_event, epc)
-
+            self.comm_cartons_event._context['lot'] = self.lot_number
+            self.comm_cartons_event._context['exp_date'] = self.exp_date
             # Add to the Object Events List of the Parser
             self._object_events.append(self.comm_cartons_event)
         else:
@@ -765,7 +787,8 @@ class TraxeedIRISParser(FlexibleNSParser):
             # A commissioning event for the Partial Cartons does not exist
             # Create one
             self.comm_partial_event = self._create_comm_partial_event(epcis_event, epc)
-
+            self.comm_partial_event._context['lot'] = self.lot_number
+            self.comm_partial_event._context['exp_date'] = self.exp_date
             # Add to the Object Events List of the Parser
             self._object_events.append(self.comm_partial_event)
         else:
@@ -825,7 +848,8 @@ class TraxeedIRISParser(FlexibleNSParser):
                              biz_location = epcis_event.biz_location,
                              template=self._obj_template
                         )
-
+            self.comm_pallets_event._context['lot'] = self.lot_number
+            self.comm_pallets_event._context['exp_date'] = self.exp_date
             # Add to the Object Events List of the Parser
             self._object_events.append(self.comm_pallets_event)
         else:
@@ -839,7 +863,8 @@ class TraxeedIRISParser(FlexibleNSParser):
            # A commissioning event for the Eaches does not exist
            # Create one
             self.comm_eaches_event = self._create_comm_eaches(epcis_event, epc)
-
+            self.comm_eaches_event._context['lot'] = self.lot_number
+            self.comm_eaches_event._context['exp_date'] = self.exp_date
             # Add to the Object Events List of the Parser
             self._object_events.append(self.comm_eaches_event)
         else:

@@ -123,8 +123,6 @@ class TestRule():
                 description='The SGLN URN of the Destination Location'
             )
 
-
-
             output_step = models.Step.objects.create(
                 name='Queue Outbound Message',
                 description='Creates a Task for sending any outbound data',

@@ -10,4 +10,12 @@
     {% endif %}
     {% include "epcis/business_data.xml" %}
     {% include "epcis/extension.xml" %}
+    {% if event._context.lot %}
+    <extension>
+        <ilmd>
+		    <cbvmda:lotNumber>{{ event._context.lot }}</cbvmda:lotNumber>
+			<cbvmda:itemExpirationDate>{{ event._context.exp_date }}</cbvmda:itemExpirationDate>
+        </ilmd>
+    </extension>
+    {% endif %}
 </ObjectEvent>
