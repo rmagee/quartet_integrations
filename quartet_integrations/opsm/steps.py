@@ -12,6 +12,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
+from gs123.conversion import BarcodeConverter
 
 from quartet_integrations.serialbox.steps import \
     ListToUrnConversionStep as SBLTU
@@ -24,6 +25,10 @@ class ListToUrnConversionStep(SBLTU):
 
     def format_gtin_urn(self, company_prefix: str, indicator: str,
                         item_reference: str, serial_number: str):
+        if len(serial_number) > 15:
+            ret = BarcodeConverter(serial_number, len(company_prefix)).epc_urn
+            ret.replace('urn:epc:id:sgtin:', '0.')
+
         return '0.%s.%s%s.%s' % (
             company_prefix, indicator, item_reference,
             serial_number
