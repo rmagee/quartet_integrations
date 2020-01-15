@@ -28,7 +28,7 @@ class ListToUrnConversionStep(SBLTU):
         ret = None
         if len(serial_number) > 15:
             ret = BarcodeConverter(serial_number, len(company_prefix)).epc_urn
-            ret.replace('urn:epc:id:sgtin:', '0.')
+            ret = ret.replace('urn:epc:id:sgtin:', '0.')
         else:
             ret = '0.%s.%s%s.%s' % (
             company_prefix, indicator, item_reference,
