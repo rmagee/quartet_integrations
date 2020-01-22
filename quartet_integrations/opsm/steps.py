@@ -26,7 +26,7 @@ class ListToUrnConversionStep(SBLTU):
     def format_gtin_urn(self, company_prefix: str, indicator: str,
                         item_reference: str, serial_number: str):
         ret = None
-        if len(serial_number) > 15:
+        if serial_number > 999999999999999:
             ret = BarcodeConverter(serial_number, len(company_prefix)).epc_urn
             ret = ret.replace('urn:epc:id:sgtin:', '0.')
         else:
