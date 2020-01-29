@@ -19,7 +19,9 @@ from quartet_output.models import EndPoint, AuthenticationInfo
 from quartet_templates.models import Template
 from serialbox.models import Pool
 from quartet_masterdata.models import TradeItem
-
+import logging
+from quartet_integrations.management.commands import utils
+logger = logging.getLogger(__name__)
 
 
 class TracelinkMMParser(MasterMaterialParser):
@@ -36,7 +38,7 @@ class TracelinkMMParser(MasterMaterialParser):
                                 trade_item: TradeItem,
                                 endpoint: EndPoint,
                                 template: Template,
-                                response_rule: Rule,
+                                response_rule: str,
                                 authentication_info: AuthenticationInfo,
                                 sending_system_gln: str,
                                 receiving_system_gln: str
@@ -46,6 +48,7 @@ class TracelinkMMParser(MasterMaterialParser):
         :param trade_item: The TradeItem to use for creating the pool.
         :return: None
         """
+
         request_rule = self._verify_request_rule()
         pool = Pool.objects.create(
             readable_name=trade_item.regulated_product_name,
@@ -98,3 +101,18 @@ class TracelinkMMParser(MasterMaterialParser):
         """
         return Rule.objects.get(name='Tracelink Number Request')
 
+    def _verify_response_rule(self, rule_name):
+        """
+        Makes sure the response rule exists.  If not, creates it.
+        :return: None
+        """
+        ret = None
+        try:
+            ret = Rule.objects.get(
+                name="OPSM External GTIN Response Rule"
+            )
+        except Rule.DoesNotExist:
+            # create the rule
+            rule, created = utils.create_external_GTIN_response_rule()
+            ret = rule
+        return ret
