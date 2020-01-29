@@ -25,16 +25,18 @@ class ListToUrnConversionStep(SBLTU):
 
     def format_gtin_urn(self, company_prefix: str, indicator: str,
                         item_reference: str, serial_number: str):
-        ret = None
-        if serial_number > 999999999999999:
-            ret = BarcodeConverter(serial_number, len(company_prefix)).epc_urn
-            ret = ret.replace('urn:epc:id:sgtin:', '0.')
-        else:
-            ret = '0.%s.%s%s.%s' % (
+        return '0.%s.%s%s.%s' % (
             company_prefix, indicator, item_reference,
-            serial_number
-            )
-        return ret
+            serial_number)
 
 
 
+class ListBasedRegionConversionStep(SBLTU):
+    """
+    Converts 01/21 GTIN strings to OPSM URNS.
+    """
+    def format_gtin_urn(self, company_prefix: str, indicator: str,
+                        item_reference: str, serial_number: str):
+        ret = None
+        ret = BarcodeConverter(serial_number, len(company_prefix)).epc_urn
+        return ret.replace('urn:epc:id:sgtin:', '0.')
