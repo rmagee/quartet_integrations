@@ -138,3 +138,9 @@ class MasterMaterialParser:
         """
         for company, db_company in self.company_records.items():
             if company in gtin: return db_company
+
+    def create_vendor_range(self, trade_item: TradeItem, material_number
+                           ) -> None:
+        raise NotImplementedError('The create vendor range is not implemented '
+                                  'for this class.')
+
