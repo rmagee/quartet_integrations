@@ -25,7 +25,7 @@ from quartet_capture import models
 from quartet_capture.rules import RuleContext, Step
 from list_based_flavorpack.processing_classes.third_party_processing.rules import \
     get_region_table
-
+from quartet_integrations.tracelink.parsing import TraceLinkPartnerParser
 
 class NumberResponseStep(Step):
     '''
@@ -201,3 +201,15 @@ class DiscreteDBResponseStep(DBResponseStep):
         else:
             ret = element.text
         return ret
+
+class TraceLinkPartnerParsingStep(Step):
+
+    @property
+    def declared_parameters(self):
+        return {}
+
+    def execute(self, data, rule_context: RuleContext):
+        TraceLinkPartnerParser().parse(data)
+
+    def on_failure(self):
+        pass

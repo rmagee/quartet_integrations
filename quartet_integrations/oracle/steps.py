@@ -14,7 +14,8 @@
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 from quartet_capture import models
 from quartet_capture.rules import Step, RuleContext
-from quartet_integrations.oracle.parsing import MasterMaterialParser
+from quartet_integrations.oracle.parsing import MasterMaterialParser, \
+    TracelinkMMParser
 from quartet_masterdata.models import Company
 
 
@@ -138,3 +139,32 @@ class TradeItemNumberRangeImportStep(TradeItemImportStep):
 
     def on_failure(self):
         super().on_failure()
+
+class ExternalTradeItemNumberRangeImportStep(TradeItemNumberRangeImportStep):
+
+    def execute(self, data, rule_context: RuleContext):
+        self.info('Invoking the parser.')
+        company_records = self.get_company_records()
+        TracelinkMMParser(company_records).parse(
+            data,
+            info_func=self.info,
+            response_rule_name='Tracelink Response Rule',
+            threshold=75000,
+            endpoint=self.get_parameter('Endpoint', None, True),
+            authentication_info=self.get_parameter('Authentication Info', None,
+                                                   True),
+            sending_system_gln=self.get_parameter('Sending System GLN', None, True)
+        )
+
+    @property
+    def declared_parameters(self):
+        params = super().declared_parameters
+        params['Authentication Info ID'] = 'The ID of the authentication info ' \
+                                           'instance to use to communicate with ' \
+                                           'external tracelink system.'
+        params['Endpoint'] = 'The name of the Endpoint to use to communicate ' \
+                             'with TraceLink.'
+        params['Sending System GLN'] = 'The GLN that will be used as the "sending systmem' \
+                                       ' during template rendering for tracelink.'
+        return params
+
