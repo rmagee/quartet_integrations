@@ -13,6 +13,8 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 from quartet_integrations.management.commands import utils
+from django.core.management import base
+
 class Command(base.BaseCommand):
     help = 'Creates the response rules for OPSM SSCC, GTIN for internal ' \
            'and external sources.'

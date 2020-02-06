@@ -73,7 +73,7 @@ class TestMasterMaterialImport(TransactionTestCase):
         step = Step.objects.create(
             name='Import Spreadsheet Data',
             description='Unit test step',
-            step_class='quartet_integrations.oracle.steps.ExternalTradeItemNumberRangeImportStep',
+            step_class='quartet_integrations.tracelink.steps.ExternalTradeItemNumberRangeImportStep',
             rule=rule,
             order=1
         )
@@ -95,7 +95,7 @@ class TestMasterMaterialImport(TransactionTestCase):
         )
 
         StepParameter.objects.create(
-            name='Authentication Info',
+            name='Authentication Info ID',
             value=str(ai_id),
             step=step
         )
