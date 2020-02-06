@@ -110,7 +110,7 @@ class TestMasterMaterialImport(TransactionTestCase):
     def create_endpoint(self):
         EndPoint.objects.create(
             name='Tracelink',
-            urn=settings.TEST_SERVER
+            urn=getattr(settings, 'TEST_SERVER', 'http://testhost')
         )
 
     def create_authentication(self):
