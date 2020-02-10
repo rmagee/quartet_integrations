@@ -14,12 +14,22 @@
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 
 import csv
+
 import logging
+from django.db import transaction
+from django.db.utils import IntegrityError
 from io import StringIO
-from quartet_capture.models import Rule, Step, StepParameter
-from serialbox.models import Pool, ResponseRule
+
+from list_based_flavorpack.models import ListBasedRegion, ProcessingParameters
+from quartet_capture.models import Rule
+from quartet_integrations.management.commands import utils
+from quartet_masterdata.models import TradeItem
+from quartet_masterdata.models import TradeItemField, Company
+from quartet_output.models import EndPoint, AuthenticationInfo
+from quartet_templates.models import Template
 from random_flavorpack.models import RandomizedRegion
-from quartet_masterdata.models import TradeItem, TradeItemField
+from serialbox.models import Pool
+from serialbox.models import ResponseRule
 
 logger = logging.getLogger(__name__)
 
@@ -138,3 +148,9 @@ class MasterMaterialParser:
         """
         for company, db_company in self.company_records.items():
             if company in gtin: return db_company
+
+    def create_vendor_range(self, trade_item: TradeItem, material_number
+                            ) -> None:
+        raise NotImplementedError('The create vendor range is not implemented '
+                                  'for this class.')
+

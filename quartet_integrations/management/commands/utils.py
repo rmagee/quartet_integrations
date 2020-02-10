@@ -197,3 +197,39 @@ def create_sequential_sscc_range():
         state=1,
         end=99999999999
     )
+
+def create_external_GTIN_response_rule():
+    """
+    Gets or creates the external gtin response rule.
+    :return: A tuple with the rule and a boolean 'created'.
+    """
+    rule, created = Rule.objects.get_or_create(
+        name='OPSM External GTIN Response Rule',
+        description='OPSM Response Rule (Auto Created) for use by list-based'
+                    ' range data sourced from external systems.',
+    )
+
+    conversion_step, created = Step.objects.get_or_create(
+        rule=rule,
+        name='List Conversion',
+        step_class='quartet_integrations.opsm.steps.ListBasedRegionConversionStep',
+        order=1
+    )
+    if not created:
+        conversion_step.description = 'Convert the list of numbers to ' \
+                                      'GTIN URNs or SSCCs for use by OPSM.',
+
+    format_step, created = Step.objects.get_or_create(
+        rule=rule,
+        name='Format Message',
+        description='A message template step.',
+        step_class='quartet_templates.steps.TemplateStep',
+        order=2
+    )
+    StepParameter.objects.get_or_create(
+        step=format_step,
+        name='Template Name',
+        value='OPSM GTIN Response Template'
+    )
+    create_template()
+    return rule, created

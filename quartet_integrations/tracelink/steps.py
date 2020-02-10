@@ -12,19 +12,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
+import os
+
 import abc
 import sqlite3
-
 import time
-import os
 from lxml import etree, objectify
 
 from list_based_flavorpack.models import ListBasedRegion
-from serialbox import models as sb_models
-from quartet_capture import models
-from quartet_capture.rules import RuleContext, Step
 from list_based_flavorpack.processing_classes.third_party_processing.rules import \
     get_region_table
+from quartet_capture import models
+from quartet_capture.rules import RuleContext, Step
+from quartet_integrations.oracle.steps import TradeItemNumberRangeImportStep
+from quartet_integrations.tracelink.parsing import TraceLinkPartnerParser, \
+    TracelinkMMParser
+from serialbox import models as sb_models
 
 
 class NumberResponseStep(Step):
@@ -201,3 +204,52 @@ class DiscreteDBResponseStep(DBResponseStep):
         else:
             ret = element.text
         return ret
+
+
+class TraceLinkPartnerParsingStep(Step):
+
+    @property
+    def declared_parameters(self):
+        return {}
+
+    def execute(self, data, rule_context: RuleContext):
+        TraceLinkPartnerParser().parse(data)
+
+    def on_failure(self):
+        pass
+
+
+class ExternalTradeItemNumberRangeImportStep(TradeItemNumberRangeImportStep):
+
+    def execute(self, data, rule_context: RuleContext):
+        self.info('Invoking the parser.')
+        TracelinkMMParser().parse(
+            data,
+            info_func=self.info,
+            response_rule_name=self.get_parameter('Response Rule Name', None, True),
+            threshold=75000,
+            endpoint=self.get_parameter('Endpoint', None, True),
+            authentication_info=self.get_parameter('Authentication Info ID',
+                                                   None,
+                                                   True),
+            sending_system_gln=self.get_parameter('Sending System GLN', None,
+                                                  True),
+            replenishment_size=self.get_integer_parameter('Replenishment Size',
+                                                          2000)
+        )
+
+    @property
+    def declared_parameters(self):
+        params = super().declared_parameters
+        params['Authentication Info ID'] = 'The ID of the authentication info ' \
+                                           'instance to use to communicate with ' \
+                                           'external tracelink system.'
+        params['Endpoint'] = 'The name of the Endpoint to use to communicate ' \
+                             'with TraceLink.'
+        params[
+            'Sending System GLN'] = 'The GLN that will be used as the "sending systmem' \
+                                    ' during template rendering for tracelink.',
+        params[
+            'Replenishment Size'] = 'The size of the request to the external ' \
+                                    'system.'
+        return params
