@@ -24,6 +24,8 @@ from quartet_capture.tasks import create_and_queue_task
 from quartet_masterdata import models
 from quartet_output.models import EndPoint, AuthenticationInfo
 from quartet_tracelink.utils import TraceLinkHelper
+from quartet_integrations.management.commands.utils import \
+    create_external_GTIN_response_rule
 
 
 class TestMasterMaterialImport(TransactionTestCase):
@@ -104,7 +106,13 @@ class TestMasterMaterialImport(TransactionTestCase):
             value='0123456789012',
             step=step
         )
-
+        response_rule_name = self.create_response_rule()
+        TraceLinkHelper().create_template()
+        StepParameter.objects.create(
+            name='Response Rule Name',
+            value=response_rule_name,
+            step=step
+        )
         return rule
 
     def create_endpoint(self):
@@ -135,7 +143,9 @@ class TestMasterMaterialImport(TransactionTestCase):
             order=1
         )
 
-
+    def create_response_rule(self):
+        rule, created = create_external_GTIN_response_rule()
+        return rule.name
 
     def create_companies(self):
         """
@@ -148,7 +158,6 @@ class TestMasterMaterialImport(TransactionTestCase):
         models.Company.objects.create(
             gs1_company_prefix='0377777'
         )
-
 
     def test_load_partners(self):
         curpath = os.path.dirname(__file__)
