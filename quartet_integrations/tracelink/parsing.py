@@ -86,8 +86,10 @@ class TracelinkMMParser:
 
     def parse(self, data: bytes, info_func: object, threshold: int,
               response_rule_name: str, endpoint: str,
-              authentication_info: str, sending_system_gln: str
+              authentication_info: str, sending_system_gln: str,
+              replenishment_size: int
               ):
+        self.replenishment_size = int(replenishment_size)
         self.threshold = threshold
         self.sending_system_gln = sending_system_gln
         self.response_rule_name = response_rule_name
@@ -201,6 +203,7 @@ class TracelinkMMParser:
         :param trade_item: The TradeItem to use for creating the pool.
         :return: None
         """
+        replenishment_size = int(self.replenishment_size)
         self._create_response_rule()
         request_rule = self._verify_request_rule()
         db_endpoint = self._get_endpoint(self.endpoint)
@@ -218,7 +221,7 @@ class TracelinkMMParser:
                 machine_name=trade_item.GTIN14,
                 active=True,
                 order=1,
-                number_replenishment_size=5000,
+                number_replenishment_size=replenishment_size,
                 processing_class_path='list_based_flavorpack.processing_classes.third_party_processing.processing.DBProcessingClass',
                 end_point=db_endpoint,
                 rule=request_rule,

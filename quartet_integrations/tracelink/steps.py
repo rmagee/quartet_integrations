@@ -233,7 +233,9 @@ class ExternalTradeItemNumberRangeImportStep(TradeItemNumberRangeImportStep):
                                                    None,
                                                    True),
             sending_system_gln=self.get_parameter('Sending System GLN', None,
-                                                  True)
+                                                  True),
+            replenishment_size=self.get_integer_parameter('Replenishment Size',
+                                                          2000)
         )
 
     @property
@@ -247,4 +249,7 @@ class ExternalTradeItemNumberRangeImportStep(TradeItemNumberRangeImportStep):
         params[
             'Sending System GLN'] = 'The GLN that will be used as the "sending systmem' \
                                     ' during template rendering for tracelink.',
+        params[
+            'Replenishment Size'] = 'The size of the request to the external ' \
+                                    'system.'
         return params
