@@ -151,20 +151,35 @@ class TracelinkMMParser:
                            ' TRADE ITEM.', gtin14)
         else:
             with transaction.atomic():
-                trade_item = TradeItem.objects.get_or_create(
-                    company=company,
-                    additional_id=material_number,
-                    package_uom=unit_of_measure,
-                    GTIN14=gtin14,
-                    pack_count=pack_count,
-                    regulated_product_name=name
-                )[0]
-                TradeItemField.objects.get_or_create(
-                    trade_item=trade_item,
-                    name='pallet_pack_count',
-                    value=pallet_pack
-                )
+                trade_item = self._get_trade_item_model(company, gtin14,
+                                                        material_number, name,
+                                                        pack_count,
+                                                        pallet_pack,
+                                                        unit_of_measure)
+
                 self.create_vendor_range(trade_item, material_number, company)
+
+    def _get_trade_item_model(self, company, gtin14, material_number, name,
+                              pack_count, pallet_pack, unit_of_measure):
+        try:
+            trade_item = TradeItem.objects.get(GTIN14=gtin14)
+        except TradeItem.DoesNotExist:
+            trade_item = TradeItem.objects.create(
+                GTIN14=gtin14,
+                company=company
+            )
+        trade_item.additional_id = material_number
+        trade_item.package_uom = unit_of_measure
+        trade_item.pack_count = pack_count
+        trade_item.regulated_product_name = name
+        trade_item.company = company
+        trade_item.save()
+        TradeItemField.objects.get_or_create(
+            trade_item=trade_item,
+            name='pallet_pack_count',
+            value=pallet_pack
+        )
+        return trade_item
 
     def create_vendor_range(self, trade_item: TradeItem, material_number,
                             company: Company
