@@ -16,17 +16,11 @@
 import csv
 
 import logging
-from django.db import transaction
-from django.db.utils import IntegrityError
 from io import StringIO
-
-from list_based_flavorpack.models import ListBasedRegion, ProcessingParameters
+from django.db.utils import IntegrityError
 from quartet_capture.models import Rule
-from quartet_integrations.management.commands import utils
 from quartet_masterdata.models import TradeItem
-from quartet_masterdata.models import TradeItemField, Company
-from quartet_output.models import EndPoint, AuthenticationInfo
-from quartet_templates.models import Template
+from quartet_masterdata.models import TradeItemField, Company, Location
 from random_flavorpack.models import RandomizedRegion
 from serialbox.models import Pool
 from serialbox.models import ResponseRule
@@ -154,3 +148,108 @@ class MasterMaterialParser:
         raise NotImplementedError('The create vendor range is not implemented '
                                   'for this class.')
 
+
+class TradingPartnerParser:
+
+    def parse(self, data: bytes, info_func):
+        """
+        Parses inbound trading partner spreadsheet data.
+        """
+        file_stream = StringIO(data.decode('utf-8'))
+        self.info_func = info_func
+        parsed_data = csv.DictReader(file_stream)
+        for data in parsed_data:
+            data = list(data.values())
+            from_company = self.create_from_company(data)
+            to_company = self.create_to_company(data)
+            self.create_location(from_company)
+            self.create_location(to_company)
+
+    def create_location(self, company: Company):
+        """
+        Creates a location which is a duplicate of the company.  This
+        allows for mapping of locations to companies and vise-versa
+        freely after importing the data.
+        :param data: The data row with partner info
+        :param company: The location's parent company
+        :param location_type: The type of location.
+        :return: The Location model instance that was created.
+        """
+        try:
+            location = Location.objects.get(
+                GLN13=company.GLN13
+            )
+            location.name = company.name
+        except Location.DoesNotExist:
+            try:
+                location = Location.objects.get(
+                    SGLN=company.SGLN
+                )
+                location.name = company.name
+                location.GLN13 = company.GLN13
+            except Location.DoesNotExist:
+                location = Location.objects.create(
+                    GLN13=company.GLN13,
+                    name=company.name
+                )
+        location.SGLN = company.SGLN
+        location.address1 = company.address1
+        location.address2 = company.address2
+        location.address3 = company.address3
+        location.city = company.city
+        location.state_province = company.state_province
+        location.postal_code = company.postal_code
+        location.country = company.country
+        location.save()
+
+    def create_from_company(self, data):
+        try:
+            company = Company.objects.get(
+                gs1_company_prefix=data[2]
+            )
+            company.name = data[1]
+        except Company.DoesNotExist:
+            company = Company.objects.create(
+                name=data[1],
+                gs1_company_prefix=data[2]
+            )
+        company.GLN13 = data[3]
+        company.SGLN = 'urn:epc:id:sgln:%s' % data[4]
+        company.address1 = data[5]
+        company.address2 = data[6]
+        company.address3 = data[7]
+        company.city = data[9]
+        company.state_province = data[10]
+        company.postal_code = data[11]
+        company.country = data[12]
+        try:
+            company.save()
+        except IntegrityError:
+            self.info_func('Company %s already exists.', company.name)
+        return company
+
+    def create_to_company(self, data: list):
+        try:
+            company = Company.objects.get(
+                gs1_company_prefix=data[22]
+            )
+            company.name = data[13]
+        except Company.DoesNotExist:
+            company = Company.objects.create(
+                name=data[13],
+                gs1_company_prefix=data[22]
+            )
+        company.GLN13 = data[23]
+        company.SGLN = 'urn:epc:id:sgln:%s' % data[24]
+        company.address1 = data[14]
+        company.address2 = data[15]
+        company.address3 = data[16]
+        company.city = data[18]
+        company.state_province = data[19]
+        company.postal_code = data[20]
+        company.country = data[21]
+        try:
+            company.save()
+        except IntegrityError:
+            self.info_func('Company %s already exists.', company.name)
+        return company

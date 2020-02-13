@@ -181,3 +181,5 @@ class TestMasterMaterialImport(TransactionTestCase):
                 rule_name="Unit Test NR Rule",
                 run_immediately=True
             )
+
+
