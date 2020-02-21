@@ -5,7 +5,7 @@ quartet_epcis
 quartet_capture
 quartet_masterdata
 quartet_templates
-quartet_tracelink
+-e git+https://gitlab.com/serial-lab/quartet_tracelink.git#egg=quartet_tracelink
 django
 djangorestframework
 gs123

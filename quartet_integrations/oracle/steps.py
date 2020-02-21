@@ -14,7 +14,8 @@
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 from quartet_capture import models
 from quartet_capture.rules import Step, RuleContext
-from quartet_integrations.oracle.parsing import MasterMaterialParser
+from quartet_integrations.oracle.parsing import MasterMaterialParser, \
+    TradingPartnerParser
 from quartet_masterdata.models import Company
 
 
@@ -138,3 +139,20 @@ class TradeItemNumberRangeImportStep(TradeItemImportStep):
 
     def on_failure(self):
         super().on_failure()
+
+
+class TradingPartnerImportStep(Step):
+    """
+    Imports trading partner data in the format of the company_mappings file
+    in the unit tests test/data directory of the main python project.
+    """
+
+    def execute(self, data, rule_context: RuleContext):
+        self.info('Invoking the parser...')
+        TradingPartnerParser().parse(data, self.info)
+
+    def on_failure(self):
+        pass
+
+    def declared_parameters(self):
+        return {}
