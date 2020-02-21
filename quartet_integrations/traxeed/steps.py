@@ -34,8 +34,8 @@ from quartet_output.steps import ContextKeys
 from quartet_templates.models import Template
 
 """
+ Processes EPCIS coming from Traxeed
 """
-
 
 class ProcessTraxeedStep(rules.Step):
 
