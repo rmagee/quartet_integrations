@@ -48,10 +48,10 @@ class ImportTradingPartnerTestCase(TransactionTestCase):
                 rule_name="Trading Partner Import",
                 run_immediately=True
             )
-        self.assertGreater(
-            Company.objects.all().count(), 0
+        self.assertEqual(
+            Company.objects.all().count(), 40
         )
-        self.assertGreater(
-            Location.objects.all().count(), 0
+        self.assertEqual(
+            Location.objects.all().count(), 42
         )
 
