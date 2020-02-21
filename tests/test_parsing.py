@@ -198,7 +198,7 @@ class TestDivinciRule(TestCase):
         step.rule = rule
         step.order = 4
         step.name = 'Render Tracelink EPCIS XML'
-        step.step_class = 'quartet_tracelink.steps.DaVinciTracelinkOutputStep'
+        step.step_class = 'quartet_tracelink.steps.TracelinkFilteredEventOutputStep'
         step.description = 'Creates TraceLink compliant EPCIS'
         step.save()
 
