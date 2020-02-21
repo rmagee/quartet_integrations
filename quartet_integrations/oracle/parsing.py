@@ -18,6 +18,7 @@ import csv
 import logging
 from io import StringIO
 from django.db.utils import IntegrityError
+from sqlite3 import IntegrityError as sqlIE
 from quartet_capture.models import Rule
 from quartet_masterdata.models import TradeItem
 from quartet_masterdata.models import TradeItemField, Company, Location
@@ -162,8 +163,11 @@ class TradingPartnerParser:
             data = list(data.values())
             from_company = self.create_from_company(data)
             to_company = self.create_to_company(data)
-            self.create_location(from_company)
-            self.create_location(to_company)
+            try:
+                self.create_location(from_company)
+                self.create_location(to_company)
+            except (IntegrityError, sqlIE):
+                info_func('Skipping location.  Already exists.')
 
     def create_location(self, company: Company):
         """
@@ -224,7 +228,7 @@ class TradingPartnerParser:
         company.country = data[12]
         try:
             company.save()
-        except IntegrityError:
+        except (IntegrityError, sqlIE):
             self.info_func('Company %s already exists.', company.name)
         return company
 
@@ -250,6 +254,6 @@ class TradingPartnerParser:
         company.country = data[21]
         try:
             company.save()
-        except IntegrityError:
+        except (IntegrityError, sqlIE):
             self.info_func('Company %s already exists.', company.name)
         return company
