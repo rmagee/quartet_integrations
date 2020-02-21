@@ -42,8 +42,8 @@
                 <tl:country>USA</tl:country>
             </tl:address>
         </tl:fromBusiness>
-        <tl:shipFromLocation>
-            <tl:facilityId type="GLN">0399990000005</tl:facilityId>
+        <tl:shipFromLocation>asdfawdsfasdfasdfasdfasdf
+            <tl:facilityId typfe="GLN">0399990000005</tl:facilityId>
             <tl:address>
                 <tl:businessName>FARM Pharmaceuticals</tl:businessName>
                 <tl:street1>1234 Fake St</tl:street1>
