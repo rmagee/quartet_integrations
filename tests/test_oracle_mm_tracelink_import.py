@@ -12,7 +12,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-
+import sys
 import os
 
 from django.conf import settings
@@ -160,26 +160,28 @@ class TestMasterMaterialImport(TransactionTestCase):
         )
 
     def test_load_partners(self):
-        curpath = os.path.dirname(__file__)
-        file_path = os.path.join(curpath, 'data/tracelink-partners.csv')
-        with open(file_path, "rb") as f:
-            create_and_queue_task(
-                data=f.read(),
-                rule_name='Tracelink Partner Import',
-                run_immediately=True
-            )
-        self.assertEqual(models.Company.objects.all().count(), 15)
+        if sys.version_info[1] > 5:
+            curpath = os.path.dirname(__file__)
+            file_path = os.path.join(curpath, 'data/tracelink-partners.csv')
+            with open(file_path, "rb") as f:
+                create_and_queue_task(
+                    data=f.read(),
+                    rule_name='Tracelink Partner Import',
+                    run_immediately=True
+                )
+            self.assertEqual(models.Company.objects.all().count(), 15)
 
     def test_execute_task_with_NR(self):
-        self.create_endpoint()
-        curpath = os.path.dirname(__file__)
-        file_path = os.path.join(curpath, 'data/master_out.csv')
+        if sys.version_info[1] > 5:
+            self.create_endpoint()
+            curpath = os.path.dirname(__file__)
+            file_path = os.path.join(curpath, 'data/master_out.csv')
 
-        with open(file_path, "rb") as f:
-            create_and_queue_task(
-                data=f.read(),
-                rule_name="Unit Test NR Rule",
-                run_immediately=True
-            )
+            with open(file_path, "rb") as f:
+                create_and_queue_task(
+                    data=f.read(),
+                    rule_name="Unit Test NR Rule",
+                    run_immediately=True
+                )
 
 
