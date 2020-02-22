@@ -73,7 +73,7 @@ class FrequentzOutputParser(FlexibleNSParser):
         self._aggregation_events.append(epcis_event)
 
     def _create_object_event(self, epcis_event):
-        
+
         # transforming the incoming object event into a Frequentz Object Event.
         ret_val = template_events.ObjectEvent(
             epc_list=epcis_event.epc_list,
@@ -86,6 +86,9 @@ class FrequentzOutputParser(FlexibleNSParser):
             read_point=epcis_event.read_point,
             biz_location=epcis_event.biz_location,
             ilmd=epcis_event.ilmd,
+            source_list=epcis_event.source_list,
+            destination_list=epcis_event.destination_list,
+            business_transaction_list=epcis_event.business_transaction_list,
             template=self._template
         )
 
