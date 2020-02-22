@@ -12,7 +12,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-
+import sys
 import os
 
 from django.test import TestCase
@@ -95,22 +95,24 @@ class TestMasterMaterialImport(TestCase):
         )
 
     def test_execute_task(self):
-        curpath = os.path.dirname(__file__)
-        file_path = os.path.join(curpath, 'data/oracle_mm_export.csv')
-        with open(file_path, "rb") as f:
-            create_and_queue_task(
-                data=f.read(),
-                rule_name='Unit Test Rule',
-                run_immediately=True
-            )
+        if sys.version_info[1] > 5:
+            curpath = os.path.dirname(__file__)
+            file_path = os.path.join(curpath, 'data/oracle_mm_export.csv')
+            with open(file_path, "rb") as f:
+                create_and_queue_task(
+                    data=f.read(),
+                    rule_name='Unit Test Rule',
+                    run_immediately=True
+                )
 
     def test_execute_task_with_NR(self):
-        curpath = os.path.dirname(__file__)
-        file_path = os.path.join(curpath, 'data/oracle_mm_export.csv')
+        if sys.version_info[1] > 5:
+            curpath = os.path.dirname(__file__)
+            file_path = os.path.join(curpath, 'data/oracle_mm_export.csv')
 
-        with open(file_path, "rb") as f:
-            create_and_queue_task(
-                data=f.read(),
-                rule_name="Unit Test NR Rule",
-                run_immediately=True
-            )
+            with open(file_path, "rb") as f:
+                create_and_queue_task(
+                    data=f.read(),
+                    rule_name="Unit Test NR Rule",
+                    run_immediately=True
+                )
