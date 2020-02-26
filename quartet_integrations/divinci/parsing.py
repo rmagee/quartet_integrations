@@ -133,7 +133,7 @@ class JSONParser(EPCISJSONParser):
                     "+00:00",
                     datetime.utcnow(),
                     Action.delete.value,
-                    biz_step=BusinessSteps.removing,
+                    biz_step=BusinessSteps.removing.value,
                     parent_id=entry.parent_id,
                 )
                 disagg.child_epcs.append(epc)

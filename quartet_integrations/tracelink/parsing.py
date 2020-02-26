@@ -149,15 +149,14 @@ class TracelinkMMParser:
                 pack_count))
             self.info_func('Company not found for gtin %s- NOT CREATING'
                            ' TRADE ITEM.', gtin14)
-        else:
-            with transaction.atomic():
-                trade_item = self._get_trade_item_model(company, gtin14,
-                                                        material_number, name,
-                                                        pack_count,
-                                                        pallet_pack,
-                                                        unit_of_measure)
+        with transaction.atomic():
+            trade_item = self._get_trade_item_model(company, gtin14,
+                                                    material_number, name,
+                                                    pack_count,
+                                                    pallet_pack,
+                                                    unit_of_measure)
 
-                self.create_vendor_range(trade_item, material_number, company)
+            self.create_vendor_range(trade_item, material_number, company)
 
     def _get_trade_item_model(self, company, gtin14, material_number, name,
                               pack_count, pallet_pack, unit_of_measure):
@@ -227,7 +226,7 @@ class TracelinkMMParser:
         template = Template.objects.get(name='Tracelink Number Request')
         try:
             pool = Pool.objects.create(
-                readable_name='%s | %s' % (trade_item.regulated_product_name, material_number),
+                readable_name='%s | %s | %s' % (trade_item.regulated_product_name, material_number, trade_item.GTIN14),
                 machine_name=trade_item.GTIN14,
                 request_threshold=self.threshold
             )

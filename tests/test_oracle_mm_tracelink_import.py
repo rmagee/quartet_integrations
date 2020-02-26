@@ -12,20 +12,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-import sys
 import os
 
+import sys
 from django.conf import settings
 from django.test import TransactionTestCase
-from quartet_integrations.tracelink.steps import TraceLinkPartnerParsingStep
-from quartet_integrations.management.commands import utils
+
+from serialbox.models import Pool
 from quartet_capture.models import Rule, Step, StepParameter
 from quartet_capture.tasks import create_and_queue_task
+from quartet_integrations.management.commands import utils
+from quartet_integrations.management.commands.utils import \
+    create_external_GTIN_response_rule
 from quartet_masterdata import models
 from quartet_output.models import EndPoint, AuthenticationInfo
 from quartet_tracelink.utils import TraceLinkHelper
-from quartet_integrations.management.commands.utils import \
-    create_external_GTIN_response_rule
 
 
 class TestMasterMaterialImport(TransactionTestCase):
@@ -184,4 +185,5 @@ class TestMasterMaterialImport(TransactionTestCase):
                     run_immediately=True
                 )
 
+            self.assertEqual(Pool.objects.all().count(),163)
 
