@@ -47,3 +47,12 @@ class SSCCListConversionStep(Step):
     """
     def execute(self, data, rule_context: RuleContext):
         return [datum[2:] for datum in data]
+
+    def on_failure(self):
+        pass
+
+    @property
+    def declared_parameters(self):
+        return {}
+
+
