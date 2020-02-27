@@ -38,6 +38,7 @@ class TraceLinkPartnerParser:
     Parses tracelink partner export spreadsheet data and creates QU4RTET
     company instances.
     """
+
     def parse(self, data: bytes):
         file_stream = StringIO(data.decode('utf-8'))
         parsed_data = csv.DictReader(file_stream)
@@ -78,6 +79,7 @@ class TraceLinkPartnerParser:
         zip = ' '.join(state_zip_country)
         return city, state, zip, country_code
 
+
 class TracelinkMMParser:
 
     def __init__(self):
@@ -87,7 +89,7 @@ class TracelinkMMParser:
     def parse(self, data: bytes, info_func: object, threshold: int,
               response_rule_name: str, endpoint: str,
               authentication_info: str, sending_system_gln: str,
-              replenishment_size: int
+              replenishment_size: int, secondary_replenishment_size: int
               ):
         self.replenishment_size = int(replenishment_size)
         self.threshold = threshold
@@ -97,6 +99,7 @@ class TracelinkMMParser:
         self.info_func = info_func
         self.endpoint = endpoint
         self.authentication_info = authentication_info
+        self.secondary_replenishment_size = secondary_replenishment_size
 
         parsed_data = csv.DictReader(file_stream)
         for datarow in parsed_data:
@@ -118,7 +121,7 @@ class TracelinkMMParser:
                                        GLN=row[13],
                                        SGLN=row[14],
                                        company_prefix=row[15],
-                                        company = company
+                                       company=company
                                        )
                 if row[6]:
                     self.create_trade_item(row[0], row[6], row[7],
@@ -134,7 +137,7 @@ class TracelinkMMParser:
     def create_trade_item(self, material_number, unit_of_measure, gtin14,
                           pack_count=None, pallet_pack=None, name=None,
                           l4=None, GLN=None, SGLN=None, company_prefix=None,
-                          company: Company=None
+                          company: Company = None
                           ):
         """
 
@@ -217,7 +220,9 @@ class TracelinkMMParser:
         :param trade_item: The TradeItem to use for creating the pool.
         :return: None
         """
-        replenishment_size = int(self.replenishment_size)
+        replenishment_size = int(
+            self.replenishment_size) if trade_item.GTIN14.startswith(
+            '0') else self.secondary_replenishment_size
         self._create_response_rule()
         request_rule = self._verify_request_rule()
         db_endpoint = self._get_endpoint(self.endpoint)
@@ -226,7 +231,9 @@ class TracelinkMMParser:
         template = Template.objects.get(name='Tracelink Number Request')
         try:
             pool = Pool.objects.create(
-                readable_name='%s | %s | %s' % (trade_item.regulated_product_name, material_number, trade_item.GTIN14),
+                readable_name='%s | %s | %s' % (
+                trade_item.regulated_product_name, material_number,
+                trade_item.GTIN14),
                 machine_name=trade_item.GTIN14,
                 request_threshold=self.threshold
             )
