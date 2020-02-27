@@ -13,7 +13,7 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 from gs123.conversion import BarcodeConverter
-
+from quartet_capture.rules import Step, RuleContext
 from quartet_integrations.serialbox.steps import \
     ListToUrnConversionStep as SBLTU
 
@@ -40,3 +40,10 @@ class ListBasedRegionConversionStep(SBLTU):
         ret = None
         ret = BarcodeConverter(serial_number, len(company_prefix)).epc_urn
         return ret.replace('urn:epc:id:sgtin:', '0.')
+
+class SSCCListConversionStep(Step):
+    """
+    Converts 20 length tracelink SSCCs to 18 by stripping the app identifier.
+    """
+    def execute(self, data, rule_context: RuleContext):
+        return [datum[2:] for datum in data]
