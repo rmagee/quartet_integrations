@@ -29,9 +29,9 @@ INSTALLED_APPS = [
     "quartet_masterdata",
     "quartet_templates",
     "quartet_tracelink",
-    "serialbox",
     "random_flavorpack",
-    "list_based_flavorpack"
+    "serialbox.apps.PoolsConfig",
+    "list_based_flavorpack.apps.ListBasedFlavorpackConfig"
 ]
 
 SETTINGS_PATH = os.path.normpath(os.path.dirname(__file__))
