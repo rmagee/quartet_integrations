@@ -190,9 +190,12 @@ class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
 
         # Set parameter values from the Step
         content_type = 'txt/xml'
-        quantity = self.get_parameter('quantity', None)
-        resource_name = self.get_parameter('resource_name', None)
-        format = self.get_parameter('format', None)
+        quantity = region.number_replenishment_size
+        resource_name = region.machine_name
+        try:
+            format = region.processing_parameters.get(key='format').value
+        except:
+            format = None
 
         # check parameters
         if quantity is None:
