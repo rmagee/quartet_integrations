@@ -85,8 +85,7 @@ class OPSMNumberRangeView(AllocateView):
                                      namespaces=namespaces)
             if len(pool_result) > 0:
                 self.location_name = pool_result[0].text
-                pool = pool_result[0].text.replace('-SSCC', '')
-
+                
             # TODO: Handle exception
             count_result = root.xpath('%scom:SerialQuantity' % xpath_prefix,
                                       namespaces=namespaces)
