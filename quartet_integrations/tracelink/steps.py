@@ -223,10 +223,16 @@ class ExternalTradeItemNumberRangeImportStep(TradeItemNumberRangeImportStep):
 
     def execute(self, data, rule_context: RuleContext):
         self.info('Invoking the parser.')
+        replenishment_size = self.get_integer_parameter('Replenishment Size',
+                                                        2000)
+        secondary_replenishment_size = self.get_integer_parameter(
+            'Secondary Replenishment Size', int(replenishment_size / 2))
+
         TracelinkMMParser().parse(
             data,
             info_func=self.info,
-            response_rule_name=self.get_parameter('Response Rule Name', None, True),
+            response_rule_name=self.get_parameter('Response Rule Name', None,
+                                                  True),
             threshold=75000,
             endpoint=self.get_parameter('Endpoint', None, True),
             authentication_info=self.get_parameter('Authentication Info ID',
@@ -234,22 +240,28 @@ class ExternalTradeItemNumberRangeImportStep(TradeItemNumberRangeImportStep):
                                                    True),
             sending_system_gln=self.get_parameter('Sending System GLN', None,
                                                   True),
-            replenishment_size=self.get_integer_parameter('Replenishment Size',
-                                                          2000)
+            replenishment_size=replenishment_size,
+            secondary_replenishment_size=secondary_replenishment_size
         )
 
-    @property
-    def declared_parameters(self):
-        params = super().declared_parameters
-        params['Authentication Info ID'] = 'The ID of the authentication info ' \
-                                           'instance to use to communicate with ' \
-                                           'external tracelink system.'
-        params['Endpoint'] = 'The name of the Endpoint to use to communicate ' \
-                             'with TraceLink.'
-        params[
-            'Sending System GLN'] = 'The GLN that will be used as the "sending systmem' \
-                                    ' during template rendering for tracelink.',
-        params[
-            'Replenishment Size'] = 'The size of the request to the external ' \
-                                    'system.'
-        return params
+        @property
+        def declared_parameters(self):
+            params = super().declared_parameters
+            params[
+                'Authentication Info ID'] = 'The ID of the authentication info ' \
+                                            'instance to use to communicate with ' \
+                                            'external tracelink system.'
+            params[
+                'Endpoint'] = 'The name of the Endpoint to use to communicate ' \
+                              'with TraceLink.'
+            params[
+                'Sending System GLN'] = 'The GLN that will be used as the "sending systmem' \
+                                        ' during template rendering for tracelink.',
+            params[
+                'Replenishment Size'] = 'The size of the request to the external ' \
+                                        'system.'
+            params[
+                'Secondary Replenishment Size'] = 'To request a smaller amount ' \
+                                                  'for secondary packaging use ' \
+                                                  'this.'
+            return params
