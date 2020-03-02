@@ -31,7 +31,7 @@ class IRISNumberTest(TestCase):
 
     def test_send_request(self):
         # Don't run this test
-        pass
+        return
         if os.path.exists(self.list_based_region.db_file_path):
             os.remove(self.list_based_region.db_file_path)
         size = 5
@@ -98,22 +98,22 @@ class IRISNumberTest(TestCase):
         return list_based_region
 
     def generate_end_point(self):
+        pass
 
-        return None
 
     def generate_authinfo(self):
+        pass
 
-        return None
 
     def generate_allocation(self, size, test_pool):
+
         generator = get_generator(test_pool.machine_name)
         request_factory = RequestFactory()
         request = request_factory.get("allocate/00351991817017/" + str(size))
         response = generator.get_response(request, size,
                                            test_pool.machine_name)
 
-        #serializer = serializers.ResponseSerializer(response)
-
+        self.assertTrue(len(response.get_number_list()) == size)
         return response
 
     def generate_template(self):

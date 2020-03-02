@@ -342,9 +342,8 @@ class IRISNumberRequestProcessStep(rules.Step):
         # Get xml response from context
         xml = rule_context.context['NUMBER_RESPONSE']
         region_name = rule_context.context['region_name']
-        format = rule_context.context['format']
         region = self.get_list_based_region(region_name)
-
+        format = region.processing_parameters.get(key='format').value
         # Load XML
         root = ElementTree.fromstring(xml)
         # Get quantity
@@ -374,7 +373,7 @@ class IRISNumberRequestProcessStep(rules.Step):
 
         cursor = connection.cursor()
         cursor.execute('begin transaction')
-        self.info('storing the numbers.')
+        self.info('storing the numbers. {0}'.format(region.db_file_path))
         for id in serial_numbers:
             cursor.execute('insert into %s (serial_number, used) values '
                            '(?, ?)' % get_region_table(region), (id, 0))
