@@ -15,9 +15,11 @@ from quartet_capture.rules import RuleContext
 from quartet_output.transport.http import HttpTransportMixin, user_agent
 from quartet_integrations.frequentz.environment import get_default_environment
 from quartet_integrations.frequentz.parsers import FrequentzOutputParser
+from quartet_masterdata.models import TradeItem
 from list_based_flavorpack.models import ListBasedRegion
 from serialbox import models as sb_models
-
+from gs123 import conversion
+from quartet_templates.steps import TemplateStep
 from quartet_output.steps import ContextKeys
 
 """
@@ -189,9 +191,12 @@ class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
         }
 
         # Set parameter values from the Step
-        content_type = 'txt/xml'
+        content_type = 'text/xml'
         quantity = region.number_replenishment_size
-        resource_name = region.machine_name
+        try:
+            resource_name = region.processing_parameters.get(key='gtin').value
+        except:
+            resource_name = None
         try:
             format = region.processing_parameters.get(key='format').value
         except:
@@ -199,17 +204,17 @@ class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
 
         # check parameters
         if quantity is None:
-            msg = "Step Parameter 'quantity' was not set"
+            msg = "replenishment_size was not set"
             self.error(msg)
             raise Exception(msg)
 
         if resource_name is None:
-            msg = "Step Parameter 'resource_name' was not set"
+            msg = "Region Processing Parameter 'gtin' was not set. (This can be an sscc value too.)"
             self.error(msg)
             raise Exception(msg)
 
         if format is None:
-            msg = "Step Parameter 'format' was not set"
+            msg = "Region Processing Parameter 'format' was not set"
             self.error(msg)
             raise Exception(msg)
 
@@ -353,8 +358,20 @@ class IRISNumberRequestProcessStep(rules.Step):
         serial_numbers = []
         # add tags to serial_numbers array
         for tag in tags:
-            sn = tag.text.replace('urn:epc:tag:{0}:'.format(format).lower(), "")
-            serial_numbers.append(sn)
+            if format.lower() == 'sgtin-198' or format.lower() == 'sgtin-96':
+                sn = tag.text.replace('urn:epc:tag:{0}:'.format(format).lower(), "")
+                serial_numbers.append(sn)
+            elif format.lower() == 'sscc-96':
+                urn = tag.text.replace('urn:epc:tag:sscc-96:', 'urn:epc:id:sscc:')
+                #sn = conversion.URNConverter(urn)
+                parts = urn.split('.')
+                ext = parts[2][0]
+                cp = parts[1]
+                sn = parts[2][1:]
+                sscc18 = '{0}{1}{2}'.format(ext, cp, sn)
+                sscc18 = conversion.calculate_check_digit(sscc18)
+                serial_numbers.append(sscc18)
+
 
         self.write_list(serial_numbers, region)
 
@@ -400,6 +417,28 @@ class IRISNumberRequestProcessStep(rules.Step):
                     'pool %s' % pool.machine_name
                 )
         return ret
+
+    def on_failure(self):
+        super().on_failure()
+
+    @property
+    def declared_parameters(self):
+        return {}
+
+class IRISTemplateStep(TemplateStep):
+
+    def execute(self, data, rule_context: RuleContext):
+        # convert
+        if len(data[0]) > 18:
+            num = data[0][2:]
+            urn = 'urn:epc:id:sgtin:{0}'.format(num)
+            sn = conversion.URNConverter(urn)
+            # Populate
+            rule_context.context['trade_item'] = TradeItem.objects.get(
+                GTIN14=sn.gtin14
+            )
+        #call super
+        return super().execute(data, rule_context)
 
     def on_failure(self):
         super().on_failure()
