@@ -31,7 +31,7 @@ class IRISNumberTest(TestCase):
 
     def test_send_request(self):
         # Don't run this test
-        pass
+        return
         if os.path.exists(self.list_based_region.db_file_path):
             os.remove(self.list_based_region.db_file_path)
         size = 5
@@ -80,7 +80,7 @@ class IRISNumberTest(TestCase):
         list_based_region = ListBasedRegion()
         list_based_region.pool = test_pool
         list_based_region.readable_name = "IRIS Region"
-        list_based_region.machine_name = "00351991817017"
+        list_based_region.machine_name = "0351991.0" # "00351991817017"
         list_based_region.active = True
         list_based_region.order = 1
         list_based_region.rule = rule
@@ -93,35 +93,36 @@ class IRISNumberTest(TestCase):
         ProcessingParameters.objects.create(
             list_based_region=list_based_region,
             key='format',
-            value='SGTIN-96'
+            value='SSCC-96'
+        )
+        ProcessingParameters.objects.create(
+            list_based_region=list_based_region,
+            key='GTIN',
+            value='0351991.0'
         )
         return list_based_region
 
     def generate_end_point(self):
-
-        return None
+       pass
 
     def generate_authinfo(self):
-
-        return None
+        pass
 
     def generate_allocation(self, size, test_pool):
+
         generator = get_generator(test_pool.machine_name)
         request_factory = RequestFactory()
-        request = request_factory.get("allocate/00351991817017/" + str(size))
+        request = request_factory.get("allocate/0351991.0/" + str(size))
+        #request = request_factory.get("allocate/00351991817017/" + str(size))
         response = generator.get_response(request, size,
                                            test_pool.machine_name)
 
-        #serializer = serializers.ResponseSerializer(response)
-
+        self.assertTrue(len(response.get_number_list()) == size)
         return response
 
     def generate_template(self):
         content = '''
-         <IRIS>
-            <gtin>{{ GTIN }}<gtin> 
-            <quantity>{{ QUANTITY }}</quantity>
-         </IRIS>
+         {{GTIN}},{{format}}
         '''
         return Template.objects.create(name="Test IRIS Template", content=content,
                                        description="")
