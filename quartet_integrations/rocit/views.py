@@ -115,7 +115,7 @@ class RetrievePackagingHierarchyView(RocItBaseView):
         if 'wsdl' in self.request.query_params.keys():
             ret = self.get_wsdl('wsdl')
         elif request.query_params.get('XSD'):
-            ret = self.get_wsdl('XSD')
+            ret = self.get_wsdl(request.query_params.get('XSD'))
         return ret or Response("Resource not found.",
                  status.HTTP_404_NOT_FOUND, content_type="*/*")
 
