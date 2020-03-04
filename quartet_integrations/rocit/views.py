@@ -18,6 +18,7 @@ import logging
 from lxml import etree
 from django.template import loader
 from rest_framework.response import Response
+from rest_framework.request import Request
 from rest_framework import views
 from rest_framework.negotiation import DefaultContentNegotiation
 from rest_framework import status
@@ -109,24 +110,13 @@ class RetrievePackagingHierarchyView(RocItBaseView):
 
         return ret_val
 
-    def get(self, request):
-        try:
-            if 'wsdl' in request.GET:
-                return self.get_wsdl('wsdl')
-        except:
-            pass
-        try:
-            if request.GET["WSDL"]:
-                return self.get_wsdl(request.GET["WSDL"])
-        except:
-            pass
-        try:
-            if request.GET["XSD"]:
-                return self.get_wsdl(request.GET["XSD"])
-        except:
-            pass
-
-        return Response("Resource not found.",
+    def get(self, request: Request):
+        ret = None
+        if 'wsdl' in self.request.query_params.keys():
+            ret = self.get_wsdl('wsdl')
+        elif request.query_params.get('XSD'):
+            ret = self.get_wsdl('XSD')
+        return ret or Response("Resource not found.",
                  status.HTTP_404_NOT_FOUND, content_type="*/*")
 
     def get_wsdl(self, resource_path):
