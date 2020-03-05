@@ -104,41 +104,46 @@ class RocItQuery():
             child_tag_count = len(children)
             tags = []
             for child in children:
+
+                if child.find(':sscc:') > 0:
+                   # add the sscc to the child tags
+                   child_tags.append(child)
+                   # But don't add its children to the saleable units
+                   # just continue, this is a partial.
+                   continue
                 # retrieve all children from the tag_id
                 tags = tags + RocItQuery.get_all_children(query, child)
+
                 if len(tags) == 0:
                     # if no tags then no children for the child - add the child to saleable_units
                     saleable_units.append(child)
                 else:
                     # there are children for this child, set the returned tags to the saleable units
                     saleable_units = tags
-                # add the child to the child_tags. This list will be returned in the Response to ROC-IT
+                # add the child to the child_tags.
                 child_tags.append(child)
 
-            # use saleable_units list to get Quantity count and ILMD information
+            # use saleable_units + child_tag_count to get Quantity count
+            quantity = len(saleable_units) + child_tag_count
 
-            quantity = len(saleable_units)
-            if quantity == 0:
-                # The tag_id parameter is a saleable_unit
-                saleable_unit = tag_id
-            else:
-                saleable_unit = saleable_units[0]
-
-            events = query.get_events_by_entry_identifer(entry_identifier=saleable_unit)
-
-            for event in events:
-                ilmds = query.get_ilmd(db_event=event.event)
-                for ilmd in ilmds:
-                    if ilmd.name == 'itemExpirationDate':
-                        expiry = ilmd.value
-                    elif ilmd.name == 'lotNumber':
-                        lot = ilmd.value
-                    elif ilmd.name == 'additionalTradeItemIdentification':
-                        product = ilmd.value
-                    elif ilmd.name == 'measurementUnitCode':
-                        uom = ilmd.value
-
-                # if have both lot and expiry, stop going through events
+            # go through saleable_units to get the ILMD information
+            for id in saleable_units:
+                events = query.get_events_by_entry_identifer(entry_identifier=id)
+                for event in events:
+                    # look for ILMD info
+                    ilmds = query.get_ilmd(db_event=event.event)
+                    for ilmd in ilmds:
+                        if ilmd.name == 'itemExpirationDate':
+                            expiry = ilmd.value
+                        elif ilmd.name == 'lotNumber':
+                            lot = ilmd.value
+                        elif ilmd.name == 'additionalTradeItemIdentification':
+                            product = ilmd.value
+                        elif ilmd.name == 'measurementUnitCode':
+                            uom = ilmd.value
+                        # if have both lot and expiry, stop going through events
+                    if len(lot) > 0 and len(expiry) > 0 and len(uom) > 0 and len(product) > 0:
+                       break
                 if len(lot) > 0 and len(expiry) > 0 and len(uom) > 0 and len(product) > 0:
                     break
 
