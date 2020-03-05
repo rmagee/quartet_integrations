@@ -112,7 +112,7 @@ class RetrievePackagingHierarchyView(RocItBaseView):
 
     def get(self, request: Request):
         ret = None
-        if request.query_params.get('wsdl') :
+        if 'wsdl' in request.query_params.keys():
             ret = self.get_wsdl('wsdl')
         elif request.query_params.get('WSDL'):
             ret = self.get_wsdl(request.query_params.get("WSDL"))
