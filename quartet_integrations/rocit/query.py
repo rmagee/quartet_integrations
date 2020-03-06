@@ -99,32 +99,23 @@ class RocItQuery():
         if send_children:
             # The request is to return the children.
             # get the children of tag_id
-
             children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
             child_tag_count = len(children)
-            tags = []
+            # go through the children identifers and collect the lowest saleable units
             for child in children:
-
-                if child.find(':sscc:') > 0:
-                   # add the sscc to the child tags
-                   child_tags.append(child)
-                   # But don't add its children to the saleable units
-                   # just continue, this is a partial.
-                   continue
                 # retrieve all children from the tag_id
-                tags = tags + RocItQuery.get_all_children(query, child)
-
-                if len(tags) == 0:
-                    # if no tags then no children for the child - add the child to saleable_units
-                    saleable_units.append(child)
-                else:
-                    # there are children for this child, set the returned tags to the saleable units
-                    saleable_units = tags
-                # add the child to the child_tags.
+                saleable_units += RocItQuery.get_lowest_saleable_units(query, child)
                 child_tags.append(child)
 
-            # use saleable_units + child_tag_count to get Quantity count
-            quantity = len(saleable_units) + child_tag_count
+
+            if len(saleable_units) == 0:
+                # if no saleable_units where located then the searched value: tag_id
+                # is a saleable_unit, add it to the salable_units list so the ILMD data
+                # can be located. 
+                saleable_units.append(tag_id)
+
+            # add saleable_units to quantity
+            quantity = len(saleable_units)
 
             # go through saleable_units to get the ILMD information
             for id in saleable_units:
@@ -165,6 +156,41 @@ class RocItQuery():
                 }
 
         return ret_val
+
+    @staticmethod
+    def get_lowest_saleable_units(query, tag_id):
+        ret_val = []
+        children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
+        if len(children) == 0:
+           ret_val.append(tag_id)
+        else:
+            for child in children:
+                identifiers = RocItQuery.get_lowest_saleable_units(query, child)
+                if len(identifiers) == 0:
+                    ret_val.append(child)
+                ret_val += identifiers
+        return ret_val
+
+    @staticmethod
+    def get_ilmd_data(query, tag_id):
+
+        events = query.get_events_by_entry_identifer(entry_identifier=tag_id)
+        for event in events:
+            # look for ILMD info
+            ilmds = query.get_ilmd(db_event=event.event)
+            for ilmd in ilmds:
+                if ilmd.name == 'itemExpirationDate':
+                    expiry = ilmd.value
+                elif ilmd.name == 'lotNumber':
+                    lot = ilmd.value
+                elif ilmd.name == 'additionalTradeItemIdentification':
+                    product = ilmd.value
+                elif ilmd.name == 'measurementUnitCode':
+                    uom = ilmd.value
+            # if have uom, lot, expiry, product stop going through events
+            if len(lot) > 0 and len(expiry) > 0 and len(uom) > 0 and len(product) > 0:
+                break
+
 
     @staticmethod
     def get_all_children(query, tag_id):
