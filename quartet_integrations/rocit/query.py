@@ -29,26 +29,9 @@ logger = getLogger(__name__)
 
 class RocItQuery():
 
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def count_eaches(query, tag_id):
-
-        cnt = 0
-        entry = entries.Entry.objects.get(identifier=tag_id)
-        agg_evt = query.get_epcis_event(entry.last_aggregation_event)
-        cnt = len(agg_evt.child_epcs)
-        for child in agg_evt.child_epcs:
-            res = query.get_epcs_by_parent_identifier(child,False)
-            cnt = cnt + len(res)
-        return cnt
-
     @staticmethod
     def RetrievePackagingHierarchy(tag_id, send_children, send_product_info):
 
-        gtin = None
-        parent_tag = ""
         quantity = 0
         product = ""
         uom = ""
@@ -61,7 +44,6 @@ class RocItQuery():
         child_tag_count = 0
         child_tags = []
         saleable_units = []
-        send_product_info = (send_product_info is not None and send_product_info.lower() == 'true')
         send_children = (send_children is not None and send_children.lower() == 'true')
 
         # Create the DBProxy
@@ -98,23 +80,23 @@ class RocItQuery():
 
         if send_children:
             # The request is to return the children.
-            # get the children of tag_id
+            # get the direct children of the tag_id
             children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
             child_tag_count = len(children)
-            # go through the children identifers and collect the lowest saleable units
+            # go through the direct children identifers and collect the lowest saleable units
             for child in children:
-                # retrieve all children from the tag_id
+                # retrieve the lowest saleable unit from the child
                 saleable_units += RocItQuery.get_lowest_saleable_units(query, child)
+                # add child to child_tags
                 child_tags.append(child)
 
-
             if len(saleable_units) == 0:
-                # if no saleable_units where located then the searched value: tag_id
+                # if no saleable_units where located then the searched value, tag_id
                 # is a saleable_unit, add it to the salable_units list so the ILMD data
-                # can be located. 
+                # can be located.
                 saleable_units.append(tag_id)
 
-            # add saleable_units to quantity
+            # The quantity is the saleable_units count
             quantity = len(saleable_units)
 
             # go through saleable_units to get the ILMD information
@@ -132,12 +114,14 @@ class RocItQuery():
                             product = ilmd.value
                         elif ilmd.name == 'measurementUnitCode':
                             uom = ilmd.value
-                        # if have both lot and expiry, stop going through events
+                    # if uom, lot, expiry, and product have values, stop going through events
                     if len(lot) > 0 and len(expiry) > 0 and len(uom) > 0 and len(product) > 0:
                        break
+                # if uom, lot, expiry, and product have values, stop going through saleable_units
                 if len(lot) > 0 and len(expiry) > 0 and len(uom) > 0 and len(product) > 0:
                     break
 
+        # set up the template parameters
         ret_val = {
                     "message_id": str(uuid.uuid4()),
                     "tag_id": tag_id,
@@ -171,57 +155,5 @@ class RocItQuery():
                 ret_val += identifiers
         return ret_val
 
-    @staticmethod
-    def get_ilmd_data(query, tag_id):
-
-        events = query.get_events_by_entry_identifer(entry_identifier=tag_id)
-        for event in events:
-            # look for ILMD info
-            ilmds = query.get_ilmd(db_event=event.event)
-            for ilmd in ilmds:
-                if ilmd.name == 'itemExpirationDate':
-                    expiry = ilmd.value
-                elif ilmd.name == 'lotNumber':
-                    lot = ilmd.value
-                elif ilmd.name == 'additionalTradeItemIdentification':
-                    product = ilmd.value
-                elif ilmd.name == 'measurementUnitCode':
-                    uom = ilmd.value
-            # if have uom, lot, expiry, product stop going through events
-            if len(lot) > 0 and len(expiry) > 0 and len(uom) > 0 and len(product) > 0:
-                break
-
-
-    @staticmethod
-    def get_all_children(query, tag_id):
-        """
-        Recursive, traverses the hierarchy of tag_id of all child entries looking for more children
-        :return: A list of child entries
-        """
-        ret_val = []
-        children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
-
-        for child in children:
-            ret_val.append(child)
-            res = RocItQuery.get_all_children(query, child)
-            if len(res) > 0:
-                ret_val = ret_val + res
-
-        return ret_val
-
-    @staticmethod
-    def get_product_info(gtin):
-
-        trade_item = None
-        product = None
-        uom = None
-        try:
-            trade_item = TradeItem.objects.get(GTIN14=gtin)
-            product = trade_item.additional_id
-            uom = trade_item.package_uom
-        except:
-            raise Exception('Trade Item or Unit of Measure not configured in QU4RTET')
-
-        return product, uom
 
 
