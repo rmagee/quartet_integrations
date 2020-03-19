@@ -20,17 +20,73 @@ from list_based_flavorpack.models import ListBasedRegion
 from serialbox import models as sb_models
 from gs123 import conversion
 from quartet_templates.steps import TemplateStep
-from quartet_output.steps import ContextKeys
+from quartet_output.steps import ContextKeys, EPCPyYesOutputStep
+
+
+class FrequentzOutput(EPCPyYesOutputStep):
+
+    def _get_new_template(self):
+        """
+        Grabs the jinja environment and creates a jinja template object and
+        returns
+        :return: A new Jinja template.
+        """
+        env = get_default_environment()
+        template = env.get_template('frequentz/frequentz_object_event.xml')
+        return template
+
+    def _get_shipping_template(self):
+        """
+        Returns a shipping event template for use by the filtered event.
+        :return: A jinja template object.
+        """
+        # TODO: return the template
+        pass
+
+    def execute(self, data, rule_context: RuleContext):
+        # two events need new templates - object and shipping
+        # the overall document needs a new template get that below
+        # if filtered events has more than one event then you know
+        # the event in filtered events is a shipping event so grab that
+        # and give it a new template
+        filtered_events = rule_context.context.get(ContextKeys.FILTERED_EVENTS_KEY)
+        if len(filtered_events) > 0:
+            template = self._get_shipping_template()
+            # TODO: check to make sure this is changed by reference and not value
+            filtered_events[0]._template = template
+            # get the object events from the context - these are added by
+            # the AddCommissioningDataStep step in the rule.
+            object_events = rule_context.context.get(
+                ContextKeys.OBJECT_EVENTS_KEY.value, [])
+            if len(object_events) > 0:
+                #here you are changing the object event templates
+                template = self._get_new_template()
+                for event in object_events:
+                    event._template = template
+        super().execute(data, rule_context)
+
+    def get_epcis_document_class(self,
+                                 all_events) -> template_events.EPCISEventListDocument:
+        """
+        This function will override the default 1.2 EPCIS doc with a 1.0
+        template
+        :param all_events: The events to add to the document
+        :return: The EPCPyYes event list document to render
+        """
+        doc_class = super().get_epcis_document_class(all_events)
+        # TODO: override template here
+        return doc_class
+
 
 """
  Creates output EPCIS for Frequentz which is EPCIS 1.0
 """
 
+
 class FrequentzOutputStep(rules.Step):
 
     def __init__(self, db_task: models.Task, **kwargs):
         super().__init__(db_task, **kwargs)
-
 
     def execute(self, data, rule_context: RuleContext):
 
@@ -82,6 +138,7 @@ class FrequentzOutputStep(rules.Step):
 
     def on_failure(self):
         pass
+
 
 class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
     '''
@@ -251,7 +308,8 @@ class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
         self.info("Response Received %s", response.content[0:5000])
         # Get the request id
         root = ElementTree.fromstring(response.text)
-        request_id = root.find('soapenv:Body/ns2:createTagResponse/ns2:requestId', ns).text
+        request_id = root.find(
+            'soapenv:Body/ns2:createTagResponse/ns2:requestId', ns).text
 
         # build request to get serial numbers
         context = {
@@ -325,7 +383,6 @@ class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
         }
 
 
-
 class IRISNumberRequestProcessStep(rules.Step):
     """
     Takes response data from tracelink systems and writes to the sqlite db
@@ -352,18 +409,24 @@ class IRISNumberRequestProcessStep(rules.Step):
         # Load XML
         root = ElementTree.fromstring(xml)
         # Get quantity
-        quantity_returned = root.find('soapenv:Body/ns2:getTagsResponse/ns2:tagResponse/ns2:quantity', ns).text
+        quantity_returned = root.find(
+            'soapenv:Body/ns2:getTagsResponse/ns2:tagResponse/ns2:quantity',
+            ns).text
         # Get Serial Numbers
-        tags = root.findall('soapenv:Body/ns2:getTagsResponse/ns2:tagResponse/ns2:tagList/ns2:tag', ns)
+        tags = root.findall(
+            'soapenv:Body/ns2:getTagsResponse/ns2:tagResponse/ns2:tagList/ns2:tag',
+            ns)
         serial_numbers = []
         # add tags to serial_numbers array
         for tag in tags:
             if format.lower() == 'sgtin-198' or format.lower() == 'sgtin-96':
-                sn = tag.text.replace('urn:epc:tag:{0}:'.format(format).lower(), "")
+                sn = tag.text.replace(
+                    'urn:epc:tag:{0}:'.format(format).lower(), "")
                 serial_numbers.append(sn)
             elif format.lower() == 'sscc-96':
-                urn = tag.text.replace('urn:epc:tag:sscc-96:', 'urn:epc:id:sscc:')
-                #sn = conversion.URNConverter(urn)
+                urn = tag.text.replace('urn:epc:tag:sscc-96:',
+                                       'urn:epc:id:sscc:')
+                # sn = conversion.URNConverter(urn)
                 parts = urn.split('.')
                 ext = parts[2][0]
                 cp = parts[1]
@@ -371,7 +434,6 @@ class IRISNumberRequestProcessStep(rules.Step):
                 sscc18 = '{0}{1}{2}'.format(ext, cp, sn)
                 sscc18 = conversion.calculate_check_digit(sscc18)
                 serial_numbers.append(sscc18)
-
 
         self.write_list(serial_numbers, region)
 
@@ -425,6 +487,7 @@ class IRISNumberRequestProcessStep(rules.Step):
     def declared_parameters(self):
         return {}
 
+
 class IRISTemplateStep(TemplateStep):
 
     def execute(self, data, rule_context: RuleContext):
@@ -437,7 +500,7 @@ class IRISTemplateStep(TemplateStep):
             rule_context.context['trade_item'] = TradeItem.objects.get(
                 GTIN14=sn.gtin14
             )
-        #call super
+        # call super
         return super().execute(data, rule_context)
 
     def on_failure(self):
