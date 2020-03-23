@@ -1,3 +1,17 @@
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Copyright 2019 SerialLab Corp.  All rights reserved.
 import io, os
 import datetime
 import time
@@ -23,7 +37,7 @@ from quartet_templates.steps import TemplateStep
 from quartet_output.steps import ContextKeys, EPCPyYesOutputStep
 
 
-class FrequentzOutput(EPCPyYesOutputStep):
+class FrequentzOutputStep(EPCPyYesOutputStep):
 
     def _get_new_template(self):
         """
@@ -40,8 +54,9 @@ class FrequentzOutput(EPCPyYesOutputStep):
         Returns a shipping event template for use by the filtered event.
         :return: A jinja template object.
         """
-        # TODO: return the template
-        pass
+        env = get_default_environment()
+        template = env.get_template('frequentz/frequentz_shipping_objectevent.xml')
+        return template
 
     def execute(self, data, rule_context: RuleContext):
         # two events need new templates - object and shipping
@@ -49,10 +64,9 @@ class FrequentzOutput(EPCPyYesOutputStep):
         # if filtered events has more than one event then you know
         # the event in filtered events is a shipping event so grab that
         # and give it a new template
-        filtered_events = rule_context.context.get(ContextKeys.FILTERED_EVENTS_KEY)
+        filtered_events = rule_context.context.get(ContextKeys.FILTERED_EVENTS_KEY.value)
         if len(filtered_events) > 0:
             template = self._get_shipping_template()
-            # TODO: check to make sure this is changed by reference and not value
             filtered_events[0]._template = template
             # get the object events from the context - these are added by
             # the AddCommissioningDataStep step in the rule.
@@ -74,70 +88,10 @@ class FrequentzOutput(EPCPyYesOutputStep):
         :return: The EPCPyYes event list document to render
         """
         doc_class = super().get_epcis_document_class(all_events)
-        # TODO: override template here
-        return doc_class
-
-
-"""
- Creates output EPCIS for Frequentz which is EPCIS 1.0
-"""
-
-
-class FrequentzOutputStep(rules.Step):
-
-    def __init__(self, db_task: models.Task, **kwargs):
-        super().__init__(db_task, **kwargs)
-
-    def execute(self, data, rule_context: RuleContext):
-
-        # Parse EPCIS
-        if isinstance(data, File):
-            parser = FrequentzOutputParser(data)
-        elif isinstance(data, str):
-            parser = FrequentzOutputParser(io.BytesIO(str.encode(data)))
-        else:
-            parser = FrequentzOutputParser(io.BytesIO(data))
-
-        # parse
-        parser.parse()
-
-        rule_context.context[
-            ContextKeys.OBJECT_EVENTS_KEY.value] = parser.object_events
-        rule_context.context[
-            ContextKeys.AGGREGATION_EVENTS_KEY.value] = parser.aggregation_events
-
-        # put the parser in the context so the data isn't parsed again in the next step
-        rule_context.context['PARSER'] = parser
-
         env = get_default_environment()
-
-        created_date = str(datetime.datetime.utcnow().isoformat())
-        additional_context = {'created_date': created_date}
-
-        all_events = parser.object_events + parser.aggregation_events
-        epcis_document = template_events.EPCISEventListDocument(
-            all_events,
-            None,
-            template=env.get_template(
-                'frequentz/frequentz_epcis_document.xml'
-            ),
-            additional_context=additional_context
-        )
-        if self.get_boolean_parameter('JSON', False):
-            data = epcis_document.render_json()
-        else:
-            data = epcis_document.render()
-        rule_context.context[
-            ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value
-        ] = data
-        # For testing so the comm/agg doc can be viewed/evaluated in unit test
-        rule_context.context['COMM_AGG_DOCUMENT'] = data
-
-    def declared_parameters(self):
-        return {}
-
-    def on_failure(self):
-        pass
+        template = env.get_template('frequentz/frequentz_epcis_document.xml')
+        doc_class._template = template
+        return doc_class
 
 
 class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
