@@ -113,7 +113,8 @@ class TracelinkMMParser:
                                        GLN=row[13],
                                        SGLN=row[14],
                                        company_prefix=row[15],
-                                       company=company
+                                       company=company,
+                                       NDC=row[16]
                                        )
                 self.create_trade_item(row[0], row[3], row[4], row[5],
                                        pallet_pack=row[9], name=row[10],
@@ -121,7 +122,8 @@ class TracelinkMMParser:
                                        GLN=row[13],
                                        SGLN=row[14],
                                        company_prefix=row[15],
-                                       company=company
+                                       company=company,
+                                       NDC=row[16]
                                        )
                 if row[6]:
                     self.create_trade_item(row[0], row[6], row[7],
@@ -131,13 +133,14 @@ class TracelinkMMParser:
                                            GLN=row[13],
                                            SGLN=row[14],
                                            company_prefix=row[15],
-                                           company=company
+                                           company=company,
+                                           NDC=row[16]
                                            )
 
     def create_trade_item(self, material_number, unit_of_measure, gtin14,
                           pack_count=None, pallet_pack=None, name=None,
                           l4=None, GLN=None, SGLN=None, company_prefix=None,
-                          company: Company = None
+                          company: Company = None, NDC=None
                           ):
         """
 
@@ -157,12 +160,13 @@ class TracelinkMMParser:
                                                     material_number, name,
                                                     pack_count,
                                                     pallet_pack,
-                                                    unit_of_measure)
+                                                    unit_of_measure,
+                                                    NDC=NDC)
 
             self.create_vendor_range(trade_item, material_number, company)
 
     def _get_trade_item_model(self, company, gtin14, material_number, name,
-                              pack_count, pallet_pack, unit_of_measure):
+                              pack_count, pallet_pack, unit_of_measure, NDC):
         try:
             trade_item = TradeItem.objects.get(GTIN14=gtin14)
         except TradeItem.DoesNotExist:
@@ -170,6 +174,8 @@ class TracelinkMMParser:
                 GTIN14=gtin14,
                 company=company
             )
+        trade_item.NDC = NDC
+        trade_item.NDC_pattern = self.get_NDC_pattern(NDC)
         trade_item.additional_id = material_number
         trade_item.package_uom = unit_of_measure
         trade_item.pack_count = pack_count
@@ -182,6 +188,14 @@ class TracelinkMMParser:
             value=pallet_pack
         )
         return trade_item
+
+    def get_NDC_pattern(self, NDC: str):
+        split_vals = NDC.split('-')
+        lens = []
+        for val in split_vals:
+            lens.append(str(len(val)))
+        result = ('-').join(lens)
+        return result
 
     def create_vendor_range(self, trade_item: TradeItem, material_number,
                             company: Company
@@ -232,8 +246,8 @@ class TracelinkMMParser:
         try:
             pool = Pool.objects.create(
                 readable_name='%s | %s | %s' % (
-                trade_item.regulated_product_name, material_number,
-                trade_item.GTIN14),
+                    trade_item.regulated_product_name, material_number,
+                    trade_item.GTIN14),
                 machine_name=trade_item.GTIN14,
                 request_threshold=self.threshold
             )

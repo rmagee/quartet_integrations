@@ -21,7 +21,7 @@ from django.db.utils import IntegrityError
 from sqlite3 import IntegrityError as sqlIE
 from quartet_capture.models import Rule
 from quartet_masterdata.models import TradeItem
-from quartet_masterdata.models import TradeItemField, Company, Location
+from quartet_masterdata.models import TradeItemField, Company, Location, LocationField, CompanyType
 from random_flavorpack.models import RandomizedRegion
 from serialbox.models import Pool
 from serialbox.models import ResponseRule
@@ -205,6 +205,9 @@ class TradingPartnerParser:
         location.postal_code = company.postal_code
         location.country = company.country
         location.save()
+        LocationField.objects.get_or_create(
+            name='Import Type', value='Oracle', location=location
+        )
 
     def create_from_company(self, data):
         try:
@@ -226,10 +229,16 @@ class TradingPartnerParser:
         company.state_province = data[10]
         company.postal_code = data[11]
         company.country = data[12]
+        CompanyType.objects.get_or_create(
+            identifier='Import Type',
+            value='Oracle',
+            company=company
+        )
         try:
             company.save()
         except (IntegrityError, sqlIE):
             self.info_func('Company %s already exists.', company.name)
+
         return company
 
     def create_to_company(self, data: list):

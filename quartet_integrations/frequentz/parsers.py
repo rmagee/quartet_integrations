@@ -18,8 +18,8 @@ from eparsecis.eparsecis import FlexibleNSParser
 from quartet_integrations.frequentz.environment import get_default_environment
 
 """
-    The FrequentzOutputParser parses EPCIS from OPSM and collects the data points from the 
-    incoming EPCIS for use in the FrequentzOutputStep.    
+    The FrequentzOutputParser parses EPCIS from OPSM and collects the data points from the
+    incoming EPCIS for use in the FrequentzOutputStep.
 """
 
 
@@ -48,7 +48,7 @@ class FrequentzOutputParser(FlexibleNSParser):
 
     """
         When the base parser sees an ObjectEvent, this method is called
-        The event is passed in as a parameter. 
+        The event is passed in as a parameter.
     """
 
     def handle_object_event(self, epcis_event: template_events.ObjectEvent):
@@ -73,26 +73,13 @@ class FrequentzOutputParser(FlexibleNSParser):
         self._aggregation_events.append(epcis_event)
 
     def _create_object_event(self, epcis_event):
-
-        # transforming the incoming object event into a Frequentz Object Event.
-        ret_val = template_events.ObjectEvent(
-            epc_list=epcis_event.epc_list,
-            record_time=epcis_event.record_time,
-            event_time=epcis_event.event_time,
-            event_timezone_offset=epcis_event.event_timezone_offset,
-            action=epcis_event.action,
-            biz_step=epcis_event.biz_step,
-            disposition=epcis_event.disposition,
-            read_point=epcis_event.read_point,
-            biz_location=epcis_event.biz_location,
-            ilmd=epcis_event.ilmd,
-            source_list=epcis_event.source_list,
-            destination_list=epcis_event.destination_list,
-            business_transaction_list=epcis_event.business_transaction_list,
-            template=self._template
-        )
-
-        return ret_val
+        """
+        Change the template to the frequentz template and return.
+        :param epcis_event:
+        :return: The original event with a new template assigned.
+        """
+        epcis_event.template = self._template
+        return epcis_event
 
     @property
     def lot_number(self):
