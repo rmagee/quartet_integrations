@@ -231,7 +231,7 @@ class TradingPartnerParser:
         company.country = data[12]
         CompanyType.objects.get_or_create(
             identifier='Import Type',
-            value='Oracle',
+            description='Oracle',
             company=company
         )
         try:
