@@ -155,15 +155,15 @@ class TracelinkMMParser:
                 pack_count))
             self.info_func('Company not found for gtin %s- NOT CREATING'
                            ' TRADE ITEM.', gtin14)
-        with transaction.atomic():
-            trade_item = self._get_trade_item_model(company, gtin14,
-                                                    material_number, name,
-                                                    pack_count,
-                                                    pallet_pack,
-                                                    unit_of_measure,
-                                                    NDC=NDC)
 
-            self.create_vendor_range(trade_item, material_number, company)
+        trade_item = self._get_trade_item_model(company, gtin14,
+                                                material_number, name,
+                                                pack_count,
+                                                pallet_pack,
+                                                unit_of_measure,
+                                                NDC=NDC)
+
+        self.create_vendor_range(trade_item, material_number, company)
 
     def _get_trade_item_model(self, company, gtin14, material_number, name,
                               pack_count, pallet_pack, unit_of_measure, NDC):
