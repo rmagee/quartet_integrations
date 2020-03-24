@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/" xmlns:psid="http://schemas.datacontract.org/2004/07/psIDCodeMaker">
+	<soapenv:Header/>
+	<soapenv:Body>
+		<tem:Generate>
+			<tem:req>
+				<psid:RequestID>{{ request_id }}</psid:RequestID>
+				<psid:EncodingType>{{ encoding_type }}</psid:EncodingType>
+				<psid:Size>{{ quantity }}</psid:Size>
+				<psid:ObjectName>{{ object_name }}</psid:ObjectName>
+				<psid:ObjectValue>{{ object_value }}</psid:ObjectValue>
+			</tem:req>
+		</tem:Generate>
+	</soapenv:Body>
+</soapenv:Envelope>
