@@ -1,0 +1,6 @@
+<ilmd>
+{% for attribute in ilmd %}
+    <gs1ushc:{{ attribute.name.value or attribute.name }} xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">{{ attribute.value }}</gs1ushc:{{ attribute.name.value or attribute.name }}>
+{% endfor %}
+</ilmd>
+
