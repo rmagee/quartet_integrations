@@ -22,7 +22,7 @@
 {% endif %}
 {% if event.ilmd %}
     {% with ilmd = event.ilmd %}
-        {% include "frequentz/frequentz_ilmd.xml" %}
+        {% include "pharmasecure/pharmasecure_ilmd.xml" %}
     {% endwith %}
 {% endif %}
 </extension>

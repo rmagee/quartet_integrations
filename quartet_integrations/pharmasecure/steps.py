@@ -13,45 +13,7 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 import io, os
-import random
-import datetime
-import time
-import sqlite3
-import requests
-from django.core.files.base import File
-from django.utils.translation import gettext as _
-from xml.etree import ElementTree
-from requests.auth import HTTPBasicAuth, HTTPProxyAuth
-from list_based_flavorpack.processing_classes.third_party_processing.rules import \
-    get_region_table
-from EPCPyYes.core.v1_2 import template_events
-from quartet_capture import models, rules, errors as capture_errors
-from quartet_capture.rules import RuleContext
-from quartet_output.transport.http import HttpTransportMixin, user_agent
-from quartet_integrations.frequentz.environment import get_default_environment
-from quartet_integrations.frequentz.parsers import FrequentzOutputParser
-from quartet_masterdata.models import TradeItem
-from list_based_flavorpack.models import ListBasedRegion
-from serialbox import models as sb_models
-from gs123 import conversion
-from quartet_templates.steps import TemplateStep
-from quartet_output.steps import ContextKeys, EPCPyYesOutputStep
-
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Copyright 2019 SerialLab Corp.  All rights reserved.
-import io, os
+import copy
 import datetime
 import time
 import sqlite3
@@ -86,6 +48,64 @@ class PharmaSecureOutputStep(EPCPyYesOutputStep):
         template = env.get_template('pharmasecure/pharmasecure_object_event.xml')
         return template
 
+    def _get_aggregation_template(self):
+        """
+        Returns a Aggregation event template for use by the filtered event.
+        :return: A jinja template object.
+        """
+        env = get_default_environment()
+        template = env.get_template('pharmasecure/pharamsecure_aggregation.xml')
+        return template
+
+
+    def execute(self, data, rule_context: RuleContext):
+        # two events need new templates - object and shipping
+        # the overall document needs a new template get that below
+        # if filtered events has more than one event then you know
+        # the event in filtered events is a shipping event so grab that
+        # and give it a new template
+
+        rule_context.context[ContextKeys.FILTERED_EVENTS_KEY.value] = []
+
+
+        object_events = rule_context.context.get(
+            ContextKeys.OBJECT_EVENTS_KEY.value, [])
+
+        if len(object_events) > 0:
+            #here you are changing the object event templates
+            template = self._get_commissioning_template()
+            for event in object_events:
+                event._template = template
+
+        aggregation_events = rule_context.context.get(
+            ContextKeys.AGGREGATION_EVENTS_KEY.value, [])
+
+        if len(aggregation_events) > 0:
+            # here you are changing the object event templates
+            template = self._get_aggregation_template()
+            for event in aggregation_events:
+                event._template = template
+
+
+        super().execute(data, rule_context)
+
+    def get_epcis_document_class(self,
+                                 all_events) -> template_events.EPCISEventListDocument:
+        """
+        This function will override the default 1.2 EPCIS doc with a 1.0
+        template
+        :param all_events: The events to add to the document
+        :return: The EPCPyYes event list document to render
+        """
+        doc_class = super().get_epcis_document_class(all_events)
+        env = get_default_environment()
+        template = env.get_template('pharmasecure/pharmasecure_epcis_document.xml')
+        doc_class._template = template
+        return doc_class
+
+
+class PharmaSecureShipStep(EPCPyYesOutputStep):
+
     def _get_shipping_template(self):
         """
         Returns a shipping event template for use by the filtered event.
@@ -96,30 +116,22 @@ class PharmaSecureOutputStep(EPCPyYesOutputStep):
         return template
 
     def execute(self, data, rule_context: RuleContext):
-        # two events need new templates - object and shipping
-        # the overall document needs a new template get that below
-        # if filtered events has more than one event then you know
-        # the event in filtered events is a shipping event so grab that
-        # and give it a new template
+
         filtered_events = rule_context.context.get(ContextKeys.FILTERED_EVENTS_KEY.value)
+        rule_context.context[ContextKeys.OBJECT_EVENTS_KEY.value] = []
+        rule_context.context[ContextKeys.AGGREGATION_EVENTS_KEY.value] = []
+
         if len(filtered_events) > 0:
             template = self._get_shipping_template()
-            filtered_events[0]._template = template
-            # get the object events from the context - these are added by
-            # the AddCommissioningDataStep step in the rule.
-            object_events = rule_context.context.get(
-                ContextKeys.OBJECT_EVENTS_KEY.value, [])
-            if len(object_events) > 0:
-                #here you are changing the object event templates
-                template = self._get_commissioning_template()
-                for event in object_events:
-                    event._template = template
+            for event in filtered_events:
+                event._template = template
+
         super().execute(data, rule_context)
 
     def get_epcis_document_class(self,
                                  all_events) -> template_events.EPCISEventListDocument:
         """
-        This function will override the default 1.2 EPCIS doc with a 1.0
+        This function will override the default 1.2 EPCIS doc PharmaSecure EPCIS Document
         template
         :param all_events: The events to add to the document
         :return: The EPCPyYes event list document to render

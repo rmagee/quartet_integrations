@@ -1,0 +1,18 @@
+<AggregationEvent>
+    {% include "epcis/event_times.xml" %}
+    {% include "epcis/base_extension.xml" %}
+    {% if event.parent_id %}
+        <parentID>{{ event.parent_id }}</parentID>
+    {% endif %}
+    {% if event.child_epcs %}
+        <childEPCs>
+            {% for epc in event.child_epcs %}
+                <epc>{{ epc }}</epc>
+            {% endfor %}
+        </childEPCs>
+    {% endif %}
+    {% include "epcis/business_data.xml" %}
+    {% include "epcis/extension.xml" %}
+    <gs1ushc:eventID>urn:uuid:b302eb04-25a6-4bd4-8db0-{{ range(100000000000, 999999999999) | random }}</gs1ushc:eventID>
+</AggregationEvent>
+
