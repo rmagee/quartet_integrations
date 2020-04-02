@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <epcis:EPCISDocument
         xmlns:epcis="urn:epcglobal:epcis:xsd:1"
+        xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns"
         schemaVersion="1" creationDate="{{ created_date }}">
         <EPCISBody>
             <EventList>
