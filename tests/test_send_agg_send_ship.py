@@ -117,20 +117,11 @@ class TestRule():
                     'The regex to look up item-levels with to determine count.')
             )
 
-
-            render_tracelink = models.Step.objects.create(
-                name='Render TraceLink EPCIS',
-                description = 'Renders a Tracelink Compliant EPCIS Document',
-                order=3,
-                rule = rule,
-                step_class='quartet_tracelink.steps.TracelinkOutputStep',
-            )
-
             output_step = models.Step.objects.create(
                 name=_('Queue Outbound Message'),
                 description=_('Creates a Task for sending any outbound data'),
                 step_class='quartet_output.steps.CreateOutputTaskStep',
-                order=4,
+                order=3,
                 rule=rule
             )
 
@@ -150,7 +141,7 @@ class TestRule():
                 name='Shipping',
                 description=_('Puts together the Shipping EPCIS Document'),
                 step_class='quartet_integrations.traxeed.steps.ShipTraxeedStep',
-                order=5,
+                order=4,
                 rule=rule
             )
 
@@ -175,7 +166,7 @@ class TestRule():
                 name='Queue Outbound Message',
                 description='Creates a Task for sending any outbound data',
                 step_class='quartet_output.steps.CreateOutputTaskStep',
-                order=6,
+                order=5,
                 rule=rule
             )
 
