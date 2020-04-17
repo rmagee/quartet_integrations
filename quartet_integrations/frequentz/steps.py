@@ -93,6 +93,9 @@ class FrequentzOutputStep(EPCPyYesOutputStep):
         doc_class._template = template
         return doc_class
 
+    @property
+    def declared_parameters(self):
+        return super().declared_parameters
 
 class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
     '''
@@ -439,7 +442,7 @@ class IRISNumberRequestProcessStep(rules.Step):
 
     @property
     def declared_parameters(self):
-        return {}
+        return super().declared_parameters
 
 
 class IRISTemplateStep(TemplateStep):
@@ -462,4 +465,4 @@ class IRISTemplateStep(TemplateStep):
 
     @property
     def declared_parameters(self):
-        return {}
+        return super().declared_parameters
