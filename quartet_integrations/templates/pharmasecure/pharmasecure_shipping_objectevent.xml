@@ -1,0 +1,22 @@
+<ObjectEvent>
+    {% include "epcis/event_times.xml" %}
+    {% include "epcis/base_extension.xml" %}
+    {% if event.epc_list %}
+        <epcList>
+            {% for epc in event.epc_list %}
+                <epc>{{ epc }}</epc>
+            {% endfor %}
+        </epcList>
+    {% endif %}
+    {% include "epcis/business_data.xml" %}
+    <extension>
+        <sourceList>
+            <source type="urn:epcglobal:cbv:sdt:owning_party">urn:epc:id:sgln:0370010.00000.0</source>
+            <source type="urn:epcglobal:cbv:sdt:location">urn:epc:id:sgln:08620530000.0.0</source>
+        </sourceList>
+        <destinationList>
+            <destination type="urn:epcglobal:cbv:sdt:owning_party">urn:epc:id:sgln:0370010.00000.0</destination>
+            <destination type="urn:epcglobal:cbv:sdt:location">urn:epc:id:sgln:0096295.00336.0</destination>
+        </destinationList>
+    </extension>
+</ObjectEvent>

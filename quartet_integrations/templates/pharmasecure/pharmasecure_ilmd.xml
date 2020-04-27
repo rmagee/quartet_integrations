@@ -1,0 +1,8 @@
+<ilmd>
+{% for attribute in ilmd %}
+    {% if attribute.name == 'lotNumber' or attribute.name == 'itemExpirationDate' %}
+    <gs1ushc:{{ attribute.name.value or attribute.name }}>{{ attribute.value }}</gs1ushc:{{ attribute.name.value or attribute.name }}>
+    {% endif %}
+{% endfor %}
+</ilmd>
+

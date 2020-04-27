@@ -1,0 +1,14 @@
+<ObjectEvent>
+    {% include "epcis/event_times.xml" %}
+    {% include "epcis/base_extension.xml" %}
+    {% if event.epc_list %}
+        <epcList>
+            {% for epc in event.epc_list %}
+                <epc>{{ epc }}</epc>
+            {% endfor %}
+        </epcList>
+    {% endif %}
+    {% include "epcis/business_data.xml" %}
+    {% include "pharmasecure/pharmasecure_extensions.xml" %}
+    <gs1ushc:eventID>urn:uuid:c302eb04-25a6-4bd4-8db0-{{ range(100000000000, 999999999999) | random }}</gs1ushc:eventID>
+</ObjectEvent>

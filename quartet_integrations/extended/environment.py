@@ -26,7 +26,8 @@ def get_default_environment():
     loader = ChoiceLoader(
         [
             PackageLoader('EPCPyYes', 'templates'),
-            PackageLoader('quartet_integrations', 'templates')
+            PackageLoader('quartet_integrations', 'templates'),
+            PackageLoader('quartet_tracelink', 'templates')
         ]
     )
     env = Environment(loader=loader,

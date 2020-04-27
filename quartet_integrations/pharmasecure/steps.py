@@ -13,11 +13,12 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 import io, os
+import copy
 import datetime
+import random
 import time
 import sqlite3
 import requests
-from django.core.files.base import File
 from django.utils.translation import gettext as _
 from xml.etree import ElementTree
 from requests.auth import HTTPBasicAuth, HTTPProxyAuth
@@ -26,9 +27,8 @@ from list_based_flavorpack.processing_classes.third_party_processing.rules impor
 from EPCPyYes.core.v1_2 import template_events
 from quartet_capture import models, rules, errors as capture_errors
 from quartet_capture.rules import RuleContext
-from quartet_output.transport.http import HttpTransportMixin, user_agent
+from quartet_output.transport.http import HttpTransportMixin
 from quartet_integrations.frequentz.environment import get_default_environment
-from quartet_integrations.frequentz.parsers import FrequentzOutputParser
 from quartet_masterdata.models import TradeItem
 from list_based_flavorpack.models import ListBasedRegion
 from serialbox import models as sb_models
@@ -37,26 +37,27 @@ from quartet_templates.steps import TemplateStep
 from quartet_output.steps import ContextKeys, EPCPyYesOutputStep
 
 
-class FrequentzOutputStep(EPCPyYesOutputStep):
+class PharmaSecureOutputStep(EPCPyYesOutputStep):
 
-    def _get_new_template(self):
+    def _get_commissioning_template(self):
         """
         Grabs the jinja environment and creates a jinja template object and
         returns
         :return: A new Jinja template.
         """
         env = get_default_environment()
-        template = env.get_template('frequentz/frequentz_object_event.xml')
+        template = env.get_template('pharmasecure/pharmasecure_object_event.xml')
         return template
 
-    def _get_shipping_template(self):
+    def _get_aggregation_template(self):
         """
-        Returns a shipping event template for use by the filtered event.
+        Returns a Aggregation event template for use by the filtered event.
         :return: A jinja template object.
         """
         env = get_default_environment()
-        template = env.get_template('frequentz/frequentz_shipping_objectevent.xml')
+        template = env.get_template('pharmasecure/pharamsecure_aggregation.xml')
         return template
+
 
     def execute(self, data, rule_context: RuleContext):
         # two events need new templates - object and shipping
@@ -64,19 +65,29 @@ class FrequentzOutputStep(EPCPyYesOutputStep):
         # if filtered events has more than one event then you know
         # the event in filtered events is a shipping event so grab that
         # and give it a new template
-        filtered_events = rule_context.context.get(ContextKeys.FILTERED_EVENTS_KEY.value)
-        if len(filtered_events) > 0:
-            template = self._get_shipping_template()
-            filtered_events[0]._template = template
-            # get the object events from the context - these are added by
-            # the AddCommissioningDataStep step in the rule.
-            object_events = rule_context.context.get(
-                ContextKeys.OBJECT_EVENTS_KEY.value, [])
-            if len(object_events) > 0:
-                #here you are changing the object event templates
-                template = self._get_new_template()
-                for event in object_events:
-                    event._template = template
+
+        rule_context.context[ContextKeys.FILTERED_EVENTS_KEY.value] = []
+
+
+        object_events = rule_context.context.get(
+            ContextKeys.OBJECT_EVENTS_KEY.value, [])
+
+        if len(object_events) > 0:
+            #here you are changing the object event templates
+            template = self._get_commissioning_template()
+            for event in object_events:
+                event._template = template
+
+        aggregation_events = rule_context.context.get(
+            ContextKeys.AGGREGATION_EVENTS_KEY.value, [])
+
+        if len(aggregation_events) > 0:
+            # here you are changing the object event templates
+            template = self._get_aggregation_template()
+            for event in aggregation_events:
+                event._template = template
+
+
         super().execute(data, rule_context)
 
     def get_epcis_document_class(self,
@@ -89,17 +100,53 @@ class FrequentzOutputStep(EPCPyYesOutputStep):
         """
         doc_class = super().get_epcis_document_class(all_events)
         env = get_default_environment()
-        template = env.get_template('frequentz/frequentz_epcis_document.xml')
+        template = env.get_template('pharmasecure/pharmasecure_epcis_document.xml')
         doc_class._template = template
         return doc_class
 
-    @property
-    def declared_parameters(self):
-        return super().declared_parameters
 
-class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
+class PharmaSecureShipStep(EPCPyYesOutputStep):
+
+    def _get_shipping_template(self):
+        """
+        Returns a shipping event template for use by the filtered event.
+        :return: A jinja template object.
+        """
+        env = get_default_environment()
+        template = env.get_template('pharmasecure/pharmasecure_shipping_objectevent.xml')
+        return template
+
+    def execute(self, data, rule_context: RuleContext):
+
+        filtered_events = rule_context.context.get(ContextKeys.FILTERED_EVENTS_KEY.value)
+        rule_context.context[ContextKeys.OBJECT_EVENTS_KEY.value] = []
+        rule_context.context[ContextKeys.AGGREGATION_EVENTS_KEY.value] = []
+
+        if len(filtered_events) > 0:
+            template = self._get_shipping_template()
+            for event in filtered_events:
+                event._template = template
+
+        super().execute(data, rule_context)
+
+    def get_epcis_document_class(self,
+                                 all_events) -> template_events.EPCISEventListDocument:
+        """
+        This function will override the default 1.2 EPCIS doc PharmaSecure EPCIS Document
+        template
+        :param all_events: The events to add to the document
+        :return: The EPCPyYes event list document to render
+        """
+        doc_class = super().get_epcis_document_class(all_events)
+        env = get_default_environment()
+        template = env.get_template('pharmasecure/pharmasecure_epcis_document.xml')
+        doc_class._template = template
+        return doc_class
+
+
+class PharmaSecureNumberRequestTransportStep(rules.Step, HttpTransportMixin):
     '''
-    Uses the transport information within the `region`.
+    Requests Serial Numbers from PharmaSecure
     '''
 
     def execute(self, data, rule_context: RuleContext):
@@ -126,15 +173,15 @@ class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
                   'the NumberRequestTransportStep to function correctly.')
             )
         try:
+            # Get the region
             region = ListBasedRegion.objects.get(machine_name=param.value)
-
             # Send the Create Request
-
             response = self._send_message(data, rule_context, region)
             # Pass response for downstream processing.
             rule_context.context['NUMBER_RESPONSE'] = response.content
             rule_context.context['region_name'] = region.machine_name
             rule_context.context['format'] = self.get_parameter('format', None)
+
         except Exception as e:
             self.error(_(
                 "An error occurred while sending request to third party: %s"),
@@ -163,7 +210,7 @@ class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
 
     def post_data(self, data: str, rule_context: RuleContext,
                   region: ListBasedRegion,
-                  content_type='application/xml'
+                  content_type='text/xml'
                   ):
         '''
         :param data_context_key: The key within the rule_context that contains
@@ -179,7 +226,9 @@ class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
             region.end_point.urn,
             data,
             auth=self.get_auth(region),
-            headers={'content-type': content_type, 'user-agent': user_agent}
+            headers={'content-type': 'text/xml',
+                     'charset':'utf-8',
+                     'SOAPAction':'http://tempuri.org/IPSService/Generate'}
         )
         return response
 
@@ -197,57 +246,74 @@ class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
         :return: None.
         '''
 
-        ret_val = None
         # Set up namespaces for returned xml from IRIS
         ns = {
-            "soapenv": "http://schemas.xmlsoap.org/soap/envelope/",
-            "ns2": "http://www.ibm.com/epcis/serialid/TagManagerTypes"
+            "a":"http://schemas.datacontract.org/2004/07/psIDCodeMaker",
+            "s":"http://schemas.xmlsoap.org/soap/envelope/",
+            "i":"http://www.w3.org/2001/XMLSchema-instance"
         }
 
         # Set parameter values from the Step
         content_type = 'text/xml'
-        quantity = region.number_replenishment_size
+        quantity = None
+        object_value = None
+        object_name = None
+        encoding_type = None
         try:
-            resource_name = region.processing_parameters.get(key='gtin').value
+            object_value = region.processing_parameters.get(key='object_value').value
         except:
-            resource_name = None
+            pass
         try:
-            format = region.processing_parameters.get(key='format').value
+            object_name = region.processing_parameters.get(key='object_name').value
         except:
-            format = None
+            pass
+        try:
+            quantity = region.processing_parameters.get(key='quantity').value
+        except:
+            pass
+        try:
+            encoding_type = region.processing_parameters.get(key='encoding_type').value
+        except:
+            pass
 
         # check parameters
         if quantity is None:
-            msg = "replenishment_size was not set"
+            msg = "Parameter Quantity was not set"
             self.error(msg)
             raise Exception(msg)
 
-        if resource_name is None:
-            msg = "Region Processing Parameter 'gtin' was not set. (This can be an sscc value too.)"
+        if encoding_type is None:
+            msg = "Parameter 'encoding_type' was not set. Acceptable Values are SSCC or SGTIN."
             self.error(msg)
             raise Exception(msg)
 
-        if format is None:
-            msg = "Region Processing Parameter 'format' was not set"
+        if object_name is None:
+            msg = "Parameter 'object_name' was not set. Acceptable Values are COMPANY_PREFIX or GTIN."
             self.error(msg)
             raise Exception(msg)
 
-        # Build request to create a request for serial numbers
+        if object_value is None:
+            msg = "Parameter 'object_value' was not set. Acceptable Values are a Company Prefix or a GTIN14."
+            self.error(msg)
+            raise Exception(msg)
+
+
+        # Build request to for serial numbers
         context = {
+            'request_id': random.randint(100000000001,999999999999),
+            'encoding_type': encoding_type,
             'quantity': quantity,
-            'resource': resource_name,
-            'format': format,
-            'username': region.authentication_info.username,
-            'password': region.authentication_info.password,
-            'created': str(datetime.datetime.utcnow().isoformat())
+            'object_name': object_name,
+            'object_value': object_value
+
         }
 
         # build/generate template for create request
-        template_doc = 'frequentz/create_request.xml'
+        template_doc = 'pharmasecure/pharmasecure_number_request.xml'
         env = get_default_environment()
         template = env.get_template(template_doc)
         data = template.render(**context)
-        self.info("create request sent %s", data)
+        self.info("Sending request %s", data)
         # Post the request
         response = self.post_data(
             data,
@@ -262,70 +328,9 @@ class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
                 self.info("Error occurred with following response %s",
                           response.content)
             raise
-        self.info("Response Received %s", response.content[0:5000])
-        # Get the request id
-        root = ElementTree.fromstring(response.text)
-        request_id = root.find(
-            'soapenv:Body/ns2:createTagResponse/ns2:requestId', ns).text
+        self.info("Response Received %s", response.content[0:50000])
 
-        # build request to get serial numbers
-        context = {
-            'request_id': request_id,
-            'username': region.authentication_info.username,
-            'password': region.authentication_info.password,
-            'created': str(datetime.datetime.utcnow().isoformat())
-        }
-        # generate template to get the serial numbers
-        template_doc = 'frequentz/get_serial_number.xml'
-        template = env.get_template(template_doc)
-        data = template.render(**context)
-
-        # post data to retrieve serial numbers
-        result_response = self.post_data(
-            data,
-            rule_context,
-            region,
-            content_type
-        )
-        try:
-            result_response.raise_for_status()
-        except:
-            if result_response.content:
-                self.info("Error occurred with following response %s",
-                          result_response.content)
-            raise
-        self.info("Response Received %s", response.content[0:5000])
-        self.info("get serial number request sent %s", data)
-
-        # build request to confrim serial numbers retrieved
-        context = {
-            'request_id': request_id,
-            'username': region.authentication_info.username,
-            'password': region.authentication_info.password,
-            'created': str(datetime.datetime.utcnow().isoformat())
-        }
-        # Generate template for confirm request
-        template_doc = 'frequentz/confirm_request.xml'
-        template = env.get_template(template_doc)
-        data = template.render(**context)
-        # Post Confirm request
-        response = self.post_data(
-            data,
-            rule_context,
-            region,
-            content_type
-        )
-        self.info("confirmation for serial numbers sent %s", data)
-        try:
-            response.raise_for_status()
-        except:
-            if response.content:
-                self.info("Error occurred with following response %s",
-                          response.content)
-            raise
-        self.info("Response Received %s", response.content[0:5000])
-
-        return result_response
+        return response
 
     def on_failure(self):
         super().on_failure()
@@ -334,15 +339,16 @@ class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
     def declared_parameters(self):
         return {
 
-            'resource_name': 'The GTIN-14 or Company Prefix for SSCCs',
+            'object_value': 'The GTIN-14 or Company Prefix for SSCCs',
             'quantity': 'Number of serial numbers to return',
-            'format': 'The format to return from IRIS. SGTIN-198 or SSCC'
+            'object_name':'The name of the Object value e.g. COMPANY_PREFIX or GTIN',
+            'encoding_type': 'SGTIN or SSCC'
         }
 
 
-class IRISNumberRequestProcessStep(rules.Step):
+class PharmaSecureNumberRequestProcessStep(rules.Step):
     """
-    Takes response data from tracelink systems and writes to the sqlite db
+    Takes response data from PharmaSecure and writes to the sqlite db
     database file if the region supports that.
     """
 
@@ -352,45 +358,35 @@ class IRISNumberRequestProcessStep(rules.Step):
 
     def execute(self, data, rule_context: RuleContext):
 
-        # Set up namespaces for returned xml from IRIS
+        # Set up namespaces for returned xml from PharmaSecure
         ns = {
-            "soapenv": "http://schemas.xmlsoap.org/soap/envelope/",
-            "ns2": "http://www.ibm.com/epcis/serialid/TagManagerTypes"
+            "a":"http://schemas.datacontract.org/2004/07/psIDCodeMaker",
+            "i":"http://www.w3.org/2001/XMLSchema-instance",
+            "s":"http://schemas.xmlsoap.org/soap/envelope/",
+            "":"http://tempuri.org/"
         }
 
         # Get xml response from context
         xml = rule_context.context['NUMBER_RESPONSE']
         region_name = rule_context.context['region_name']
         region = self.get_list_based_region(region_name)
-        format = region.processing_parameters.get(key='format').value
         # Load XML
         root = ElementTree.fromstring(xml)
-        # Get quantity
-        quantity_returned = root.find(
-            'soapenv:Body/ns2:getTagsResponse/ns2:tagResponse/ns2:quantity',
-            ns).text
         # Get Serial Numbers
         tags = root.findall(
-            'soapenv:Body/ns2:getTagsResponse/ns2:tagResponse/ns2:tagList/ns2:tag',
+            '*/*/*/*/a:SerialNo',
             ns)
         serial_numbers = []
         # add tags to serial_numbers array
         for tag in tags:
-            if format.lower() == 'sgtin-198' or format.lower() == 'sgtin-96':
-                sn = tag.text.replace(
-                    'urn:epc:tag:{0}:'.format(format).lower(), "")
-                serial_numbers.append(sn)
-            elif format.lower() == 'sscc-96':
-                urn = tag.text.replace('urn:epc:tag:sscc-96:',
-                                       'urn:epc:id:sscc:')
-                # sn = conversion.URNConverter(urn)
-                parts = urn.split('.')
-                ext = parts[2][0]
-                cp = parts[1]
-                sn = parts[2][1:]
-                sscc18 = '{0}{1}{2}'.format(ext, cp, sn)
-                sscc18 = conversion.calculate_check_digit(sscc18)
-                serial_numbers.append(sscc18)
+            sn = conversion.BarcodeConverter(tag.find('a:SerialNumber', ns).text, company_prefix_length=len("0370010"))
+            if sn.sscc18 is None:
+                nums = sn.epc_urn.split(":")
+                num = "0.{0}".format(nums[4])
+            else:
+                num = sn.sscc18
+
+            serial_numbers.append(num)
 
         self.write_list(serial_numbers, region)
 
@@ -442,22 +438,27 @@ class IRISNumberRequestProcessStep(rules.Step):
 
     @property
     def declared_parameters(self):
-        return super().declared_parameters
+        return {}
 
 
-class IRISTemplateStep(TemplateStep):
+class PharmaSecureTemplateStep(TemplateStep):
 
     def execute(self, data, rule_context: RuleContext):
         # convert
         if len(data[0]) > 18:
-            num = data[0][2:]
-            urn = 'urn:epc:id:sgtin:{0}'.format(num)
+            # this is an SGTIN, get the TradeItem
+            d = data[0]
+            # remove the leading "0."
+            d = d[2:]
+            # build the urn
+            urn = "urn:epc:id:sgtin:{0}".format(d)
+            # convert the urn to get the gtin14
             sn = conversion.URNConverter(urn)
-            # Populate
+            # Populate the trade_item context value
             rule_context.context['trade_item'] = TradeItem.objects.get(
                 GTIN14=sn.gtin14
             )
-        # call super
+        # call super and return
         return super().execute(data, rule_context)
 
     def on_failure(self):
@@ -465,4 +466,4 @@ class IRISTemplateStep(TemplateStep):
 
     @property
     def declared_parameters(self):
-        return super().declared_parameters
+        return {}
