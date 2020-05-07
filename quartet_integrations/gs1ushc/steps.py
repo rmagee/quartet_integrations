@@ -12,14 +12,34 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-from io import StringIO, BytesIO
+from io import BytesIO
+
+from enum import Enum
+from EPCPyYes.core.SBDH import sbdh
+from EPCPyYes.core.SBDH import template_sbdh
 from EPCPyYes.core.v1_2 import template_events
-from EPCPyYes.core.v1_2.CBV import business_steps
-from quartet_capture import rules
-from quartet_output.steps import OutputParsingStep as QOPS, ContextKeys
+from EPCPyYes.core.v1_2.events import EPCISBusinessEvent
+from EPCPyYes.core.v1_2.CBV import business_steps, source_destination
+from quartet_capture import rules, models
+from quartet_capture.rules import RuleContext
+from quartet_integrations.frequentz.environment import get_default_environment
+from quartet_integrations.generic import mixins
 from quartet_integrations.gs1ushc.parsing import SimpleOutputParser, \
     BusinessOutputParser
-from quartet_integrations.generic import mixins
+from quartet_masterdata.models import Company, Location
+from quartet_output.steps import ContextKeys as OutputKeys, \
+    EPCPyYesOutputStep as EPYOS
+from quartet_output.steps import OutputParsingStep as QOPS
+
+
+class ContextKeys(Enum):
+    """
+    RECEIVER_COMPANY
+    ----------------
+    A masterdata Company record for the receiving company. This is derived
+    via company prefix information in filtered events.
+    """
+    RECEIVER_COMPANY = 'RECEIVER_COMPANY'
 
 
 class OutputParsingStep(mixins.ObserveChildrenMixin, QOPS):
@@ -54,7 +74,7 @@ class OutputParsingStep(mixins.ObserveChildrenMixin, QOPS):
 
     def execute(self, data, rule_context: rules.RuleContext):
         super().execute(data, rule_context)
-        if self.get_boolean_parameter('Create Child Observation', 'False'):
+        if self.get_boolean_parameter('Create Child Observation', False):
             self.info('Create Child Observation step parameter was set to '
                       'True...checking filtered events to create '
                       'object/observe events.')
@@ -62,7 +82,7 @@ class OutputParsingStep(mixins.ObserveChildrenMixin, QOPS):
             use_destinations = self.get_boolean_parameter('Use Destinations',
                                                           True)
             filtered_events = rule_context.context[
-                ContextKeys.FILTERED_EVENTS_KEY.value]
+                OutputKeys.FILTERED_EVENTS_KEY.value]
             doc = template_events.EPCISDocument()
             for event in filtered_events:
                 objEvent = self.create_observation_event(event, use_sources,
@@ -71,4 +91,157 @@ class OutputParsingStep(mixins.ObserveChildrenMixin, QOPS):
                 doc.object_events.append(objEvent)
             if len(doc.object_events) > 0:
                 parser = self.get_parser_type()
-                parser(BytesIO(doc.render().encode()), self.epc_output_criteria).parse()
+                parser(BytesIO(doc.render().encode()),
+                       self.epc_output_criteria).parse()
+
+
+class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
+                         mixins.CompanyLocationMixin):
+    """
+    Provides a new template for object events that includes gs1ushc
+    ILMD data instead of CBV ILMD.
+    """
+
+    def __init__(self, db_task: models.Task, **kwargs):
+        super().__init__(db_task, **kwargs)
+        self.template = self._get_new_template()
+        self.add_sbdh = self.get_or_create_parameter(
+            'Add SBDH',
+            'True',
+            self.declared_parameters.get('Add SBDH')
+        ) in ['True', 'true']
+        self.header = template_sbdh.StandardBusinessDocumentHeader()
+
+    def _get_new_template(self):
+        """
+        Grabs the jinja environment and creates a jinja template object and
+        returns
+        :return: A new Jinja template.
+        """
+        env = get_default_environment()
+        template = env.get_template('gs1ushc/object_event.xml')
+        return template
+
+    def execute(self, data, rule_context: RuleContext):
+        # two events need new templates - object and shipping
+        # the overall document needs a new template get that below
+        # if filtered events has more than one event then you know
+        # the event in filtered events is a shipping event so grab that
+        # and give it a new template
+        schema_version = self.get_or_create_parameter('Schema Version', '1',
+                                                      self.declared_parameters.get(
+                                                          'Schema Version'))
+        self.info('Setting the schema version to %s', schema_version)
+        rule_context.context['schema_version'] = schema_version
+        filtered_events = rule_context.context.get(
+            OutputKeys.FILTERED_EVENTS_KEY.value)
+        if len(filtered_events) > 0:
+            # get the object events from the context - these are added by
+            # the AddCommissioningDataStep step in the rule.
+            object_events = rule_context.context.get(
+                OutputKeys.OBJECT_EVENTS_KEY.value, [])
+            if len(object_events) > 0:
+                self.info(
+                    'Found some filtered object events.'
+                    ' Looking up the receiver company by urn value/'
+                    'company prefix.')
+                if self.add_sbdh:
+                    self.add_header(filtered_events[0], rule_context)
+                # self.sbdh.partners.append(receiver)
+                for event in object_events:
+                    event._template = self.template
+        super().execute(data, rule_context)
+
+    def add_header(self, filtered_event: EPCISBusinessEvent, rule_context):
+        """
+        Adds the SBDH data.
+        :param object_events:
+        :param rule_context:
+        :return:
+        """
+        # first get the receiver by the company prefix
+        # noinspection PyTypeChecker
+        receiver_company = self.get_company_by_urn(filtered_event,
+                                                   rule_context)
+        self.add_receiver_partner(receiver_company, rule_context)
+        # next get the receiving location by the receiving party in the event
+        try:
+            receiver_location = self.get_company_by_identifier(
+                epcis_event=filtered_event
+            )
+        except Company.DoesNotExist:
+            receiver_location = self.get_location_by_identifier(
+                filtered_event
+            )
+        sender_location = self.get_location_by_identifier(
+            filtered_event,
+            source_destination.SourceDestinationTypes.possessing_party.value
+        )
+
+        rule_context.context['masterdata'] = {
+            receiver_company.SGLN: receiver_company,
+            receiver_location.SGLN: receiver_location,
+            sender_location.SGLN: sender_location
+        }
+
+    def add_receiver_location(self, receiver):
+        pass
+
+    def add_receiver_partner(self, receiver_company, rule_context):
+        """
+        Adds the receiver partner to the header and the receiver company
+        to the context.
+        :param receiver_company: The masterdata Company model instance.
+        :param rule_context: The RuleContext passed to execute.
+        :return: None
+        """
+        receiver = sbdh.Partner(
+            sbdh.PartnerType.RECEIVER.value,
+            partner_id=sbdh.PartnerIdentification('GLN',
+                                                  receiver_company.GLN13)
+        )
+        self.header.partners.append(receiver)
+        rule_context.context[
+            ContextKeys.RECEIVER_COMPANY.value] = receiver
+
+    def add_sender_partner(self, sender_company, rule_context):
+        """
+        Adds the receiver partner to the header and the sender company
+        to the context.
+        :param sender_company: The masterdata Company model instance.
+        :param rule_context: The RuleContext passed to execute.
+        :return: None
+        """
+        sender = sbdh.Partner(
+            sbdh.PartnerType.SENDER.value,
+            partner_id=sbdh.PartnerIdentification('GLN',
+                                                  sender_company.GLN13)
+        )
+        self.header.partners.append(sender)
+        rule_context.context[
+            ContextKeys.SENDER_COMPANY.value] = sender
+
+    def get_epcis_document_class(self,
+                                 all_events
+                                 ) -> template_events.EPCISEventListDocument:
+        """
+        This function will override the default 1.2 EPCIS doc with a 1.0
+        template
+        :param all_events: The events to add to the document
+        :return: The EPCPyYes event list document to render
+        """
+        doc_class = template_events.EPCISEventListDocument(all_events,
+                                                           self.header)
+        env = get_default_environment()
+        template = env.get_template('gs1ushc/epcis_document.xml')
+        doc_class._template = template
+        return doc_class
+
+    @property
+    def declared_parameters(self):
+        ret = super().declared_parameters()
+        ret['Schema Version'] = 'The schema version to include in the header. ' \
+                                'default is 1'
+        ret['Add SBDH'] = 'Whether or not to add a Standard Business Document' \
+                          ' Header to the EPCIS message.  Default is true.'
+        return ret

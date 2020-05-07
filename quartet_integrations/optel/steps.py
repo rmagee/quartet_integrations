@@ -128,7 +128,7 @@ class OptelLineParsingStep(SAPParsingStep):
 
     @property
     def declared_parameters(self):
-        params = super().declared_parameters()
+        params = super().declared_parameters
         params['Replace Timezone'] = 'Whether or not to replace explicit ' \
                                      'timezone declarations in event times ' \
                                      'with the timezone offset in the event.'

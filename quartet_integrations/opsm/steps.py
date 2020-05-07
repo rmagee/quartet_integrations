@@ -30,21 +30,23 @@ class ListToUrnConversionStep(SBLTU):
             serial_number)
 
 
-
 class ListBasedRegionConversionStep(SBLTU):
     """
     Converts 01/21 GTIN strings to OPSM URNS.
     """
+
     def format_gtin_urn(self, company_prefix: str, indicator: str,
                         item_reference: str, serial_number: str):
         ret = None
         ret = BarcodeConverter(serial_number, len(company_prefix)).epc_urn
         return ret.replace('urn:epc:id:sgtin:', '0.')
 
+
 class SSCCListConversionStep(Step):
     """
     Converts 20 length tracelink SSCCs to 18 by stripping the app identifier.
     """
+
     def execute(self, data, rule_context: RuleContext):
         return [datum[2:] for datum in data]
 
@@ -54,5 +56,3 @@ class SSCCListConversionStep(Step):
     @property
     def declared_parameters(self):
         return {}
-
-
