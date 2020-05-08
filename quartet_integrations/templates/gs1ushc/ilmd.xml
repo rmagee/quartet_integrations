@@ -1,0 +1,15 @@
+<ilmd>
+    {# LOT NUMBER HAS TO BE FIRST IN THE SEQUENCE #}
+{% for attribute in ilmd %}
+{% if attribute.name == 'lotNumber' %}
+    {# LOT NUMBER HAS TO BE FIRST IN THE SEQUENCE #}
+    <gs1ushc:lotNumber xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">{{ attribute.value }}</gs1ushc:lotNumber>
+{% endif %}
+{% endfor %}
+{% for attribute in ilmd %}
+{% if attribute.name == 'itemExpirationDate' %}
+    <gs1ushc:itemExpirationDate xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">{{ attribute.value }}</gs1ushc:itemExpirationDate>
+{% endif %}
+{% endfor %}
+</ilmd>
+
