@@ -212,7 +212,7 @@ class TradingPartnerParser:
     def create_from_company(self, data):
         try:
             company = Company.objects.get(
-                gs1_company_prefix=data[2]
+                GLN13=data[3]
             )
             company.name = data[1]
         except Company.DoesNotExist:
