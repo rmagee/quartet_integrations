@@ -248,7 +248,7 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                                                            self.header)
         env = get_default_environment()
         template = env.get_template('gs1ushc/epcis_document.xml')
-        doc_class.additional_context = self.rule_context.context['masterdata']
+        doc_class.additional_context = {'masterdata': self.rule_context.context['masterdata']}
         doc_class._template = template
         return doc_class
 
