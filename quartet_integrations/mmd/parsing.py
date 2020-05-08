@@ -44,8 +44,7 @@ class PartnerParser:
             row = list(datarow.values())
             try:
                 city, state, zip, country = self.parse_location(row)
-                if len(row[3]) == 0:
-                    pass
+
                 Company.objects.get_or_create(
                     name=row[1],
                     address1=row[5],
@@ -53,7 +52,7 @@ class PartnerParser:
                     state_province=state,
                     postal_code=zip,
                     country=country,
-                    gs1_company_prefix=row[3],
+                    gs1_company_prefix=row[2],
                     GLN13=row[2],
                     SGLN='urn:epc:id:sgln:%s' % row[4]
                 )
