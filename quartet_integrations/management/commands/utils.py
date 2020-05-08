@@ -37,13 +37,13 @@ def create_gtin_response_rule():
         value='OPSM GTIN Response Template'
     )
 
-    create_template()
-    pool = Pool.objects.get(machine_name='00313000007772')
-    response_rule = ResponseRule.objects.get_or_create(
-        rule=rule,
-        pool=pool,
-        content_type='xml'
-    )
+    # create_template()
+    # pool = Pool.objects.get(machine_name='00313000007772')
+    # response_rule = ResponseRule.objects.get_or_create(
+    #     rule=rule,
+    #     pool=pool,
+    #     content_type='xml'
+    # )
 
 
 def create_SSCC_response_rule():
