@@ -4,7 +4,7 @@
         <VocabularyList>
             <Vocabulary type="urn:epcglobal:epcis:vtype:Location">
                 <VocabularyElementList>
-                    {% for sgln, dict in masterdata.items() %}
+                    {% for sgln, dict in additional_context['masterdata'].items() %}
                         <VocabularyElement id="{{ sgln }}">
                             <attribute id="urn:epcglobal:cbv:mda#name">{{ dict['name'] }}</attribute>
                             <attribute id="urn:epcglobal:cbv:mda#streetAddressOne">{{ dict['address1'] }}</attribute>

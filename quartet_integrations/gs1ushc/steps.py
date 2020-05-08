@@ -36,10 +36,17 @@ class ContextKeys(Enum):
     """
     RECEIVER_COMPANY
     ----------------
-    A masterdata Company record for the receiving company. This is derived
+    A masterdata Company (or location)
+    record for the receiving company. This is derived
     via company prefix information in filtered events.
+
+    SENDER_COMPANY
+    --------------
+    This is a masterdate Company (or location) record for the sender.  This
+    is pulled from the Sender data in the EPCIS message.
     """
     RECEIVER_COMPANY = 'RECEIVER_COMPANY'
+    SENDER_COMPANY = 'SENDER_COMPANY'
 
 
 class OutputParsingStep(mixins.ObserveChildrenMixin, QOPS):
@@ -111,6 +118,7 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
             self.declared_parameters.get('Add SBDH')
         ) in ['True', 'true']
         self.header = template_sbdh.StandardBusinessDocumentHeader()
+        self.header.partners = []
 
     def _get_new_template(self):
         """
@@ -167,17 +175,23 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         # next get the receiving location by the receiving party in the event
         try:
             receiver_location = self.get_company_by_identifier(
-                epcis_event=filtered_event
+                epcis_event=filtered_event, source_list=False
             )
         except Company.DoesNotExist:
             receiver_location = self.get_location_by_identifier(
-                filtered_event
+                filtered_event, source_list=False
             )
-        sender_location = self.get_location_by_identifier(
-            filtered_event,
-            source_destination.SourceDestinationTypes.possessing_party.value
-        )
-
+        try:
+            sender_location = self.get_company_by_identifier(
+                filtered_event,
+                source_destination.SourceDestinationTypes.possessing_party.value
+            )
+        except Company.DoesNotExist:
+            sender_location = self.get_location_by_identifier(
+                filtered_event,
+                source_destination.SourceDestinationTypes.possessing_party.value
+            )
+        self.add_sender_partner(sender_location, rule_context)
         rule_context.context['masterdata'] = {
             receiver_company.SGLN: receiver_company,
             receiver_location.SGLN: receiver_location,
@@ -234,6 +248,7 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                                                            self.header)
         env = get_default_environment()
         template = env.get_template('gs1ushc/epcis_document.xml')
+        doc_class.additional_context = {'masterdata': self.rule_context.context['masterdata']}
         doc_class._template = template
         return doc_class
 

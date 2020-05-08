@@ -8,28 +8,59 @@ test_quartet_output
 Tests for `quartet_output` models module.
 """
 import os
-from urllib.parse import urlparse
-
-import paramiko
-import time
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from EPCPyYes.core.SBDH.sbdh import StandardBusinessDocumentHeader as sbdheader
 from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
 from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
 from EPCPyYes.core.v1_2.events import EventType
 from quartet_capture.models import Rule, Step, StepParameter, Task
-from quartet_capture.tasks import execute_rule, execute_queued_task
+from quartet_capture.tasks import execute_rule
 from quartet_epcis.parsing.business_parser import BusinessEPCISParser
 from quartet_output import models
 from quartet_output.models import EPCISOutputCriteria
 from quartet_output.steps import SimpleOutputParser, ContextKeys
-from quartet_output.transport.mail import MailMixin
-
+from quartet_masterdata.models import Company, Location
 
 class TestGS1USHC(TestCase):
+
+    def setUp(self) -> None:
+        self.create_companies()
+
+    def create_companies(self):
+        Company.objects.create(
+            name='CMO Corp',
+            address1='Testing street',
+            city='Testerville',
+            state_province='AL',
+            postal_code='13777',
+            country='US',
+            SGLN='urn:epc:id:sgln:07777770000.0.0',
+            GLN13='7777777777777',
+            gs1_company_prefix='777777'
+        )
+        Company.objects.create(
+            name='Virtual Corp',
+            address1='Imaginary street',
+            city='Virtuality',
+            state_province='NJ',
+            postal_code='77700',
+            country='US',
+            gs1_company_prefix='305555',
+            GLN13='3055550000000',
+            SGLN='urn:epc:id:sgln:3055555.0.0'
+        )
+        Location.objects.create(
+            name='C3PO',
+            address1='Android Lane',
+            city='Protocol Droid',
+            state_province='TX',
+            postal_code='70707',
+            country='US',
+            GLN13='0842671116709',
+            SGLN='urn:epc:id:sgln:0842671116.0.0',
+        )
+
 
     def test_rule_with_agg_comm(self):
         self._create_good_ouput_criterion()
@@ -68,16 +99,10 @@ class TestGS1USHC(TestCase):
         auth = self._create_auth()
         eoc = EPCISOutputCriteria()
         eoc.name = "Test Criteria"
-        eoc.action = "ADD"
-        eoc.event_type = EventType.Transaction.value
+        eoc.action = "OBSERVE"
+        eoc.event_type = EventType.Object.value
         eoc.disposition = Disposition.in_transit.value
         eoc.biz_step = BusinessSteps.shipping.value
-        eoc.biz_location = 'urn:epc:id:sgln:305555.123456.0'
-        eoc.read_point = 'urn:epc:id:sgln:305555.123456.12'
-        eoc.source_type = 'urn:epcglobal:cbv:sdt:location'
-        eoc.source_id = 'urn:epc:id:sgln:305555.123456.12'
-        eoc.destination_type = 'urn:epcglobal:cbv:sdt:location'
-        eoc.destination_id = 'urn:epc:id:sgln:309999.111111.233'
         eoc.authentication_info = auth
         eoc.end_point = endpoint
         eoc.save()
@@ -150,7 +175,7 @@ class TestGS1USHC(TestCase):
 
     def _create_filtered_output_step(self, rule, order=1):
         step = Step()
-        step.step_class = 'quartet_output.steps.EPCPyYesFilteredEventOutputStep'
+        step.step_class = 'quartet_integration.gs1ushc.steps.OutputParsingStep'
         step.order = order
         step.name = 'filtered output step'
         step.rule = rule
@@ -187,7 +212,7 @@ class TestGS1USHC(TestCase):
         step.rule = rule
         step.order = 1
         step.name = 'Output Determination'
-        step.step_class = 'quartet_output.steps.OutputParsingStep'
+        step.step_class = 'quartet_integrations.gs1ushc.steps.OutputParsingStep'
         step.description = 'unit test step'
         step.save()
         step_parameter = StepParameter()

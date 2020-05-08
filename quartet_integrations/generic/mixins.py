@@ -71,6 +71,7 @@ class CompanyFromURNMixin:
     based on that.  Will use the first company prefix it finds.  Will not
     match against multiple company prefixes.
     """
+
     def get_company_by_urn(self, epcis_event: events.ObjectEvent,
                            rule_context: RuleContext):
         epc = epcis_event.epc_list[0]
@@ -97,11 +98,14 @@ class CompanyLocationMixin:
     def get_company_by_identifier(
         self,
         epcis_event: EPCISBusinessEvent,
-        type=SourceDestinationTypes.owning_party.value
+        type=SourceDestinationTypes.owning_party.value,
+        source_list=True
     ):
-        for destination in epcis_event.destination_list:
-            if destination.type == type:
-                id = destination.destination
+        cur_list = epcis_event.source_list if source_list else epcis_event.destination_list
+        attr = 'source' if source_list else 'destination'
+        for source_dest in cur_list:
+            if source_dest.type == type:
+                id = getattr(source_dest, attr)
                 try:
                     if len(id) == 13:
                         ret = Company.objects.get(GLN13=id)
@@ -120,11 +124,22 @@ class CompanyLocationMixin:
     def get_location_by_identifier(
         self,
         epcis_event: EPCISBusinessEvent,
-        type=SourceDestinationTypes.owning_party.value
+        type=SourceDestinationTypes.owning_party.value,
+        source_list=True
     ):
-        for destination in epcis_event.destination_list:
-            if destination.type == type:
-                id = destination.destination
+        """
+        Will look for a Location model instance by identifier.
+        :param epcis_event: The event to use to find the identifier
+        :param type: The type of SourceDestination to look for
+        :param source_list: If true, will look through the source list, if
+        false will look through destinations.
+        :return: A Location model instance.
+        """
+        cur_list = epcis_event.source_list if source_list else epcis_event.destination_list
+        attr = 'source' if source_list else 'destination'
+        for source_dest in cur_list:
+            if source_dest.type == type:
+                id = getattr(source_dest, attr)
                 try:
                     if len(id) == 13:
                         ret = Location.objects.get(GLN13=id)
