@@ -169,6 +169,17 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         """
         # first get the receiver by the company prefix
         # noinspection PyTypeChecker
+        try:
+            sender_location = self.get_company_by_identifier(
+                filtered_event,
+                source_destination.SourceDestinationTypes.possessing_party.value
+            )
+        except Company.DoesNotExist:
+            sender_location = self.get_location_by_identifier(
+                filtered_event,
+                source_destination.SourceDestinationTypes.possessing_party.value
+            )
+        self.add_sender_partner(sender_location, rule_context)
         receiver_company = self.get_company_by_urn(filtered_event,
                                                    rule_context)
         self.add_receiver_partner(receiver_company, rule_context)
@@ -181,17 +192,6 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
             receiver_location = self.get_location_by_identifier(
                 filtered_event, source_list=False
             )
-        try:
-            sender_location = self.get_company_by_identifier(
-                filtered_event,
-                source_destination.SourceDestinationTypes.possessing_party.value
-            )
-        except Company.DoesNotExist:
-            sender_location = self.get_location_by_identifier(
-                filtered_event,
-                source_destination.SourceDestinationTypes.possessing_party.value
-            )
-        self.add_sender_partner(sender_location, rule_context)
         rule_context.context['masterdata'] = {
             receiver_company.SGLN: receiver_company,
             receiver_location.SGLN: receiver_location,
