@@ -285,7 +285,7 @@ def create_output_filter_rule(rule_name='GS1USHC Output Filter',
             name=_('Render EPCIS XML'),
             description=_(
                 'Pulls any EPCPyYes objects from the context and creates an XML message'),
-            step_class='quartet_output.steps.EPCPyYesOutputStep',
+            step_class='quartet_integrations.gs1ushc.steps.EPCPyYesOutputStep',
             order=4,
             rule=rule
         )
