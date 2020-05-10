@@ -210,7 +210,7 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         :return: None
         """
         receiver = sbdh.Partner(
-            sbdh.PartnerType.RECEIVER.value,
+            sbdh.PartnerType.RECEIVER,
             partner_id=sbdh.PartnerIdentification('GLN',
                                                   receiver_company.GLN13)
         )
@@ -227,7 +227,7 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         :return: None
         """
         sender = sbdh.Partner(
-            sbdh.PartnerType.SENDER.value,
+            sbdh.PartnerType.SENDER,
             partner_id=sbdh.PartnerIdentification('GLN',
                                                   sender_company.GLN13)
         )
