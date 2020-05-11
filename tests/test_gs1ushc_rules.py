@@ -72,7 +72,7 @@ class TestGS1USHC(TestCase):
         db_task = self._create_task(db_rule)
         curpath = os.path.dirname(__file__)
         # prepopulate the db
-        self._parse_test_data('data/commission_one_event.xml')
+        self._parse_test_data('data/commissioning_three_events.xml')
         self._parse_test_data('data/nested_pack.xml')
         data_path = os.path.join(curpath, 'data/ship_pallet.xml')
         with open(data_path, 'r') as data_file:

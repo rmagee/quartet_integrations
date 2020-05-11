@@ -2,6 +2,7 @@
 
 <epcis:EPCISDocument
         xmlns:epcis="urn:epcglobal:epcis:xsd:1"
+        xmlns:sbdh="http://www.unece.org/cefact/namespaces/StandardBusinessDocumentHeader"
         schemaVersion="{{ schema_version or '1' }}"
         creationDate="{{ created_date }}">
         {% block header %}

@@ -13,8 +13,9 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 from EPCPyYes.core.v1_2 import events as yes_events
-from quartet_output import parsing
 from quartet_integrations.gs1ushc import mixins
+from quartet_output import parsing
+from quartet_output.models import EPCISOutputCriteria
 
 
 class BusinessOutputParser(mixins.ConversionMixin,
@@ -26,6 +27,14 @@ class BusinessOutputParser(mixins.ConversionMixin,
     Destination types when possible.  Overrides the default behavior of the
     BusinessOutputParser in the quartet_output class.
     """
+
+    def __init__(self, stream, epcis_output_criteria: EPCISOutputCriteria,
+                 event_cache_size: int = 1024,
+                 recursive_decommission: bool = True, skip_parsing=False):
+        super().__init__(stream, epcis_output_criteria, event_cache_size,
+                         recursive_decommission, skip_parsing)
+        self.lot = None
+        self.expiry = None
 
     def handle_object_event(self, epcis_event: yes_events.ObjectEvent):
         super().handle_object_event(epcis_event)

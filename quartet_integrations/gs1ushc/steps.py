@@ -13,7 +13,7 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 from io import BytesIO
-
+from datetime import datetime
 from enum import Enum
 from EPCPyYes.core.SBDH import sbdh
 from EPCPyYes.core.SBDH import template_sbdh
@@ -136,6 +136,7 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         # if filtered events has more than one event then you know
         # the event in filtered events is a shipping event so grab that
         # and give it a new template
+        ilmd = None
         schema_version = self.get_or_create_parameter('Schema Version', '1',
                                                       self.declared_parameters.get(
                                                           'Schema Version'))
@@ -149,6 +150,10 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
             object_events = rule_context.context.get(
                 OutputKeys.OBJECT_EVENTS_KEY.value, [])
             if len(object_events) > 0:
+                for object_event in object_events:
+                    if len(object_event.ilmd) > 0:
+                        ilmd = object_event.ilmd
+                        break
                 self.info(
                     'Found some filtered object events.'
                     ' Looking up the receiver company by urn value/'
@@ -158,6 +163,9 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                 # self.sbdh.partners.append(receiver)
                 for event in object_events:
                     event._template = self.template
+                    if len(event.ilmd) == 0:
+                        event.ilmd = ilmd
+
         super().execute(data, rule_context)
 
     def add_header(self, filtered_event: EPCISBusinessEvent, rule_context):
@@ -215,6 +223,7 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                                                   receiver_company.GLN13)
         )
         self.header.partners.append(receiver)
+        self.header.document_identification.creation_date_and_time = datetime.utcnow().isoformat()
         rule_context.context[
             ContextKeys.RECEIVER_COMPANY.value] = receiver
 
