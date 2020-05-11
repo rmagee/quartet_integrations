@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <epcis:EPCISDocument
         xmlns:epcis="urn:epcglobal:epcis:xsd:1"
         xmlns:sbdh="http://www.unece.org/cefact/namespaces/StandardBusinessDocumentHeader"
