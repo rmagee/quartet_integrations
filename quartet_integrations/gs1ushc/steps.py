@@ -239,7 +239,8 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                                                   receiver_company.GLN13)
         )
         self.header.partners.append(receiver)
-        self.header.document_identification.creation_date_and_time = datetime.utcnow().isoformat()
+        self.header.document_identification.creation_date_and_time = \
+            datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
         rule_context.context[
             ContextKeys.RECEIVER_COMPANY.value] = receiver
 
