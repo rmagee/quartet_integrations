@@ -30,6 +30,7 @@ from quartet_masterdata.models import Company, Location
 from quartet_output.steps import ContextKeys as OutputKeys, \
     EPCPyYesOutputStep as EPYOS
 from quartet_output.steps import OutputParsingStep as QOPS
+from EPCPyYes.core.v1_2.events import Source, Destination
 
 
 class ContextKeys(Enum):
@@ -200,6 +201,21 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
             receiver_location = self.get_location_by_identifier(
                 filtered_event, source_list=False
             )
+        owner_source = Source(
+            source_destination.SourceDestinationTypes.owning_party.value,
+            receiver_company.SGLN)
+        owner_destination = Destination(
+            source_destination.SourceDestinationTypes.owning_party.value,
+            receiver_company.SGLN)
+        source_location = Source(
+            source_destination.SourceDestinationTypes.location.value,
+            sender_location.SGLN)
+        destination_location = Destination(
+            source_destination.SourceDestinationTypes.location.value,
+            receiver_location.SGLN)
+        filtered_event.source_list = [owner_source, source_location]
+        filtered_event.destination_list = [owner_destination,
+                                           destination_location]
         rule_context.context['masterdata'] = {
             receiver_company.SGLN: receiver_company,
             receiver_location.SGLN: receiver_location,
@@ -257,7 +273,8 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                                                            self.header)
         env = get_default_environment()
         template = env.get_template('gs1ushc/epcis_document.xml')
-        doc_class.additional_context = {'masterdata': self.rule_context.context['masterdata']}
+        doc_class.additional_context = {
+            'masterdata': self.rule_context.context['masterdata']}
         doc_class._template = template
         return doc_class
 
