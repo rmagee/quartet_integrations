@@ -455,12 +455,12 @@ class PharmaSecureTemplateStep(TemplateStep):
             # convert the urn to get the gtin14
             sn = conversion.URNConverter(urn)
             # Populate the trade_item context value
-            try:
-                rule_context.context.add('trade_item', TradeItem.objects.get(
-                    GTIN14=sn.gtin14
-                ))
-            except:
-                raise
+            # try:
+            #     rule_context.context.add('trade_item', TradeItem.objects.get(
+            #         GTIN14=sn.gtin14
+            #     ))
+            # except:
+            #     raise
         # call super and return
         return super().execute(data, rule_context)
 
