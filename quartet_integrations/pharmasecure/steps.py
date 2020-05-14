@@ -376,6 +376,11 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
         tags = root.findall(
             '*/*/*/*/a:SerialNo',
             ns)
+        if len(tags) == 0:
+            # Error from PharmaSecure
+            er = root.find('*/*/*/a:ErrorCode', ns).text
+            raise Exception("Error from PharmaSecure {0}".format(er))
+
         serial_numbers = []
         # add tags to serial_numbers array
         for tag in tags:
@@ -455,12 +460,12 @@ class PharmaSecureTemplateStep(TemplateStep):
             # convert the urn to get the gtin14
             sn = conversion.URNConverter(urn)
             # Populate the trade_item context value
-            # try:
-            #     rule_context.context.add('trade_item', TradeItem.objects.get(
-            #         GTIN14=sn.gtin14
-            #     ))
-            # except:
-            #     raise
+            try:
+                rule_context.context['trade_item']= TradeItem.objects.get(
+                    GTIN14=sn.gtin14
+                )
+            except:
+                raise
         # call super and return
         return super().execute(data, rule_context)
 
