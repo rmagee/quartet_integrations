@@ -13,7 +13,7 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 from io import BytesIO
-
+from datetime import datetime
 from enum import Enum
 from EPCPyYes.core.SBDH import sbdh
 from EPCPyYes.core.SBDH import template_sbdh
@@ -30,6 +30,7 @@ from quartet_masterdata.models import Company, Location
 from quartet_output.steps import ContextKeys as OutputKeys, \
     EPCPyYesOutputStep as EPYOS
 from quartet_output.steps import OutputParsingStep as QOPS
+from EPCPyYes.core.v1_2.events import Source, Destination
 
 
 class ContextKeys(Enum):
@@ -136,6 +137,7 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         # if filtered events has more than one event then you know
         # the event in filtered events is a shipping event so grab that
         # and give it a new template
+        ilmd = None
         schema_version = self.get_or_create_parameter('Schema Version', '1',
                                                       self.declared_parameters.get(
                                                           'Schema Version'))
@@ -149,6 +151,10 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
             object_events = rule_context.context.get(
                 OutputKeys.OBJECT_EVENTS_KEY.value, [])
             if len(object_events) > 0:
+                for object_event in object_events:
+                    if len(object_event.ilmd) > 0:
+                        ilmd = object_event.ilmd
+                        break
                 self.info(
                     'Found some filtered object events.'
                     ' Looking up the receiver company by urn value/'
@@ -158,6 +164,9 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                 # self.sbdh.partners.append(receiver)
                 for event in object_events:
                     event._template = self.template
+                    if len(event.ilmd) == 0:
+                        event.ilmd = ilmd
+
         super().execute(data, rule_context)
 
     def add_header(self, filtered_event: EPCISBusinessEvent, rule_context):
@@ -169,6 +178,17 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         """
         # first get the receiver by the company prefix
         # noinspection PyTypeChecker
+        try:
+            sender_location = self.get_company_by_identifier(
+                filtered_event,
+                source_destination.SourceDestinationTypes.possessing_party.value
+            )
+        except Company.DoesNotExist:
+            sender_location = self.get_location_by_identifier(
+                filtered_event,
+                source_destination.SourceDestinationTypes.possessing_party.value
+            )
+        self.add_sender_partner(sender_location, rule_context)
         receiver_company = self.get_company_by_urn(filtered_event,
                                                    rule_context)
         self.add_receiver_partner(receiver_company, rule_context)
@@ -181,17 +201,21 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
             receiver_location = self.get_location_by_identifier(
                 filtered_event, source_list=False
             )
-        try:
-            sender_location = self.get_company_by_identifier(
-                filtered_event,
-                source_destination.SourceDestinationTypes.possessing_party.value
-            )
-        except Company.DoesNotExist:
-            sender_location = self.get_location_by_identifier(
-                filtered_event,
-                source_destination.SourceDestinationTypes.possessing_party.value
-            )
-        self.add_sender_partner(sender_location, rule_context)
+        owner_source = Source(
+            source_destination.SourceDestinationTypes.owning_party.value,
+            receiver_company.SGLN)
+        owner_destination = Destination(
+            source_destination.SourceDestinationTypes.owning_party.value,
+            receiver_company.SGLN)
+        source_location = Source(
+            source_destination.SourceDestinationTypes.location.value,
+            sender_location.SGLN)
+        destination_location = Destination(
+            source_destination.SourceDestinationTypes.location.value,
+            receiver_location.SGLN)
+        filtered_event.source_list = [owner_source, source_location]
+        filtered_event.destination_list = [owner_destination,
+                                           destination_location]
         rule_context.context['masterdata'] = {
             receiver_company.SGLN: receiver_company,
             receiver_location.SGLN: receiver_location,
@@ -210,11 +234,13 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         :return: None
         """
         receiver = sbdh.Partner(
-            sbdh.PartnerType.RECEIVER.value,
+            sbdh.PartnerType.RECEIVER,
             partner_id=sbdh.PartnerIdentification('GLN',
                                                   receiver_company.GLN13)
         )
         self.header.partners.append(receiver)
+        self.header.document_identification.creation_date_and_time = \
+            datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
         rule_context.context[
             ContextKeys.RECEIVER_COMPANY.value] = receiver
 
@@ -227,7 +253,7 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         :return: None
         """
         sender = sbdh.Partner(
-            sbdh.PartnerType.SENDER.value,
+            sbdh.PartnerType.SENDER,
             partner_id=sbdh.PartnerIdentification('GLN',
                                                   sender_company.GLN13)
         )
@@ -248,7 +274,8 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                                                            self.header)
         env = get_default_environment()
         template = env.get_template('gs1ushc/epcis_document.xml')
-        doc_class.additional_context = {'masterdata': self.rule_context.context['masterdata']}
+        doc_class.additional_context = {
+            'masterdata': self.rule_context.context['masterdata']}
         doc_class._template = template
         return doc_class
 
