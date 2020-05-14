@@ -445,7 +445,7 @@ class PharmaSecureTemplateStep(TemplateStep):
 
     def execute(self, data, rule_context: RuleContext):
         # convert
-        if len(data[0]) > 18:
+        if len(str(data[0])) > 18:
             # this is an SGTIN, get the TradeItem
             d = data[0]
             # remove the leading "0."
