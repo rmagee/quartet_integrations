@@ -18,8 +18,6 @@
                 </childEPCs>
                 <action>ADD</action>
                 <bizStep>urn:epcglobal:cbv:bizstep:packing</bizStep>
-                <disposition>urn:epcglobal:cbv:disp:container_closed
-                </disposition>
                 <readPoint>
                     <id>urn:epc:id:sgln:305555.123456.12</id>
                 </readPoint>
