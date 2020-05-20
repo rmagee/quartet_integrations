@@ -13,6 +13,8 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 from EPCPyYes.core.v1_2 import events as yes_events
+from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
+from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
 from quartet_integrations.gs1ushc import mixins
 from quartet_output import parsing
 from quartet_output.models import EPCISOutputCriteria
@@ -37,7 +39,17 @@ class BusinessOutputParser(mixins.ConversionMixin,
         self.expiry = None
 
     def handle_object_event(self, epcis_event: yes_events.ObjectEvent):
+        epcis_event.event_time.replace('+00:00', 'Z')
+        epcis_event.record_time.replace('+00:00', 'Z')
         super().handle_object_event(epcis_event)
+
+    def handle_aggregation_event(self,
+                                 epcis_event: yes_events.AggregationEvent):
+        epcis_event.event_time.replace('+00:00', 'Z')
+        epcis_event.record_time.replace('+00:00', 'Z')
+        if epcis_event.biz_step == BusinessSteps.packing.value:
+            epcis_event.disposition = Disposition.in_progress.value
+        super().handle_aggregation_event(epcis_event)
 
 
 class SimpleOutputParser(mixins.ConversionMixin, parsing.SimpleOutputParser):

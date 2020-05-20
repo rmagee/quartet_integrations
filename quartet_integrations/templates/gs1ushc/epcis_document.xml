@@ -10,9 +10,7 @@
         {% if header %}
         <EPCISHeader>
         {% include "epcis/sbdh.xml" %}
-        <extension>
-            {% include "gs1ushc/masterdata.xml" %}
-        </extension>
+        {% include "gs1ushc/masterdata.xml" %}
         </EPCISHeader>
         {% endif %}
         {% endblock %}
