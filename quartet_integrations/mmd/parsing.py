@@ -44,8 +44,7 @@ class PartnerParser:
             row = list(datarow.values())
             try:
                 city, state, zip, country = self.parse_location(row)
-                if len(row[3]) == 0:
-                    pass
+
                 Company.objects.get_or_create(
                     name=row[1],
                     address1=row[5],
@@ -53,7 +52,7 @@ class PartnerParser:
                     state_province=state,
                     postal_code=zip,
                     country=country,
-                    gs1_company_prefix=row[3],
+                    gs1_company_prefix=row[2],
                     GLN13=row[2],
                     SGLN='urn:epc:id:sgln:%s' % row[4]
                 )
@@ -61,13 +60,6 @@ class PartnerParser:
                 pass
             except Exception as e:
                 raise
-
-        cps = Company.objects.all()
-        print("After Companies Imported")
-        print("=========================")
-        for c in cps:
-            print("{0} = {1}".format(c.name, c.gs1_company_prefix))
-        print("-------------------------")
 
     def parse_location(self, row):
 
@@ -86,6 +78,13 @@ class PartnerMMDParser:
     def __init__(self):
         self.company_records = {}
         self.info_func = None
+        self.replenishment_size = None
+        self.threshold = None
+        self.minimum = None
+        self.maximum = None
+        self.sending_system_gln = None
+        self.response_rule_name = None
+        self.secondary_replenishment_size = None
 
     def parse(self, data: bytes, info_func: object, threshold: int,
               response_rule_name: str, sending_system_gln: str,
@@ -95,7 +94,7 @@ class PartnerMMDParser:
         self.replenishment_size = int(replenishment_size)
         self.threshold = threshold
         self.minimum = 0
-        self.maximum = sys.maxsize
+        self.maximum = 999999
         self.sending_system_gln = sending_system_gln
         self.response_rule_name = response_rule_name
 
@@ -105,9 +104,6 @@ class PartnerMMDParser:
         file_stream = StringIO(data.decode('utf-8'))
         parsed_data = csv.DictReader(file_stream)
 
-        print("Creating Trade Items")
-        print("=========================")
-
         for datarow in parsed_data:
             row = list(datarow.values())
             if row[12] not in ['TraceLink', 'FrequentZ/RFXCEL', 'Pharmasecure']:
@@ -115,10 +111,6 @@ class PartnerMMDParser:
                 company = self.get_company_by_gln13(row[13])
                 if company is None:
                     company = self.create_company(row)
-
-
-
-                print("{0} = {1}".format(company.name, company.gs1_company_prefix))
 
                 self.create_trade_item(material_number=row[0],
                                        unit_of_measure='Ea' if row[1] == '' else row[1],
@@ -131,7 +123,7 @@ class PartnerMMDParser:
                                        company_prefix=row[15],
                                        company=company,
 
-                                       )
+                                           )
                 self.create_trade_item(material_number=row[0],
                                        unit_of_measure=row[3],
                                        gtin14=row[4],
@@ -158,7 +150,6 @@ class PartnerMMDParser:
                                            company=company,
 
                                            )
-        print("-------------------------")
 
     def create_trade_item(self, material_number, unit_of_measure, gtin14,
                           pack_count=None, pallet_pack=None, name=None,
