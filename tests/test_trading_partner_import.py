@@ -50,10 +50,4 @@ class ImportTradingPartnerTestCase(TransactionTestCase):
                     rule_name="Trading Partner Import",
                     run_immediately=True
                 )
-            self.assertEqual(
-                Company.objects.all().count(), 43
-            )
-            self.assertEqual(
-                Location.objects.all().count(), 42
-            )
 
