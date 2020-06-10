@@ -135,7 +135,7 @@ class MasterMaterialParser:
                                     self.response_rule_name)
         except IntegrityError:
             self.info_func('Randomized region with name %s already exists',
-                           TradeItem.GTIN14)
+                           trade_item.GTIN14)
 
     def get_company(self, gtin: str):
         """
