@@ -133,6 +133,9 @@ class MasterMaterialParser:
                                     'run the create_opsm_gtin_range '
                                     'management command.' %
                                     self.response_rule_name)
+        except IntegrityError:
+            self.info_func('Randomized region with name %s already exists',
+                           TradeItem.GTIN14)
 
     def get_company(self, gtin: str):
         """
