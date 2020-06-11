@@ -94,6 +94,7 @@ class MasterMaterialParser:
                     pack_count=pack_count,
                     regulated_product_name=name
                 )
+            self.info_func('Trade item is %s %s', gtin14, name)
             TradeItemField.objects.get_or_create(
                 trade_item=trade_item,
                 name='pallet_pack_count',
