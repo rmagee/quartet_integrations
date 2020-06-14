@@ -51,7 +51,7 @@ class ImportTradingPartnerTestCase(TransactionTestCase):
                     run_immediately=True
                 )
             self.assertEqual(
-                Company.objects.all().count(), 40
+                Company.objects.all().count(), 43
             )
             self.assertEqual(
                 Location.objects.all().count(), 42

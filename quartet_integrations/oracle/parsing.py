@@ -77,14 +77,24 @@ class MasterMaterialParser:
             self.info_func('Company not found for gtin %s- NOT CREATING'
                            ' TRADE ITEM.', gtin14)
         else:
-            trade_item = TradeItem.objects.get_or_create(
-                company=company,
-                additional_id=material_number,
-                package_uom=unit_of_measure,
-                GTIN14=gtin14,
-                pack_count=pack_count,
-                regulated_product_name=name
-            )[0]
+            try:
+                trade_item = TradeItem.objects.get(GTIN14=gtin14)
+                trade_item.company = company
+                trade_item.additional_id=material_number
+                trade_item.package_uom=unit_of_measure
+                trade_item.pack_count=pack_count
+                trade_item.regulated_product_name=name
+                trade_item.save()
+            except TradeItem.DoesNotExist:
+                trade_item = TradeItem.objects.create(
+                    company=company,
+                    additional_id=material_number,
+                    package_uom=unit_of_measure,
+                    GTIN14=gtin14,
+                    pack_count=pack_count,
+                    regulated_product_name=name
+                )
+            self.info_func('Trade item is %s %s', gtin14, name)
             TradeItemField.objects.get_or_create(
                 trade_item=trade_item,
                 name='pallet_pack_count',
@@ -133,6 +143,9 @@ class MasterMaterialParser:
                                     'run the create_opsm_gtin_range '
                                     'management command.' %
                                     self.response_rule_name)
+        except IntegrityError:
+            self.info_func('Randomized region with name %s already exists',
+                           trade_item.GTIN14)
 
     def get_company(self, gtin: str):
         """

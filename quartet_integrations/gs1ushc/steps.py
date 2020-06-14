@@ -15,10 +15,12 @@
 from io import BytesIO
 from datetime import datetime
 from enum import Enum
+from typing import List
 from EPCPyYes.core.SBDH import sbdh
 from EPCPyYes.core.SBDH import template_sbdh
 from EPCPyYes.core.v1_2 import template_events
 from EPCPyYes.core.v1_2.events import EPCISBusinessEvent
+from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
 from EPCPyYes.core.v1_2.CBV import business_steps, source_destination
 from quartet_capture import rules, models
 from quartet_capture.rules import RuleContext
@@ -32,6 +34,7 @@ from quartet_output.steps import ContextKeys as OutputKeys, \
 from quartet_output.steps import OutputParsingStep as QOPS
 from EPCPyYes.core.v1_2.events import Source, Destination
 
+EventList = List[EPCISBusinessEvent]
 
 class ContextKeys(Enum):
     """
@@ -137,6 +140,15 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         # if filtered events has more than one event then you know
         # the event in filtered events is a shipping event so grab that
         # and give it a new template
+        append_data = self.get_or_create_parameter(
+            'Append Data', 'True',
+            'Whether or not to call the append data function of the step for '
+            'events prior to rendering.') in ['True', 'true']
+        modify_date = self.get_or_create_parameter(
+            'Modify Date', 'True',
+            'Whether or not to call the modify date function on teh step'
+            ' for events prior to rendering.'
+        ) in ['True', 'true']
         ilmd = None
         schema_version = self.get_or_create_parameter('Schema Version', '1',
                                                       self.declared_parameters.get(
@@ -148,9 +160,11 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         if len(filtered_events) > 0:
             # get the object events from the context - these are added by
             # the AddCommissioningDataStep step in the rule.
+            if modify_date: self.modify_date(filtered_events)
             object_events = rule_context.context.get(
                 OutputKeys.OBJECT_EVENTS_KEY.value, [])
             if len(object_events) > 0:
+                if modify_date: self.modify_date(object_events)
                 for object_event in object_events:
                     if len(object_event.ilmd) > 0:
                         ilmd = object_event.ilmd
@@ -166,8 +180,36 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                     event._template = self.template
                     if len(event.ilmd) == 0:
                         event.ilmd = ilmd
+            agg_events = rule_context.context.get(
+                OutputKeys.AGGREGATION_EVENTS_KEY.value, []
+            )
+            if append_data: self.append_event_data(agg_events)
+            if modify_date: self.modify_date(agg_events)
 
         super().execute(data, rule_context)
+
+    def modify_date(self, epcis_events: EventList):
+        """
+        Some systems don't like timezone info so remove it.  Override to
+        provide different behavior.
+        """
+        for epcis_event in epcis_events:
+            epcis_event.event_time = epcis_event.event_time.replace('+00:00', 'Z')
+            epcis_event.record_time = epcis_event.record_time.replace('+00:00', 'Z')
+
+    def append_event_data(self, epcis_events: EventList):
+        """
+        If set, will append data to the event, in this case will
+        append disposition information if it is missing.  Override to provide
+        different behavior.
+        """
+        disposition = self.get_or_create_parameter(
+            'Added Disposition',Disposition.in_progress.value,
+            'The disposition to add to events that do not have one.'
+        )
+        for epcis_event in epcis_events:
+            if not epcis_event.disposition:
+                epcis_event.disposition = disposition
 
     def add_header(self, filtered_event: EPCISBusinessEvent, rule_context):
         """
