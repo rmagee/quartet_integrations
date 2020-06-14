@@ -12,19 +12,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-import os
 
-import abc
-import sqlite3
-import time
-from lxml import etree, objectify
-
-from list_based_flavorpack.models import ListBasedRegion
-from list_based_flavorpack.processing_classes.third_party_processing.rules import get_region_table
-from quartet_capture import models
 from quartet_capture.rules import RuleContext, Step
 from quartet_integrations.oracle.steps import TradeItemNumberRangeImportStep
-from quartet_integrations.mmd.parsing import PartnerParser, PartnerMMDParser
+from quartet_integrations.mmd.parsing import (
+    PartnerParser,
+    PartnerMMDParser,
+    FirstTimeUSGenericsGPIImport
+)
 from serialbox import models as sb_models
 
 
@@ -32,15 +27,66 @@ class PartnerParsingStep(Step):
     """
     Step that parses the Company Information from a provided .csv file
     """
+
     @property
     def declared_parameters(self):
         return {}
 
     def execute(self, data, rule_context: RuleContext):
-        PartnerParser().parse(data)
+        PartnerParser().parse(data, info_func=self.info)
 
     def on_failure(self):
         pass
+
+
+class FirstTimeUSGenericsGPIImportStep(TradeItemNumberRangeImportStep):
+
+
+    def execute(self, data, rule_context: RuleContext):
+        self.info('Starting Import')
+        auth_id = self.get_integer_parameter(
+            'Authentication Id', None)
+        if auth_id is None:
+            msg = "Authentication Id Step Parameter is Not Set on 'FirstTimeUSGenericsGPIImportStep' Step"
+            self.error(msg)
+            raise Exception(msg)
+
+        response_rule = self.get_parameter(
+            'Response Rule Name', "OPSM External GTIN Response Rule")
+
+        request_rule = self.get_parameter(
+            'Request Rule Name', "PharmaSecure Serial Numbers")
+
+        FirstTimeUSGenericsGPIImport().parse(data, info_func=self.info,
+                                             auth_id=auth_id,
+                                             response_rule=response_rule,
+                                             request_rule=request_rule);
+
+    def on_failure(self):
+        pass
+
+    @property
+    def declared_parameters(self):
+
+        self.params[
+            'Authentication Id'] = 'The Id of the authentication info ' \
+                                        'instance to use to communicate with ' \
+                                        'external PharamSecure System.'
+
+        self.params['Response Rule Name'] = 'The Name of the Response Rule that will' \
+                                       ' handle formatting the serial number response from PharamSecure.'
+
+        self.params['Request Rule Name'] = 'The Name of the Request Rule that will' \
+                                            ' request Serial Numbers from PharamSecure.'
+
+        self.params[
+            'Endpoint'] = 'The name of the Endpoint to use to communicate ' \
+                          'with PharmaSecure.'
+        self.params[
+            'Replenishment Size'] = 'The size of the request to the external ' \
+                                    'system.'
+        return self.params
+
 
 class TradeItemImportStep(TradeItemNumberRangeImportStep):
 

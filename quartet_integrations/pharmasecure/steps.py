@@ -378,8 +378,16 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
             ns)
         if len(tags) == 0:
             # Error from PharmaSecure
-            er = root.find('*/*/*/a:ErrorCode', ns).text
-            raise Exception("Error from PharmaSecure {0}".format(er))
+            msg = ""
+            try:
+                er = root.find('*/*/*/a:ErrorCode', ns).text
+                msg = "Error from PharmaSecure {0}".format(er)
+            except:
+                msg = 'PharmaSecure returned no Serial Numbers for {0}'.format(region_name)
+                self.error(msg)
+
+            raise Exception(msg)
+
 
         serial_numbers = []
         # add tags to serial_numbers array
