@@ -57,10 +57,14 @@ class FirstTimeUSGenericsGPIImportStep(TradeItemNumberRangeImportStep):
         request_rule = self.get_parameter(
             'Request Rule Name', "PharmaSecure Serial Numbers")
 
+        endpoint = self.get_parameter(
+            'Endpoint', "PharmaSecure SerialNumbers")
+
         FirstTimeUSGenericsGPIImport().parse(data, info_func=self.info,
                                              auth_id=auth_id,
                                              response_rule=response_rule,
-                                             request_rule=request_rule);
+                                             request_rule=request_rule,
+                                             endpoint=endpoint);
 
     def on_failure(self):
         pass

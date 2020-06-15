@@ -83,10 +83,10 @@ class FirstTimeUSGenericsGPIImport:
         self.response_rule_name = None
         self.request_rule_name = None
         self.secondary_replenishment_size = None
-        self.endpoint = "PharmaSecure Serial Numbers"
+        self.endpoint = ""
         self.authentication_info = ""
 
-    def parse(self, data: bytes, info_func: object, auth_id: int, response_rule: str, request_rule: str):
+    def parse(self, data: bytes, info_func: object, auth_id: int, response_rule: str, request_rule: str, endpoint: str):
 
         self.replenishment_size = 500
         self.threshold = 500
@@ -95,6 +95,7 @@ class FirstTimeUSGenericsGPIImport:
         self.authentication_info = auth_id
         self.response_rule_name = response_rule
         self.request_rule_name = request_rule
+        self.endpoint = endpoint
 
         self.info_func = info_func
 
