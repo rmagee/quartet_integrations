@@ -92,6 +92,62 @@ class FirstTimeUSGenericsGPIImportStep(TradeItemNumberRangeImportStep):
         return self.params
 
 
+class GenericTradeItemImportStep(TradeItemNumberRangeImportStep):
+
+
+    def execute(self, data, rule_context: RuleContext):
+        self.info('Starting Import')
+        auth_id = self.get_integer_parameter(
+            'Authentication Id', None)
+        if auth_id is None:
+            msg = "Authentication Id Step Parameter is Not Set on 'FirstTimeUSGenericsGPIImportStep' Step"
+            self.error(msg)
+            raise Exception(msg)
+
+        response_rule = self.get_parameter(
+            'Response Rule Name', "OPSM External GTIN Response Rule")
+
+        request_rule = self.get_parameter(
+            'Request Rule Name', "PharmaSecure Serial Numbers")
+
+        endpoint = self.get_parameter(
+            'Endpoint', "PharmaSecure SerialNumbers")
+
+        list_based = self.get_boolean_parameter(
+            'ListBased', False)
+
+        FirstTimeUSGenericsGPIImport().parse(data, info_func=self.info,
+                                             auth_id=auth_id,
+                                             response_rule=response_rule,
+                                             request_rule=request_rule,
+                                             endpoint=endpoint);
+
+    def on_failure(self):
+        pass
+
+    @property
+    def declared_parameters(self):
+
+        self.params[
+            'Authentication Id'] = 'The Id of the authentication info ' \
+                                        'instance to use to communicate with ' \
+                                        'external PharamSecure System.'
+
+        self.params['Response Rule Name'] = 'The Name of the Response Rule that will' \
+                                       ' handle formatting the serial number response from PharamSecure.'
+
+        self.params['Request Rule Name'] = 'The Name of the Request Rule that will' \
+                                            ' request Serial Numbers from PharamSecure.'
+
+        self.params[
+            'Endpoint'] = 'The name of the Endpoint to use to communicate ' \
+                          'with PharmaSecure.'
+        self.params[
+            'Replenishment Size'] = 'The size of the request to the external ' \
+                                    'system.'
+        return self.params
+
+
 class TradeItemImportStep(TradeItemNumberRangeImportStep):
 
     def execute(self, data, rule_context: RuleContext):
