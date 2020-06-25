@@ -170,18 +170,21 @@ class TradeItemImportStep(TradeItemNumberRangeImportStep):
             secondary_replenishment_size=secondary_replenishment_size
         )
 
-        @property
-        def declared_parameters(self):
-            params = super().declared_parameters
+    @property
+    def declared_parameters(self):
+        self.params = super().declared_parameters
 
-            params[
-                'Sending System GLN'] = 'The GLN that will be used as the "sending systmem' \
-                                        ' during template rendering for tracelink.',
-            params[
-                'Replenishment Size'] = 'The size of the request to the external ' \
-                                        'system.'
-            params[
-                'Secondary Replenishment Size'] = 'To request a smaller amount ' \
-                                                  'for secondary packaging use ' \
-                                                  'this.'
-            return params
+        self.params[
+            'Sending System GLN'] = 'The GLN that will be used as the "sending systmem' \
+                                    ' during template rendering for tracelink.',
+        self.params[
+            'Replenishment Size'] = 'The size of the request to the external ' \
+                                    'system.'
+        self.params[
+            'Secondary Replenishment Size'] = 'To request a smaller amount ' \
+                                              'for secondary packaging use ' \
+                                              'this.'
+        return self.params
+
+    def on_failure(self):
+        pass
