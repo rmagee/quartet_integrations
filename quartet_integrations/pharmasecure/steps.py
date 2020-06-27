@@ -395,7 +395,7 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
             sn = conversion.BarcodeConverter(tag.find('a:SerialNumber', ns).text, company_prefix_length=len("0370010"))
             if sn.sscc18 is None:
                 nums = sn.epc_urn.split(":")
-                num = "0.{0}".format(nums[4])
+                num = nums[4].split('.')[2]
             else:
                 num = sn.sscc18
 
@@ -423,6 +423,8 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
             cursor.execute('insert into %s (serial_number, used) values '
                            '(?, ?)' % get_region_table(region), (id, 0))
         connection.commit()
+        s = ","
+        self.info('Saved Serial Numbers. {0}'.format(s.join(serial_numbers)))
         self.info("Execution time: %.3f seconds." % (time.time() - start))
 
     def get_list_based_region(self, machine_name):
