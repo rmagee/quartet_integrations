@@ -101,6 +101,10 @@ class RetrievePackagingHierarchyView(RocItBaseView):
 
             ret_val = Response(xml, status.HTTP_200_OK, content_type="text/xml")
 
+        except IndexError:
+            ret_val = Response({"error": "The epc requested could not be found."},
+                               status.HTTP_500_INTERNAL_SERVER_ERROR,
+                               content_type="*/*")
         except Exception:
             # Unexpected error, return HTTP 500 Server Error and log the exception
             data = traceback.format_exc()
