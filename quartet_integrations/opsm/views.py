@@ -27,7 +27,6 @@ from logging import getLogger
 from quartet_capture import views as capture_views
 from quartet_capture.models import TaskParameter
 from serialbox.api.views import AllocateView
-from rest_framework.exceptions import NotFound
 
 logger = getLogger(__name__)
 
@@ -100,11 +99,8 @@ class OPSMNumberRangeView(AllocateView):
 
             if gtin:
                 pool = gtin
-            try:
-                ret = super().get(request, pool, count)
-            except NotFound:
-                pool = '%s-SSCC' % pool
-                ret = super().get(request, pool, count)
+
+            ret = super().get(request, pool, count)
         except ObjectDoesNotExist as e:
             ret = Response(
                 'An item that was expected to be '
