@@ -342,7 +342,7 @@ class IRISNumberRequestTransportStep(rules.Step, HttpTransportMixin):
 
 class IRISNumberRequestProcessStep(rules.Step):
     """
-    Takes response data from tracelink systems and writes to the sqlite db
+    Takes response data from IRIS systems and writes to the sqlite db
     database file if the region supports that.
     """
 
