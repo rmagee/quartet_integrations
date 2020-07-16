@@ -460,8 +460,9 @@ class PharmaSecureTemplateStep(TemplateStep):
 
     def execute(self, data, rule_context: RuleContext):
         # convert
-        if len(str(data[0])) > 18:
+        if str(data[0]).length >= 10:
             # this is an SGTIN, get the TradeItem
+            self.info("PharmaSecureTemplateStep converting {0}".format(data))
             d = data[0]
             # remove the leading "0."
             d = d[2:]
@@ -474,8 +475,11 @@ class PharmaSecureTemplateStep(TemplateStep):
                 rule_context.context['trade_item']= TradeItem.objects.get(
                     GTIN14=sn.gtin14
                 )
-            except:
-                raise
+            except TradeItem.DoesNotExist:
+                raise Exception("The Trade Item {0} was not found in QU4RTET".format(sn.gtin14))
+        else:
+            self.info("PharmaSecureTemplateStep data was {0}".format(data))
+            rule_context.context['trade_item'] = ""
         # call super and return
         return super().execute(data, rule_context)
 
