@@ -377,8 +377,7 @@ class IRISNumberRequestProcessStep(rules.Step):
         # add tags to serial_numbers array
         for tag in tags:
             if format.lower() == 'sgtin-198' or format.lower() == 'sgtin-96':
-                sn = tag.text.replace(
-                    'urn:epc:tag:{0}:'.format(format).lower(), "")
+                sn = tag.text.split('.')[3]
                 serial_numbers.append(sn)
             elif format.lower() == 'sscc-96':
                 urn = tag.text.replace('urn:epc:tag:sscc-96:',

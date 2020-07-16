@@ -394,8 +394,7 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
         for tag in tags:
             sn = conversion.BarcodeConverter(tag.find('a:SerialNumber', ns).text, company_prefix_length=len("0370010"))
             if sn.sscc18 is None:
-                nums = sn.epc_urn.split(":")
-                num = nums[4].split('.')[2]
+                num = sn.serial_number
             else:
                 num = sn.sscc18
 
