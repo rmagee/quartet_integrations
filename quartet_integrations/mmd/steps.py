@@ -17,8 +17,7 @@ from quartet_capture.rules import RuleContext, Step
 from quartet_integrations.oracle.steps import TradeItemNumberRangeImportStep
 from quartet_integrations.mmd.parsing import (
     PartnerParser,
-    PartnerMMDParser,
-    FirstTimeUSGenericsGPIImport
+    TradeItemImportParser
 )
 from serialbox import models as sb_models
 
@@ -39,115 +38,6 @@ class PartnerParsingStep(Step):
         pass
 
 
-class FirstTimeUSGenericsGPIImportStep(TradeItemNumberRangeImportStep):
-
-
-    def execute(self, data, rule_context: RuleContext):
-        self.info('Starting Import')
-        auth_id = self.get_integer_parameter(
-            'Authentication Id', None)
-        if auth_id is None:
-            msg = "Authentication Id Step Parameter is Not Set on 'FirstTimeUSGenericsGPIImportStep' Step"
-            self.error(msg)
-            raise Exception(msg)
-
-        response_rule = self.get_parameter(
-            'Response Rule Name', "OPSM External GTIN Response Rule")
-
-        request_rule = self.get_parameter(
-            'Request Rule Name', "PharmaSecure Serial Numbers")
-
-        endpoint = self.get_parameter(
-            'Endpoint', "PharmaSecure SerialNumbers")
-
-        FirstTimeUSGenericsGPIImport().parse(data, info_func=self.info,
-                                             auth_id=auth_id,
-                                             response_rule=response_rule,
-                                             request_rule=request_rule,
-                                             endpoint=endpoint);
-
-    def on_failure(self):
-        pass
-
-    @property
-    def declared_parameters(self):
-
-        self.params[
-            'Authentication Id'] = 'The Id of the authentication info ' \
-                                        'instance to use to communicate with ' \
-                                        'external PharamSecure System.'
-
-        self.params['Response Rule Name'] = 'The Name of the Response Rule that will' \
-                                       ' handle formatting the serial number response from PharamSecure.'
-
-        self.params['Request Rule Name'] = 'The Name of the Request Rule that will' \
-                                            ' request Serial Numbers from PharamSecure.'
-
-        self.params[
-            'Endpoint'] = 'The name of the Endpoint to use to communicate ' \
-                          'with PharmaSecure.'
-        self.params[
-            'Replenishment Size'] = 'The size of the request to the external ' \
-                                    'system.'
-        return self.params
-
-
-class GenericTradeItemImportStep(TradeItemNumberRangeImportStep):
-
-
-    def execute(self, data, rule_context: RuleContext):
-        self.info('Starting Import')
-        auth_id = self.get_integer_parameter(
-            'Authentication Id', None)
-        if auth_id is None:
-            msg = "Authentication Id Step Parameter is Not Set on 'FirstTimeUSGenericsGPIImportStep' Step"
-            self.error(msg)
-            raise Exception(msg)
-
-        response_rule = self.get_parameter(
-            'Response Rule Name', "OPSM External GTIN Response Rule")
-
-        request_rule = self.get_parameter(
-            'Request Rule Name', "PharmaSecure Serial Numbers")
-
-        endpoint = self.get_parameter(
-            'Endpoint', "PharmaSecure SerialNumbers")
-
-        list_based = self.get_boolean_parameter(
-            'ListBased', False)
-
-        FirstTimeUSGenericsGPIImport().parse(data, info_func=self.info,
-                                             auth_id=auth_id,
-                                             response_rule=response_rule,
-                                             request_rule=request_rule,
-                                             endpoint=endpoint);
-
-    def on_failure(self):
-        pass
-
-    @property
-    def declared_parameters(self):
-
-        self.params[
-            'Authentication Id'] = 'The Id of the authentication info ' \
-                                        'instance to use to communicate with ' \
-                                        'external PharamSecure System.'
-
-        self.params['Response Rule Name'] = 'The Name of the Response Rule that will' \
-                                       ' handle formatting the serial number response from PharamSecure.'
-
-        self.params['Request Rule Name'] = 'The Name of the Request Rule that will' \
-                                            ' request Serial Numbers from PharamSecure.'
-
-        self.params[
-            'Endpoint'] = 'The name of the Endpoint to use to communicate ' \
-                          'with PharmaSecure.'
-        self.params[
-            'Replenishment Size'] = 'The size of the request to the external ' \
-                                    'system.'
-        return self.params
-
-
 class TradeItemImportStep(TradeItemNumberRangeImportStep):
 
     def execute(self, data, rule_context: RuleContext):
@@ -157,33 +47,46 @@ class TradeItemImportStep(TradeItemNumberRangeImportStep):
         secondary_replenishment_size = self.get_integer_parameter(
             'Secondary Replenishment Size', int(replenishment_size / 2))
 
-        PartnerMMDParser().parse(
+        TradeItemImportParser().parse(
             data,
             info_func=self.info,
-            response_rule_name=self.get_parameter('Response Rule Name', None,
-                                                  True),
-            threshold=75000,
 
-            sending_system_gln=self.get_parameter('Sending System GLN', None,
+            response_rule=self.get_parameter('Response Rule Name', None,
+                                                  True),
+
+            request_rule=self.get_parameter('Request Rule Name', None,
+                                                  True),
+            auth_id=self.get_parameter("Auth Id", None, True),
+            endpoint=self.get_parameter("Endpoint Name", None, True),
+            threshold=5000,
+
+            sending_system_sgln=self.get_parameter('Sending System SGLN', None,
                                                   False),
+
+            list_based=self.get_boolean_parameter("List Based", None, True),
+
             replenishment_size=replenishment_size,
-            secondary_replenishment_size=secondary_replenishment_size
+            range_start=self.get_parameter('Range Start', None, 0),
+            range_end=self.get_parameter('Range End', None, 0),
+            template_name=self.get_parameter('Template Name', None, None),
         )
 
     @property
     def declared_parameters(self):
         self.params = super().declared_parameters
 
-        self.params[
-            'Sending System GLN'] = 'The GLN that will be used as the "sending systmem' \
-                                    ' during template rendering for tracelink.',
-        self.params[
-            'Replenishment Size'] = 'The size of the request to the external ' \
-                                    'system.'
-        self.params[
-            'Secondary Replenishment Size'] = 'To request a smaller amount ' \
-                                              'for secondary packaging use ' \
-                                              'this.'
+        self.params['Sending System SGLN'] = 'The GLN that will be used as the "sending system for the request'
+        self.params['Replenishment Size'] = 'The size of the request to the external system.'
+        self.params['Auth Id'] = 'The numerical id of the Authentication Object used to access the external SNM system'
+        self.params['Endpoint Name'] = 'The Name of the Endpoint used to access the external SNM system'
+        self.params['Response Rule Name'] = 'The name of the rule responsible for formatting the response'
+        self.params['Request Rule Name'] = 'The name of the rule responsible for requesting the serial numbers'
+        self.params['List Based'] = 'Whether or not the Serial Number Range is List-based'
+        self.params['Range Start'] = 'The starting number of the Serial Number Region'
+        self.params['Range End'] = 'The ending number of the Serial Number Region.'
+        self.params['Template Name'] = 'The Template Name for requesting Serial Numbers'
+
+
         return self.params
 
     def on_failure(self):

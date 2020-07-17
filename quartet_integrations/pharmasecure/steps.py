@@ -455,36 +455,3 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
         return {}
 
 
-class PharmaSecureTemplateStep(TemplateStep):
-
-    def execute(self, data, rule_context: RuleContext):
-        # convert
-        if len(str(data[0])) >= 10:
-            # this is an SGTIN, get the TradeItem
-            self.info("PharmaSecureTemplateStep converting {0}".format(data))
-            d = data[0]
-            # remove the leading "0."
-            d = d[2:]
-            # build the urn
-            urn = "urn:epc:id:sgtin:{0}".format(d)
-            # convert the urn to get the gtin14
-            sn = conversion.URNConverter(urn)
-            # Populate the trade_item context value
-            try:
-                rule_context.context['trade_item']= TradeItem.objects.get(
-                    GTIN14=sn.gtin14
-                )
-            except TradeItem.DoesNotExist:
-                raise Exception("The Trade Item {0} was not found in QU4RTET".format(sn.gtin14))
-        else:
-            self.info("PharmaSecureTemplateStep data was {0}".format(data))
-            rule_context.context['trade_item'] = ""
-        # call super and return
-        return super().execute(data, rule_context)
-
-    def on_failure(self):
-        super().on_failure()
-
-    @property
-    def declared_parameters(self):
-        return {}

@@ -13,15 +13,15 @@
 #
 # Copyright 2018 SerialLab Corp.  All rights reserved.
 import abc
+import os
 import sqlite3
-
 import time
 from lxml import etree
-
 from list_based_flavorpack.models import ListBasedRegion
-from quartet_capture import models
 from quartet_capture.rules import RuleContext, Step
-
+from quartet_capture import models, rules, errors as capture_errors
+from list_based_flavorpack.processing_classes.third_party_processing.rules import \
+    get_region_table
 
 class NumberResponseStep(Step):
     '''
@@ -98,3 +98,58 @@ class DBResponseStep(NumberResponseStep):
                            '(?, ?)' % region.machine_name, (id, 0))
         cursor.execute('commit')
         self.info("Execution time: %.3f seconds." % (time.time() - start))
+
+
+class RFXCELNumberResponseParserStep(Step):
+    '''
+    Parses the Number Response and writes them to a file in list-based format.
+    '''
+    def execute(self, data, rule_context:RuleContext):
+        '''
+        Attempts to parse XML response and writes items to a file.
+        '''
+        param = models.TaskParameter.objects.get(
+            task__name=rule_context.task_name,
+            name='List-based Region'
+        )
+
+        region = ListBasedRegion.objects.get(machine_name=param.value)
+        try:
+            root = etree.fromstring(rule_context.context["NUMBER_RESPONSE"])
+            id_list = root.find('.//{http://xmlns.rfxcel.com/traceability/identifier/3}idList')
+
+            numbers = []
+
+            for urn in id_list:
+                # store the serial numbers in the array
+                numbers.append(urn.text.split('.')[2])
+
+            if not os.path.exists(region.db_file_path):
+                connection = sqlite3.connect(region.db_file_path)
+                connection.execute(
+                    "create table if not exists %s "
+                    "(serial_number text not null unique, used integer not null)"
+                    % get_region_table(region)
+                )
+            else:
+                connection = sqlite3.connect(region.db_file_path)
+
+            start = time.time()
+            cursor = connection.cursor()
+            cursor.execute('begin transaction')
+            self.info('storing the numbers. {0}'.format(region.db_file_path))
+            for id in numbers:
+                cursor.execute('insert into %s (serial_number, used) values '
+                               '(?, ?)' % get_region_table(region), (id, 0))
+            connection.commit()
+            self.info("Execution time: %.3f seconds." % (time.time() - start))
+        except:
+            self.info("Error while processing response: %s", rule_context.context["NUMBER_RESPONSE"])
+            raise
+
+    def on_failure(self):
+        super().on_failure()
+
+    @property
+    def declared_parameters(self):
+        return {}

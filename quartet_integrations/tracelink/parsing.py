@@ -103,7 +103,7 @@ class TracelinkMMParser:
         parsed_data = csv.DictReader(file_stream)
         for datarow in parsed_data:
             row = list(datarow.values())
-            if row[12] == 'TraceLink':
+            if row[12].lower() == 'tracelink':
                 company = self.create_company(row)
                 self.create_trade_item(row[0], row[1], row[2],
                                        pallet_pack=row[9],
