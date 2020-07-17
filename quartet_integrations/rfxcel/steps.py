@@ -20,6 +20,7 @@ from lxml import etree
 from list_based_flavorpack.models import ListBasedRegion
 from quartet_capture.rules import RuleContext, Step
 from quartet_capture import models, rules, errors as capture_errors
+from gs123.check_digit import calculate_check_digit
 from list_based_flavorpack.processing_classes.third_party_processing.rules import \
     get_region_table
 
@@ -122,7 +123,17 @@ class RFXCELNumberResponseParserStep(Step):
 
             for urn in id_list:
                 # store the serial numbers in the array
-                numbers.append(urn.text.split('.')[2])
+                if "sgtin" in urn.text:
+                    numbers.append(urn.text.split('.')[2])
+                if "sscc" in urn.text:
+                    #ext = urn.text.split(":")[4].split('.')[1][:1]
+                    #cp = urn.text.split(":")[4].split('.')[0]
+
+                    sn = urn.text.split(":")[4].split('.')[1][1:]
+                    numbers.append(sn)
+                    #sscc = "{0}{1}{2}".format(ext, cp, sn)
+                    #sscc18 = calculate_check_digit(sscc)
+                    #numbers.append(sscc18)
 
             if not os.path.exists(region.db_file_path):
                 connection = sqlite3.connect(region.db_file_path)

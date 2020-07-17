@@ -20,6 +20,7 @@ from django.test import TestCase
 
 from EPCPyYes.core.v1_2 import template_events as yes_events
 from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
+
 from quartet_capture.models import Rule, Step, Task, StepParameter
 from quartet_capture.tasks import execute_rule
 from quartet_epcis.models import events
