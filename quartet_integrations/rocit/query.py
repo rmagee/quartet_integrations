@@ -24,6 +24,15 @@ from quartet_epcis.db_api.queries import EPCISDBProxy
 from quartet_epcis.models import events, entries, headers
 from quartet_masterdata.models import TradeItem, TradeItemField
 from gs123 import check_digit
+from enum import Enum
+
+status_dict = {
+    'ACTIVE': 'COMMISSIONING',
+    'INACTIVE': 'DECOMMISSIONING',
+    'IN_TRANSIT': 'SHIPPING',
+    'IN_PROGRESS': 'RECEIVING',
+    'RETURNED': 'RECEIVING'
+}
 
 logger = getLogger(__name__)
 
@@ -44,49 +53,45 @@ class RocItQuery():
         child_tag_count = 0
         child_tags = []
         saleable_units = []
-        send_children = (send_children is not None and send_children.lower() == 'true')
+        send_children = (
+                send_children is not None and send_children.lower() == 'true')
 
         # Create the DBProxy
         query = EPCISDBProxy()
 
         # Get the entry, then get the last Event the entry participated in.
-        entry = query.get_entries_by_epcs(epcs=[tag_id], select_for_update=False)[0]
-        last_event = entry.last_aggregation_event
-        parent_tag = query.get_parent_epc(last_event)
+        try:
+            entry = query.get_entries_by_epcs(epcs=[tag_id], select_for_update=False)[0]
+        except IndexError:
+            entry = entries.Entry.objects.get(identifier=tag_id)
 
-        if parent_tag == tag_id:
-           parent_tag = None
+        last_agg_event = entry.last_aggregation_event
+        last_event = entry.last_event
+        parent_tag = entry.parent_id if entry.parent_id else None
 
-        if last_event is not None:
-            # If there was a last_event, then get the bizStep (state in the response)
+        if last_agg_event is not None:
+            last_agg_event = query.get_epcis_event(last_agg_event)
+            # If there was a last_agg_event, then get the bizStep (state in the response)
             # And disposition (status in the response)
             try:
-                state = last_event.biz_step.split(':')[4]
-                if state == 'receiving' or state == 'shipping':
-                   state = status.upper()
-                else:
-                   state = 'COMMISSIONING'
+                status = last_event.disposition.split(':')[4].upper()
+                state = status_dict[status]
             except:
-                raise Exception('Invalid CBV bizStep urn found.')
-            try:
-                status = last_event.disposition.split(':')[4]
-                if status == 'in_transit' or status == 'in_progress':
-                   status = status.upper()
-                else:
-                   status = 'ACTIVE'
-            except:
+                logger.exception('An unexpected status or state was set.')
                 # disposition may not have been sent in the EPCIS Doc, ignore
                 status = 'ACTIVE'
 
         if send_children:
             # The request is to return the children.
             # get the direct children of the tag_id
-            children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
+            children = query.get_epcs_by_parent_identifier(identifier=tag_id,
+                                                           select_for_update=False)
             child_tag_count = len(children)
             # go through the direct children identifers and collect the lowest saleable units
             for child in children:
                 # retrieve the lowest saleable unit from the child
-                saleable_units += RocItQuery.get_lowest_saleable_units(query, child)
+                saleable_units += RocItQuery.get_lowest_saleable_units(query,
+                                                                       child)
                 # add child to child_tags
                 child_tags.append(child)
 
@@ -101,7 +106,8 @@ class RocItQuery():
 
             # go through saleable_units to get the ILMD information
             for id in saleable_units:
-                events = query.get_events_by_entry_identifer(entry_identifier=id)
+                events = query.get_events_by_entry_identifer(
+                    entry_identifier=id)
                 for event in events:
                     # look for ILMD info
                     ilmds = query.get_ilmd(db_event=event.event)
@@ -115,47 +121,46 @@ class RocItQuery():
                         elif ilmd.name == 'measurementUnitCode':
                             uom = ilmd.value
                     # if uom, lot, expiry, and product have values, stop going through events
-                    if len(lot) > 0 and len(expiry) > 0 and len(uom) > 0 and len(product) > 0:
-                       break
+                    if len(lot) > 0 and len(expiry) > 0 and len(
+                        uom) > 0 and len(product) > 0:
+                        break
                 # if uom, lot, expiry, and product have values, stop going through saleable_units
-                if len(lot) > 0 and len(expiry) > 0 and len(uom) > 0 and len(product) > 0:
+                if len(lot) > 0 and len(expiry) > 0 and len(uom) > 0 and len(
+                    product) > 0:
                     break
 
         # set up the template parameters
         ret_val = {
-                    "message_id": str(uuid.uuid4()),
-                    "tag_id": tag_id,
-                    "parent_tag": parent_tag,
-                    "status": status,
-                    "state": state,
-                    "child_tag_count": child_tag_count,
-                    "quantity": quantity,
-                    "child_tags": child_tags,
-                    "document_id":document_id,
-                    "document_type":document_type,
-                    "expiry": expiry,
-                    "lot": lot,
-                    "uom": uom if uom else "" ,
-                    "product": product if product else ""
-                }
+            "message_id": str(uuid.uuid4()),
+            "tag_id": tag_id,
+            "parent_tag": parent_tag,
+            "status": status,
+            "state": state,
+            "child_tag_count": child_tag_count,
+            "quantity": quantity,
+            "child_tags": child_tags,
+            "document_id": document_id,
+            "document_type": document_type,
+            "expiry": expiry,
+            "lot": lot,
+            "uom": uom if uom else "",
+            "product": product if product else ""
+        }
 
         return ret_val
 
     @staticmethod
     def get_lowest_saleable_units(query, tag_id):
         ret_val = []
-        children = query.get_epcs_by_parent_identifier(identifier=tag_id, select_for_update=False)
+        children = query.get_epcs_by_parent_identifier(identifier=tag_id,
+                                                       select_for_update=False)
         if len(children) == 0:
-           ret_val.append(tag_id)
+            ret_val.append(tag_id)
         else:
             for child in children:
-                identifiers = RocItQuery.get_lowest_saleable_units(query, child)
+                identifiers = RocItQuery.get_lowest_saleable_units(query,
+                                                                   child)
                 if len(identifiers) == 0:
                     ret_val.append(child)
                 ret_val += identifiers
         return ret_val
-
-
-
-
-

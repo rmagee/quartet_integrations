@@ -4,7 +4,7 @@
       <typ:retrievePackagingHierarchy>
          <typ:voRow>
             <!--Optional:-->
-            <com:TagId>urn:epc:id:sgtin:305555.3555555.6</com:TagId>
+            <com:TagId>urn:epc:id:sgtin:0397799.207062.2190390007049</com:TagId>
             <!--Optional:-->
             <com:SendChildren>true</com:SendChildren>
             <!--Optional:-->
