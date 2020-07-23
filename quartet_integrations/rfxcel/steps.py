@@ -19,10 +19,76 @@ import time
 from lxml import etree
 from list_based_flavorpack.models import ListBasedRegion
 from quartet_capture.rules import RuleContext, Step
-from quartet_capture import models, rules, errors as capture_errors
-from gs123.check_digit import calculate_check_digit
+from quartet_integrations.rfxcel.environment import get_default_environment
+from quartet_output.steps import ContextKeys, EPCPyYesOutputStep
+from EPCPyYes.core.v1_2 import template_events
+from quartet_capture import models
 from list_based_flavorpack.processing_classes.third_party_processing.rules import \
     get_region_table
+
+
+class RFExcelOutputStep(EPCPyYesOutputStep):
+
+    def _get_new_template(self):
+        """
+        Grabs the jinja environment and creates a jinja template object and
+        returns
+        :return: A new Jinja template.
+        """
+        env = get_default_environment()
+        template = env.get_template('rfxcel/rfxcel_commissioning_event.xml')
+        return template
+
+    def _get_shipping_template(self):
+        """
+        Returns a shipping event template for use by the filtered event.
+        :return: A jinja template object.
+        """
+        env = get_default_environment()
+        template = env.get_template('rfxcel/rfxcel_shipping_event.xml')
+        return template
+
+    def execute(self, data, rule_context: RuleContext):
+        # two events need new templates - object and shipping
+        # the overall document needs a new template get that below
+        # if filtered events has more than one event then you know
+        # the event in filtered events is a shipping event so grab that
+        # and give it a new template
+        filtered_events = rule_context.context.get(ContextKeys.FILTERED_EVENTS_KEY.value)
+        if len(filtered_events) > 0:
+            template = self._get_shipping_template()
+            filtered_events[0]._template = template
+            # get the object events from the context - these are added by
+            # the AddCommissioningDataStep step in the rule.
+            object_events = rule_context.context.get(
+                ContextKeys.OBJECT_EVENTS_KEY.value, [])
+            if len(object_events) > 0:
+                #here you are changing the object event templates
+                template = self._get_new_template()
+                for event in object_events:
+                    event._template = template
+        super().execute(data, rule_context)
+
+    def get_epcis_document_class(self,
+                                 all_events) -> template_events.EPCISEventListDocument:
+        """
+        This function will provide a template with EPCISDocument and EPCISHeader
+        template
+        :param all_events: The events to add to the document
+        :return: The EPCPyYes event list document to render
+        """
+        doc_class = super().get_epcis_document_class(all_events)
+        env = get_default_environment()
+        template = env.get_template('rfxcel/rfxcel_epcis_document.xml')
+        doc_class._template = template
+        return doc_class
+
+    @property
+    def declared_parameters(self):
+        return super().declared_parameters
+
+
+
 
 class NumberResponseStep(Step):
     '''
@@ -126,14 +192,9 @@ class RFXCELNumberResponseParserStep(Step):
                 if "sgtin" in urn.text:
                     numbers.append(urn.text.split('.')[2])
                 if "sscc" in urn.text:
-                    #ext = urn.text.split(":")[4].split('.')[1][:1]
-                    #cp = urn.text.split(":")[4].split('.')[0]
-
                     sn = urn.text.split(":")[4].split('.')[1][1:]
                     numbers.append(sn)
-                    #sscc = "{0}{1}{2}".format(ext, cp, sn)
-                    #sscc18 = calculate_check_digit(sscc)
-                    #numbers.append(sscc18)
+
 
             if not os.path.exists(region.db_file_path):
                 connection = sqlite3.connect(region.db_file_path)

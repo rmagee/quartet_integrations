@@ -1,0 +1,19 @@
+{%  if event.child_quantity_list or event.source_list or event.destination_list or event.ilmd %}
+<extension>
+{% if event.child_quantity_list %}
+    <childQuantityList>
+    {% include "epcis/child_quantity_list.xml" %}
+    </childQuantityList>
+{% endif %}
+{% if event.quantity_list %}
+    <quantityList>
+    {% include "epcis/quantity_list.xml" %}
+    </quantityList>
+{% endif %}
+{% if event.ilmd %}
+    {% with ilmd = event.ilmd %}
+        {% include "rfxcel/rfxcel_ilmd.xml" %}
+    {% endwith %}
+{% endif %}
+</extension>
+{% endif %}
