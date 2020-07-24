@@ -11,12 +11,12 @@
     {% include "epcis/business_data.xml" %}
     <extension>
           <sourceList>
-            <source type="urn:epcglobal:cbv:sdt:owning_party">urn:epc:id:sgln:08620530000.0.0</source>
+            <source type="urn:epcglobal:cbv:sdt:owning_party">0359917000000</source>
             <source type="urn:epcglobal:cbv:sdt:location">urn:epc:id:sgln:08620530000.0.0</source>
           </sourceList>
           <destinationList>
-            <destination type="urn:epcglobal:cbv:sdt:owning_party">urn:epc:id:sgln:08620530000.0.0</destination>
-            <destination type="urn:epcglobal:cbv:sdt:location">urn:epc:id:sgln:08679140002.0.0</destination>
+            <destination type="urn:epcglobal:cbv:sdt:owning_party">0359917000000</destination>
+            <destination type="urn:epcglobal:cbv:sdt:location">urn:epc:id:sgln:0347335.00004.0</destination>
           </destinationList>
     </extension>
 </ObjectEvent>
