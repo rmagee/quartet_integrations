@@ -70,16 +70,15 @@ class RocItQuery():
         parent_tag = entry.parent_id if entry.parent_id else None
 
         if last_agg_event is not None:
-            last_agg_event = query.get_epcis_event(last_agg_event)
             # If there was a last_agg_event, then get the bizStep (state in the response)
             # And disposition (status in the response)
             try:
                 status = last_event.disposition.split(':')[4].upper()
-                state = status_dict[status]
             except:
                 logger.exception('An unexpected status or state was set.')
                 # disposition may not have been sent in the EPCIS Doc, ignore
                 status = 'ACTIVE'
+            state = status_dict[status]
 
         if send_children:
             # The request is to return the children.
