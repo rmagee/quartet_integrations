@@ -56,8 +56,8 @@ class TradeItemImportStep(TradeItemNumberRangeImportStep):
 
             request_rule=self.get_parameter('Request Rule Name', None,
                                                   True),
-            auth_id=self.get_parameter("Auth Id", None, True),
-            endpoint=self.get_parameter("Endpoint Name", None, True),
+            snm_output_criteria=self.get_parameter('SNX Output Criteria', None, False),
+
             threshold=5000,
 
             sending_system_sgln=self.get_parameter('Sending System SGLN', None,
@@ -78,7 +78,7 @@ class TradeItemImportStep(TradeItemNumberRangeImportStep):
         self.params['Sending System SGLN'] = 'The GLN that will be used as the "sending system for the request'
         self.params['Replenishment Size'] = 'The size of the request to the external system.'
         self.params['Auth Id'] = 'The numerical id of the Authentication Object used to access the external SNM system'
-        self.params['Endpoint Name'] = 'The Name of the Endpoint used to access the external SNM system'
+        self.params['SNX Output Criteria'] = 'The Output Criteria Name for an External SNX System'
         self.params['Response Rule Name'] = 'The name of the rule responsible for formatting the response'
         self.params['Request Rule Name'] = 'The name of the rule responsible for requesting the serial numbers'
         self.params['List Based'] = 'Whether or not the Serial Number Range is List-based'
