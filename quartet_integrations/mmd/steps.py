@@ -41,34 +41,26 @@ class PartnerParsingStep(Step):
 class TradeItemImportStep(TradeItemNumberRangeImportStep):
 
     def execute(self, data, rule_context: RuleContext):
-        self.info('Invoking the parser.')
-        replenishment_size = self.get_integer_parameter('Replenishment Size',
-                                                        2000)
-        secondary_replenishment_size = self.get_integer_parameter(
-            'Secondary Replenishment Size', int(replenishment_size / 2))
+
+        self.info('Executing Step {0}'.format(self.db_step.name))
+
+        self.info('{0} Invoking the parser.'.format(self.db_step.name))
 
         TradeItemImportParser().parse(
             data,
-            info_func=self.info,
-
-            response_rule=self.get_parameter('Response Rule Name', None,
-                                                  True),
-
-            request_rule=self.get_parameter('Request Rule Name', None,
-                                                  True),
-            snm_output_criteria=self.get_parameter('SNX Output Criteria', None, False),
-
-            threshold=5000,
-
-            sending_system_sgln=self.get_parameter('Sending System SGLN', None,
-                                                  False),
-
+            step=self,
+            response_rule=self.get_parameter('Response Rule Name', None, True),
+            snm_output_criteria=self.get_parameter("SNM Output Criteria", None, True),
+            threshold=50000,
+            sending_system_sgln=self.get_parameter('Sending System SGLN', None, False),
             list_based=self.get_boolean_parameter("List Based", None, True),
-
-            replenishment_size=replenishment_size,
-            range_start=self.get_parameter('Range Start', None, 0),
-            range_end=self.get_parameter('Range End', None, 0),
-            template_name=self.get_parameter('Template Name', None, None),
+            replenishment_size=self.get_parameter('Replenishment Size', 5000, False),
+            range_start=self.get_parameter('Range Start', 0, False),
+            range_end=self.get_parameter('Range End', 0, False),
+            template_name=self.get_parameter('Request Template Name', None, False),
+            processing_parameters=self.get_parameter('Processing Parameters', None, False),
+            mock=self.get_parameter('Mock', False, False),
+            serialbox_output_criteria=self.get_parameter('SerialBox Output Criteria', None, False)
         )
 
     @property
@@ -77,14 +69,14 @@ class TradeItemImportStep(TradeItemNumberRangeImportStep):
 
         self.params['Sending System SGLN'] = 'The GLN that will be used as the "sending system for the request'
         self.params['Replenishment Size'] = 'The size of the request to the external system.'
-        self.params['Auth Id'] = 'The numerical id of the Authentication Object used to access the external SNM system'
-        self.params['SNX Output Criteria'] = 'The Output Criteria Name for an External SNX System'
+        self.params['SNM Output Criteria'] = 'The Name of the Output Criteria used to access an external SNX System'
         self.params['Response Rule Name'] = 'The name of the rule responsible for formatting the response'
-        self.params['Request Rule Name'] = 'The name of the rule responsible for requesting the serial numbers'
         self.params['List Based'] = 'Whether or not the Serial Number Range is List-based'
         self.params['Range Start'] = 'The starting number of the Serial Number Region'
         self.params['Range End'] = 'The ending number of the Serial Number Region.'
-        self.params['Template Name'] = 'The Template Name for requesting Serial Numbers'
+        self.params['Request Template Name'] = 'The Template Name for requesting Serial Numbers'
+        self.params['Mock'] = 'Used for Unit Testing Only'
+        self.params['SerialBox Output Criteria'] = 'The Output Criteria of Serialbox. Used to test generated Pools and Regions'
 
 
         return self.params

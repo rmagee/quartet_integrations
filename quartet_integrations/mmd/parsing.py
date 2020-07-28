@@ -14,17 +14,21 @@
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 
 import csv
+import json
+import requests
 from io import StringIO
 import logging
 from django.db.utils import IntegrityError
+from requests.auth import HTTPBasicAuth
 from quartet_templates.models import Template
-from quartet_capture.models import Rule
+from quartet_capture.models import Rule, Step, StepParameter
 from quartet_integrations.management.commands import utils
 from quartet_masterdata.models import TradeItem, TradeItemField, Company
-from quartet_output.models import EndPoint, AuthenticationInfo
+from quartet_output.models import EndPoint, AuthenticationInfo, EPCISOutputCriteria
 from serialbox.models import Pool, ResponseRule
 from list_based_flavorpack.models import ListBasedRegion, ProcessingParameters
 from random_flavorpack.models import RandomizedRegion
+from quartet_integrations.mmd.exceptions import (DependencyNotFound)
 
 logger = logging.getLogger(__name__)
 
@@ -74,73 +78,70 @@ class TradeItemImportParser:
     """
 
     def __init__(self):
-        self.company_records = {}
+
         self.replenishment_size = None
         self.threshold = None
         self.minimum = None
         self.maximum = None
         self.sending_system_gln = None
         self.response_rule_name = None
-        self.request_rule_name = None
-        self.replenishment_size=None
+        self.replenishment_size = None
         self.threshold = None
         self.endpoint = ""
         self.authentication_info = 0
         self.list_based = False
         self.level4_name = None
         self.sending_system_sgln = ""
-        self.template_name =""
+        self.template_name = ""
+        self.info_func = None
+        self.snm_output_criteria = ""
+        self.processing_parameters = {}
+        self.mock = False
+        self.serialbox_output_criteria = None
 
     def parse(self, data: bytes,
-              info_func: object,
-              auth_id: int,
-              threshold:int,
+              step: object,
+              threshold: int,
               response_rule: str,
-              request_rule: str,
-              endpoint: str,
+              snm_output_criteria: str,
               list_based: bool,
-              replenishment_size:int,
-              sending_system_sgln:str,
-              range_start:int,
-              range_end:int,
-              template_name:str
+              replenishment_size: int,
+              sending_system_sgln: str,
+              range_start: int,
+              range_end: int,
+              template_name: str,
+              processing_parameters: str,
+              mock: bool,
+              serialbox_output_criteria: str
               ):
 
         self.threshold = threshold
         self.minimum = range_start
         self.maximum = range_end
-        self.authentication_info = auth_id
         self.response_rule_name = response_rule
-        self.request_rule_name = request_rule
-        self.endpoint = endpoint
+        self.snm_output_criteria = snm_output_criteria
         self.list_based = list_based
         self.sending_system_sgln = sending_system_sgln
         self.replenishment_size = replenishment_size
-        self.info_func = info_func
+        self.info_func = step.info
         self.template_name = template_name
+        self.processing_parameters = json.loads(processing_parameters)
+        self.mock = mock
+        self.serialbox_output_criteria = serialbox_output_criteria
 
         if self.list_based:
-           if not self.authentication_info or self.authentication_info == 0:
-              msg = 'List Based imports must supply the Auth Id Step Parameter.'
-              self.info_func(msg)
-              raise Exception(msg)
-           if not self.endpoint or len(self.endpoint) == 0:
-               msg = 'List Based imports must supply the Endpoint Name Step Parameter.'
-               self.info_func(msg)
-               raise Exception(msg)
-           if not self.template_name or len(self.template_name) == 0:
-               msg = 'List Based imports must supply the Template Name Step Parameter.'
-               self.info_func(msg)
-               raise Exception(msg)
+            if not self.snm_output_criteria:
+                msg = 'List Based imports must supply the SNM Output Criteria Parameter.'
+                self.info_func(msg)
+                raise Exception(msg)
+            if not self.template_name or len(self.template_name) == 0:
+                msg = 'List Based imports must supply the Template Name Step Parameter.'
+                self.info_func(msg)
+                raise Exception(msg)
         if not self.response_rule_name or len(self.response_rule_name) == 0:
             msg = 'Imports must supply the Response Rule Name Step Parameter.'
             self.info_func(msg)
             raise Exception(msg)
-        if not self.request_rule_name or len(self.request_rule_name) == 0:
-            msg = 'Imports must supply the Response Rule Name Step Parameter.'
-            self.info_func(msg)
-            raise Exception(msg)
-
 
         file_stream = StringIO(data.decode('utf-8'))
         parsed_data = csv.DictReader(file_stream)
@@ -189,7 +190,7 @@ class TradeItemImportParser:
             company = self.get_company_by_gln(gln)
             if company is None:
                 msg = 'Company {0} not configured in QU4RTET. Trade Item(s) {1}, {2}, {3} will not be created'.format(
-                    company_name, level1_gtin, level2_gtin, level3_gtin)
+                    self.company_name, level1_gtin, level2_gtin, level3_gtin)
                 self.info_func(msg);
                 # go to next record in the for loop
                 continue
@@ -239,13 +240,13 @@ class TradeItemImportParser:
                           pack_count, pallet_pack_count, product_name, ndc
                           ):
 
-        self.info_func('Creating Trade Item')
+        self.info_func('Importing Trade Item {0} ({1})'.format(gtin14, unit_of_measure))
         try:
             trade_item = TradeItem.objects.get(GTIN14=gtin14)
-            self.info_func('Trade Item for GTIN-14, {0}, is already configured.'.format(gtin14))
+            self.info_func('Trade Item for GTIN-14, {0} ({1}), is already configured.'.format(gtin14, unit_of_measure))
         except TradeItem.DoesNotExist:
             # TradeItem was not found, create it.
-            self.info_func('Trade Item for GTIN-14, {0}, was not configured. Creating the TradeItem.'.format(gtin14))
+            self.info_func('Creating the TradeItem {0} ({1}). '.format(gtin14, unit_of_measure))
             trade_item = TradeItem.objects.create(
                 GTIN14=gtin14,
                 company=company,
@@ -265,13 +266,32 @@ class TradeItemImportParser:
             value=pallet_pack_count
         )
 
-        if self.list_based:
-            # Create the list based pool, managed by an External L4
-            self.info_func('Creating a list based pool for {0} {1}'.format(company, gtin14))
-            self.create_list_based_pool(trade_item, material_number, company)
-        else:
-            # Create a Random pool, managed by QU4RTET
-            self.create_random_pool(trade_item, material_number)
+        try:
+            if self.list_based:
+                # Create the list based pool, managed by an External L4
+                self.info_func('Creating a list based pool for {0} {1}'.format(company.name, gtin14))
+                self.create_list_based_pool(trade_item, material_number, company)
+            else:
+                # Create a Random pool, managed by QU4RTET
+                self.create_random_pool(trade_item, material_number)
+        except DependencyNotFound as dnf:
+            # A dependency was not found like an Output Criteria, Response Rule, Template etc
+            # Have to remove the Trade Item
+            self._remove_trade_item(gtin14)
+            raise dnf
+
+    def _remove_trade_item(self, gtin14):
+
+        try:
+            self.info_func('Removing GTIN {0}'.format(gtin14))
+            tradeitem = TradeItem.objects.get(GTIN14=gtin14)
+            TradeItemField.objects.filter(trade_item=tradeitem).delete()
+            TradeItem.objects.filter(GTIN14=gtin14).delete()
+            self.info_func('GTIN {0} Removed'.format(gtin14))
+
+        except Exception as e:
+            self.info_func('Exception occured removing GTIN {0}. \r\n {1}'.format(gtin14, str(e)))
+            raise e
 
     def create_random_pool(self, trade_item: TradeItem, material_number) -> None:
         """
@@ -323,7 +343,7 @@ class TradeItemImportParser:
 
     def create_list_based_pool(self,
                                trade_item: TradeItem,
-                               material_number,
+                               material_number:str,
                                company: Company
                                ) -> None:
         """
@@ -332,11 +352,11 @@ class TradeItemImportParser:
         :return: None
         """
         replenishment_size = self.replenishment_size
-        self._create_response_rule()
-        request_rule = self._verify_request_rule()
-        db_endpoint = self._get_endpoint(self.endpoint)
-        db_authentication_info = self._get_authentication_info_by_id(self.authentication_info)
-        template = Template.objects.get(name=self.template_name)
+        self.verify_response_rule()
+        request_rule = self.verify_request_rule(company)
+        output_criteria = self.verify_snm_output_criteria()
+        template = self.verify_request_template()
+
         try:
             pool = Pool.objects.create(
                 readable_name='%s | %s | %s' % (
@@ -352,95 +372,168 @@ class TradeItemImportParser:
                 order=1,
                 number_replenishment_size=replenishment_size,
                 processing_class_path='list_based_flavorpack.processing_classes.third_party_processing.processing.DBProcessingClass',
-                end_point=db_endpoint,
+                end_point=output_criteria.end_point,
                 rule=request_rule,
-                authentication_info=db_authentication_info,
+                authentication_info=output_criteria.authentication_info,
                 template=template,
                 pool=pool
             )
             region.save()
-            params = self._template_parameters(trade_item)
-            self._get_response_rule(pool)
-            self._create_processing_parameters(params, region)
+            self.assign_response_rule(pool)
+            self.create_processing_parameters(region)
         except IntegrityError:
             self.info_func('Duplicate number range %s | %s being skipped' %
-                  (trade_item.regulated_product_name, material_number))
+                           (trade_item.regulated_product_name, material_number))
 
-    def _get_response_rule(self, pool):
-        rule = Rule.objects.get(name=self.response_rule_name)
-        ResponseRule.objects.create(
-            pool=pool, rule=rule, content_type='xml'
-        )
-
-    def _template_parameters(self, trade_item):
-        ret_val = {}
-        if self.level4_name.lower() == "pharmasecure":
-            ret_val = {
-                'encoding_type': 'SGTIN',
-                'quantity': self.replenishment_size,
-                'object_name': 'GTIN',
-                'object_value': trade_item.GTIN14,
-            }
-        elif self.level4_name.lower() == "rfexcel":
-            ret_val = {
-                'site_hier_id': 'Manufacturing',
-                'separate_prefix_suffix': 'false',
-                'item_id_type':'GTIN',
-                'site_gln': trade_item.company.GLN13,
-                'item_value': trade_item.GTIN14,
-                'org_sgln': self.sending_system_sgln
-
-            }
-        elif self.level4_name.lower() == 'frequentz/rfxcel':
-            pass
-        elif self.level4_name.lower() == 'iris':
-            pass
-
-        return ret_val
-
-
-    def _create_processing_parameters(self, input: dict, region):
-        for k, v in input.items():
-            try:
-                ProcessingParameters.objects.get(key=k,
-                                                 list_based_region=region)
-            except ProcessingParameters.DoesNotExist:
-                ProcessingParameters.objects.create(key=k,
-                                                    value=v,
-                                                    list_based_region=region)
-
-    def _verify_request_rule(self):
-        """
-        Makes sure the Tracelink Number Request rule exists, will throw an
-        exception if the rule does not exist...
-        :return: None
-        """
-        return Rule.objects.get(name=self.request_rule_name)
-
-    def _create_response_rule(self):
-        """
-        Makes sure the response rule exists.  If not, creates it using the
-        utils module in the management command package.
-        :return: None
-        """
-        ret = None
+    def assign_response_rule(self, pool):
         try:
-            ret = Rule.objects.get(
-                name="OPSM External GTIN Response Rule"
+            rule = Rule.objects.get(name=self.response_rule_name)
+            ResponseRule.objects.create(
+                pool=pool, rule=rule, content_type='xml'
             )
         except Rule.DoesNotExist:
-            # create the rule
-            rule, created = utils.create_external_GTIN_response_rule()
-            ret = rule
+            msg = 'The Response Rule Parameter Value, {0}, was not found.'.format(self.response_rule_name)
+            self.info_func(msg)
+            raise DependencyNotFound(msg)
+        except Exception as e:
+            msg = 'An error occured assigning the response rule {0} to the Serial Number Pool {1}'.format(self.response_rule_name, pool.name)
+            self.info_func(msg)
+            raise DependencyNotFound(msg)
+
+
+    def validate_serial_number(self, pool, region):
+
+        try:
+
+            output = EPCISOutputCriteria.objects.get(name=self.serialbox_output_criteria)
+            endpoint = output.end_point
+            auth = output.authentication_info
+            msg = 'Retrieving 1 Serial Number for Pool {0} Region {1}.'.format(
+                pool.readable_name,
+                region.machine_name
+            )
+            self.info_func(msg)
+
+            url = "{0}/serialbox/allocate/{1}/1/?format=xml".format(endpoint.urn, region.machine_name)
+            response = requests.get(url, auth=HTTPBasicAuth(auth.username, auth.password))
+            self.info_func(response.content)
+
+        except EPCISOutputCriteria.DoesNotExist:
+            self.info_func('Unable to validate Serial Number for Pool {0} Region {1}. \
+                            SerialBox Output Criteria {2} was not found'
+                           .format(pool.readable_name, region.machine_name, self.serialbox_output_criteria))
+
+        except requests.exceptions.RequestException as e:
+            msg = 'Unable to retrieve Serial Number for Pool {0} Region {1}. \r\n \
+                                        SerialBox Output Criteria = {2}'.format(
+                                        pool.readable_name,
+                                        region.machine_name,
+                                        self.serialbox_output_criteria
+                                        )
+
+            self.info_func(msg)
+
+
+
+    def create_processing_parameters(self, region):
+
+        for entry in self.processing_parameters:
+            for k, v in entry.items():
+                try:
+                    ProcessingParameters.objects.get(key=k,
+                                                     list_based_region=region)
+                except ProcessingParameters.DoesNotExist:
+
+                    if v.lower() == '%api_key%':
+                       v = v.lower().replace('%api_key%', region.machine_name)
+
+                    ProcessingParameters.objects.create(key=k,
+                                                        value=v,
+                                                        list_based_region=region)
+
+    def verify_request_rule(self, company):
+        """
+        Makes sure the Number Request rule exists
+        :return: None
+        """
+        rule_name = "{0} Serial Number Request Rule".format(company.name)
+        try:
+            rule = Rule.objects.get(name=rule_name)
+        except Rule.DoesNotExist:
+            # Request Rule doesn't exist so create it
+            rule = Rule.objects.create(
+                name=rule_name,
+                description="Serial Number Request Rule Generated by QU4RTET",
+            )
+            if self.level4_name.lower == 'isis' or self.level4_name.lower() == 'frequentz/rfxcel':
+                self.add_isis_steps(rule)
+
+        return rule
+
+    def add_isis_steps(self, rule):
+
+        request_step = Step.objects.create(
+            name='Request Numbers',
+            description='Auto Generated in QU4RTET.',
+            step_class='quartet_integrations.frequentz.steps.IRISNumberRequestTransportStep',
+            rule=rule,
+            order=1
+        )
+        StepParameter.objects.create(
+            name='content-type',
+            value='text/xml',
+            step=request_step
+        )
+
+        Step.objects.create(
+            name='Save Numbers',
+            description='Auto Generated in QU4RTET.',
+            step_class='quartet_integrations.frequentz.steps.IRISNumberRequestProcessStep',
+            rule=rule,
+            order=2
+        )
+
+
+    def verify_response_rule(self):
+        """
+        Makes sure the response rule exists.
+        :return: None
+        """
+        try:
+            Rule.objects.get(
+                name=self.response_rule_name
+            )
+        except Rule.DoesNotExist:
+            msg = 'The Response Rule Parameter Value, {0}, was not found.'.format(self.response_rule_name)
+            self.info_func(msg)
+            raise DependencyNotFound(msg)
+
+    def verify_request_template(self):
+
+        try:
+            ret = Template.objects.get(name=self.template_name)
+        except Template.DoesNotExist:
+            msg = 'The Template Name Parameter Value, {0}, was not found.'.format(self.template_name)
+            self.info_func(msg)
+            raise DependencyNotFound(msg)
+
         return ret
 
-    def _get_endpoint(self, endpoint):
-        self.info_func('Looking for endpoint %s', endpoint)
-        return EndPoint.objects.get(name=endpoint)
-
-    def _get_authentication_info_by_id(self, authentication_info: str):
-        self.info_func('Looking for auth info with id %s', authentication_info)
-        return AuthenticationInfo.objects.get(id=int(authentication_info))
+    def verify_snm_output_criteria(self):
+        """
+        Makes sure Output Criteria Exists for an External SNX Manager.
+        :return: None
+        """
+        try:
+            ret = EPCISOutputCriteria.objects.get(
+                name=self.snm_output_criteria
+            )
+        except EPCISOutputCriteria.DoesNotExist:
+            msg = 'The SNM Output Criteria Parameter Value, {0}, was not found in QU4RTET'.format(
+                self.snm_output_criteria)
+            self.info_func(msg)
+            raise DependencyNotFound(msg)
+        return ret
 
     def get_company(self, gtin: str):
         """
@@ -451,6 +544,3 @@ class TradeItemImportParser:
         """
         for company, db_company in self.company_records.items():
             if company in gtin: return db_company
-
-
-

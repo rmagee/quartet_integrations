@@ -24,7 +24,9 @@ from quartet_capture.tasks import create_and_queue_task
 from quartet_integrations.management.commands import utils
 from quartet_integrations.management.commands.utils import \
     create_external_GTIN_response_rule
-from quartet_masterdata import models
+from quartet_masterdata import models as masterdata
+from quartet_templates import models as templates
+from quartet_output import models as output
 from quartet_output.models import EndPoint, AuthenticationInfo
 from quartet_tracelink.utils import TraceLinkHelper
 
@@ -35,29 +37,22 @@ class TestMasterMaterialImport(TransactionTestCase):
     """
 
     def setUp(self) -> None:
-        self.create_company_rule()
-        self.create_tradeitem_import_rule()
-        utils.create_random_range()
+        self.create_companies()
+        self.iris_rule = self.create_iris_import_rule()
         utils.create_gtin_response_rule()
 
-    def create_tradeitem_import_rule(self):
+    def create_iris_import_rule(self):
 
         rule = Rule.objects.create(
-            name='Unit Test Trade Item Rule',
+            name='Trade Item Import IRIS',
             description='Unit test rule. Creates Number Range for Random Numbers'
         )
         step = Step.objects.create(
-            name='Import Spreadsheet Data',
+            name='Import CSV',
             description='Unit test step',
             step_class='quartet_integrations.mmd.steps.TradeItemImportStep',
             rule=rule,
             order=1
-        )
-
-        StepParameter.objects.create(
-            name='Sending System GLN',
-            value='0123456789012',
-            step=step
         )
 
         response_rule_name = self.create_response_rule()
@@ -68,53 +63,135 @@ class TestMasterMaterialImport(TransactionTestCase):
             step=step
         )
 
+        snm_output_criteria = self.create_snm_output_criteria('IRIS')
+
         StepParameter.objects.create(
-            name='Secondary Replenishment Size',
-            value=500,
+            name='SNM Output Criteria',
+            value=snm_output_criteria,
+            step=step
+        )
+
+        StepParameter.objects.create(
+            name='Sending System SGLN',
+            value='urn:epc:id:sgln:0351991.00000.0',
+            step=step
+        )
+
+        StepParameter.objects.create(
+            name='List Based',
+            value=True,
+            step=step
+        )
+
+        StepParameter.objects.create(
+            name='Replenishment Size',
+            value=5000,
+            step=step
+        )
+
+        template_name = self.create_iris_template()
+
+        StepParameter.objects.create(
+            name='Request Template Name',
+            value=template_name,
+            step=step
+        )
+
+        StepParameter.objects.create(
+            name='Processing Parameters',
+            value='[ \
+                    {"gtin":"%API_KEY%"}, \
+                    {"format":"SGTIN-198"} \
+                  ]',
+            step=step
+        )
+
+        StepParameter.objects.create(
+            name='Mock',
+            value=True,
             step=step
         )
         return rule
+
+
+    def create_iris_template(self):
+        template, _ = templates.Template.objects.get_or_create(
+            name = 'IRIS Template',
+            content = "{{gtin}},{{format}}"
+
+        )
+        return template.name
+
 
     def create_response_rule(self):
         rule, _ = create_external_GTIN_response_rule()
         return rule.name
 
-    def create_company_rule(self):
-        rule = Rule.objects.create(
-            name='Partner Import',
-            description='Unit test rule.'
-        )
-        step1 = Step.objects.create(
-            name='Parse Partner Data',
-            description='parse the tracelink data',
-            step_class='quartet_integrations.mmd.steps.PartnerParsingStep',
-            rule=rule,
-            order=1
+
+    def create_snm_output_criteria(self, name):
+    # Create a Mockable output criteria
+       auth, _ = output.AuthenticationInfo.objects.get_or_create(
+            description="{0} Auth".format(name),
+            username='test',
+            password='password'
+       )
+
+       endpoint, _ = output.EndPoint.objects.get_or_create(
+            name='{0} Endpoint'.format(name),
+            urn='http://localhost'
+       )
+
+       output_criteria, _ = output.EPCISOutputCriteria.objects.get_or_create(
+           name='{0}  SNM Output'.format(name),
+           end_point=endpoint,
+           authentication_info=auth
+       )
+
+       return output_criteria.name
+
+    def create_companies(self):
+
+        # For IRIS
+        masterdata.Company.objects.create(
+            name='Test Company A',
+            gs1_company_prefix='0351991',
+            GLN13='0351991000000'
         )
 
-    def test_execute_tradeitem_import_rule(self):
+        # For rfXcel - not IRIS
+        masterdata.Company.objects.create(
+            name='Test Company B',
+            gs1_company_prefix='0342195',
+            GLN13='0342195000008'
+        )
+
+        # For PharmaSecure
+        masterdata.Company.objects.create(
+            name='Test Company C',
+            gs1_company_prefix='0370010',
+            GLN13='0370010000001'
+        )
+
+        # For QU4RTET
+        masterdata.Company.objects.create(
+            name='Test Company D',
+            gs1_company_prefix='0352817',
+            GLN13='0352817000002'
+        )
+
+    def test_execute_import_iris(self):
 
         if sys.version_info[1] > 5:
 
             curpath = os.path.dirname(__file__)
 
-            file_path = os.path.join(curpath, 'data/ap-customers-2.csv')
+            file_path = os.path.join(curpath, 'data/mmd-iris-import.csv')
             with open(file_path, "rb") as f:
                 create_and_queue_task(
-                    data=f.read(),
-                    rule_name='Partner Import',
-                    run_immediately=True
-                )
+                data=f.read(),
+                rule_name=self.iris_rule.name,
+                run_immediately=True
+            )
 
-            self.assertEqual(models.Company.objects.all().count(), 30)
 
-            file_path = os.path.join(curpath, 'data/ap-mmd-2.csv')
-            with open(file_path, "rb") as f:
-                create_and_queue_task(
-                    data=f.read(),
-                    rule_name="Unit Test Trade Item Rule",
-                    run_immediately=True
-                )
-
-            self.assertEqual(Pool.objects.all().count(),145)
 
