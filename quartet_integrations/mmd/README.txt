@@ -17,7 +17,7 @@ IRIS
 PharmaSecure
 [
      {'encoding_type': 'SGTIN'},
-     {'quantity': self.replenishment_size},
+     {'quantity': 50},
      {'object_name': 'GTIN'},
      {'object_value': "%API_KEY%"}
 ]

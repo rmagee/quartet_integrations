@@ -38,46 +38,38 @@ class PartnerParsingStep(Step):
         pass
 
 
-class TradeItemImportStep(TradeItemNumberRangeImportStep):
+class TradeItemImportStep(Step):
 
     def execute(self, data, rule_context: RuleContext):
 
         self.info('Executing Step {0}'.format(self.db_step.name))
 
-        self.info('{0} Invoking the parser.'.format(self.db_step.name))
+        self.info('{0} Invoking TradeItemImportParser parser.'.format(self.db_step.name))
 
         TradeItemImportParser().parse(
             data,
             step=self,
             response_rule=self.get_parameter('Response Rule Name', None, True),
-            snm_output_criteria=self.get_parameter("SNM Output Criteria", None, True),
+            snm_output_criteria=self.get_parameter("SNM Output Criteria", None, False),
             threshold=50000,
-            sending_system_sgln=self.get_parameter('Sending System SGLN', None, False),
-            list_based=self.get_boolean_parameter("List Based", None, True),
             replenishment_size=self.get_parameter('Replenishment Size', 5000, False),
-            range_start=self.get_parameter('Range Start', 0, False),
-            range_end=self.get_parameter('Range End', 0, False),
             template_name=self.get_parameter('Request Template Name', None, False),
             processing_parameters=self.get_parameter('Processing Parameters', None, False),
-            mock=self.get_parameter('Mock', False, False),
-            serialbox_output_criteria=self.get_parameter('SerialBox Output Criteria', None, False)
+            serialbox_output_criteria=self.get_parameter('SerialBox Output Criteria', None, False),
+            minimum_number=self.get_parameter('Minimum Number', 100000000000, False),
+            maximum_number=self.get_parameter('Maximum Number', 999999999999, False)
         )
 
     @property
     def declared_parameters(self):
         self.params = super().declared_parameters
-
-        self.params['Sending System SGLN'] = 'The GLN that will be used as the "sending system for the request'
         self.params['Replenishment Size'] = 'The size of the request to the external system.'
         self.params['SNM Output Criteria'] = 'The Name of the Output Criteria used to access an external SNX System'
         self.params['Response Rule Name'] = 'The name of the rule responsible for formatting the response'
-        self.params['List Based'] = 'Whether or not the Serial Number Range is List-based'
-        self.params['Range Start'] = 'The starting number of the Serial Number Region'
-        self.params['Range End'] = 'The ending number of the Serial Number Region.'
+        self.params['Minimum Number'] = 'The starting number of the Serial Number Region'
+        self.params['Maximum Number'] = 'The ending number of the Serial Number Region.'
         self.params['Request Template Name'] = 'The Template Name for requesting Serial Numbers'
-        self.params['Mock'] = 'Used for Unit Testing Only'
         self.params['SerialBox Output Criteria'] = 'The Output Criteria of Serialbox. Used to test generated Pools and Regions'
-
 
         return self.params
 

@@ -19,6 +19,7 @@ import requests
 from io import StringIO
 import logging
 from django.db.utils import IntegrityError
+from django.db import transaction
 from requests.auth import HTTPBasicAuth
 from quartet_templates.models import Template
 from quartet_capture.models import Rule, Step, StepParameter
@@ -89,59 +90,41 @@ class TradeItemImportParser:
         self.threshold = None
         self.endpoint = ""
         self.authentication_info = 0
-        self.list_based = False
         self.level4_name = None
-        self.sending_system_sgln = ""
         self.template_name = ""
         self.info_func = None
         self.snm_output_criteria = ""
         self.processing_parameters = {}
         self.mock = False
         self.serialbox_output_criteria = None
+        self.step=None
 
     def parse(self, data: bytes,
               step: object,
               threshold: int,
               response_rule: str,
               snm_output_criteria: str,
-              list_based: bool,
               replenishment_size: int,
-              sending_system_sgln: str,
-              range_start: int,
-              range_end: int,
               template_name: str,
               processing_parameters: str,
-              mock: bool,
-              serialbox_output_criteria: str
+              serialbox_output_criteria: str,
+              minimum_number: int,
+              maximum_number: int
               ):
 
+        self.step = step
         self.threshold = threshold
-        self.minimum = range_start
-        self.maximum = range_end
+        self.minimum = minimum_number
+        self.maximum = maximum_number
         self.response_rule_name = response_rule
         self.snm_output_criteria = snm_output_criteria
-        self.list_based = list_based
-        self.sending_system_sgln = sending_system_sgln
         self.replenishment_size = replenishment_size
         self.info_func = step.info
         self.template_name = template_name
-        self.processing_parameters = json.loads(processing_parameters)
-        self.mock = mock
+        if processing_parameters: self.processing_parameters = json.loads(processing_parameters)
         self.serialbox_output_criteria = serialbox_output_criteria
 
-        if self.list_based:
-            if not self.snm_output_criteria:
-                msg = 'List Based imports must supply the SNM Output Criteria Parameter.'
-                self.info_func(msg)
-                raise Exception(msg)
-            if not self.template_name or len(self.template_name) == 0:
-                msg = 'List Based imports must supply the Template Name Step Parameter.'
-                self.info_func(msg)
-                raise Exception(msg)
-        if not self.response_rule_name or len(self.response_rule_name) == 0:
-            msg = 'Imports must supply the Response Rule Name Step Parameter.'
-            self.info_func(msg)
-            raise Exception(msg)
+
 
         file_stream = StringIO(data.decode('utf-8'))
         parsed_data = csv.DictReader(file_stream)
@@ -165,6 +148,7 @@ class TradeItemImportParser:
             15 = Company Prefix,
             16 = NDC
         """
+        validated = False
         for datarow in parsed_data:
             # get the fields from datarow
             fields = list(datarow.values())
@@ -186,6 +170,11 @@ class TradeItemImportParser:
             # field 14 is empty
             company_prefix = fields[15]
             ndc = fields[16]
+
+            # validate
+            if not validated:
+                validated = self.validate_parameters()
+
 
             company = self.get_company_by_gln(gln)
             if company is None:
@@ -229,6 +218,28 @@ class TradeItemImportParser:
 
             )
 
+
+    def validate_parameters(self):
+
+        ret_val = True
+
+        if self.level4_name.lower() != 'qu4rtet' and self.level4_name.lower() != 'quartet':
+            if not self.snm_output_criteria:
+                msg = 'List Based imports must supply the SNM Output Criteria Parameter.'
+                self.info_func(msg)
+                raise Exception(msg)
+            if not self.template_name or len(self.template_name) == 0:
+                msg = 'List Based imports must supply the Template Name Step Parameter.'
+                self.info_func(msg)
+                raise Exception(msg)
+        if not self.response_rule_name or len(self.response_rule_name) == 0:
+            msg = 'Imports must supply the Response Rule Name Step Parameter.'
+            self.info_func(msg)
+            raise Exception(msg)
+
+        return ret_val
+
+
     def get_company_by_gln(self, gln):
         try:
             res = Company.objects.get(GLN13=gln)
@@ -241,6 +252,7 @@ class TradeItemImportParser:
                           ):
 
         self.info_func('Importing Trade Item {0} ({1})'.format(gtin14, unit_of_measure))
+
         try:
             trade_item = TradeItem.objects.get(GTIN14=gtin14)
             self.info_func('Trade Item for GTIN-14, {0} ({1}), is already configured.'.format(gtin14, unit_of_measure))
@@ -267,9 +279,9 @@ class TradeItemImportParser:
         )
 
         try:
-            if self.list_based:
+            if self.level4_name.lower() != "qu4rtet" and self.level4_name.lower() != "quartet":
                 # Create the list based pool, managed by an External L4
-                self.info_func('Creating a list based pool for {0} {1}'.format(company.name, gtin14))
+                self.info_func('Creating a Pool for {0}'.format(gtin14))
                 self.create_list_based_pool(trade_item, material_number, company)
             else:
                 # Create a Random pool, managed by QU4RTET
@@ -315,12 +327,13 @@ class TradeItemImportParser:
             ResponseRule.objects.get_or_create(pool=pool, rule=rule,
                                                content_type='xml')
 
+
             RandomizedRegion.objects.get_or_create(
                 machine_name=trade_item.GTIN14,
                 readable_name=trade_item.GTIN14,
-                min=self.minimum,
-                max=self.maximum,
-                start=self.minimum,
+                min=int(self.minimum),
+                max=int(self.maximum),
+                start=int(self.minimum),
                 order=1,
                 active=True,
                 pool=pool
@@ -365,6 +378,7 @@ class TradeItemImportParser:
                 machine_name=trade_item.GTIN14,
                 request_threshold=self.threshold
             )
+            self.info_func('Creating a List Based Region in Pool {0} for {1}'.format(pool.readable_name, trade_item.GTIN14))
             region = ListBasedRegion(
                 readable_name=pool.readable_name,
                 machine_name=trade_item.GTIN14,
@@ -444,7 +458,7 @@ class TradeItemImportParser:
                                                      list_based_region=region)
                 except ProcessingParameters.DoesNotExist:
 
-                    if v.lower() == '%api_key%':
+                    if str(v).lower() == '%api_key%':
                        v = v.lower().replace('%api_key%', region.machine_name)
 
                     ProcessingParameters.objects.create(key=k,
@@ -457,20 +471,79 @@ class TradeItemImportParser:
         :return: None
         """
         rule_name = "{0} Serial Number Request Rule".format(company.name)
+
         try:
             rule = Rule.objects.get(name=rule_name)
         except Rule.DoesNotExist:
             # Request Rule doesn't exist so create it
+            self.info_func("Creating Rule {0}".format(rule_name))
             rule = Rule.objects.create(
                 name=rule_name,
                 description="Serial Number Request Rule Generated by QU4RTET",
             )
-            if self.level4_name.lower == 'isis' or self.level4_name.lower() == 'frequentz/rfxcel':
-                self.add_isis_steps(rule)
+            if self.level4_name.lower == 'iris' or self.level4_name.lower() == 'frequentz/rfxcel':
+                self.add_iris_steps(rule)
+            elif self.level4_name.lower() == 'pharmasecure':
+                self.add_pharmasecure_steps(rule)
+            elif self.level4_name.lower() == 'rfxcel':
+                self.add_rfxcel_steps(rule)
+            else:
+                msg = '{0} is an unsupported Level 4. Please contact your QU4RTET Administrators'.format(self.level4_name)
+                self.info_func(msg)
+                raise Exception(msg)
 
         return rule
 
-    def add_isis_steps(self, rule):
+
+    def add_rfxcel_steps(self, rule):
+
+        request_step = Step.objects.create(
+            name='Request Numbers',
+            description='Auto Generated in QU4RTET.',
+            step_class='list_based_flavorpack.steps.NumberRequestTransportStep',
+            rule=rule,
+            order=1
+        )
+        StepParameter.objects.create(
+            name='content-type',
+            value='text/xml',
+            step=request_step
+        )
+
+        Step.objects.create(
+            name='Save Numbers',
+            description='Auto Generated in QU4RTET.',
+            step_class='quartet_integrations.rfxcel.steps.RFXCELNumberResponseParserStep',
+            rule=rule,
+            order=2
+        )
+
+
+    def add_pharmasecure_steps(self, rule):
+
+        request_step = Step.objects.create(
+            name='Request Numbers',
+            description='Auto Generated in QU4RTET.',
+            step_class='quartet_integrations.pharmasecure.steps.PharmaSecureNumberRequestTransportStep',
+            rule=rule,
+            order=1
+        )
+        StepParameter.objects.create(
+            name='content-type',
+            value='text/xml',
+            step=request_step
+        )
+
+        Step.objects.create(
+            name='Save Numbers',
+            description='Auto Generated in QU4RTET.',
+            step_class='quartet_integrations.pharmasecure.steps.PharmaSecureNumberRequestProcessStep',
+            rule=rule,
+            order=2
+        )
+
+
+    def add_iris_steps(self, rule):
 
         request_step = Step.objects.create(
             name='Request Numbers',
@@ -535,12 +608,3 @@ class TradeItemImportParser:
             raise DependencyNotFound(msg)
         return ret
 
-    def get_company(self, gtin: str):
-        """
-        Looks for the company prefix in the GTIN and returns the company
-        database model if that is found.
-        :param gtin: The gtin to inspect
-        :return: A quartet_masterdata.models.Company instance.
-        """
-        for company, db_company in self.company_records.items():
-            if company in gtin: return db_company
