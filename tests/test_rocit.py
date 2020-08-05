@@ -60,68 +60,7 @@ class TestRocIt(APITestCase):
         response = self.client.post(url, data, content_type='application/xml')
         self.assertEquals(response.status_code, 400)
 
-    def test_rocit_container1_query(self):
-        '''
-        Posting SOAP Request Content
-        :return:
-        '''
-        url = reverse("retrievePackagingHierarchyResponse")
-        data = self._get_test_data('rocit-search-container1-request.xml')
-        response = self.client.post(url, data, content_type='application/xml')
-        self.assertEquals(response.status_code, 200)
-
-        root = ET.fromstring(response.data)
-        for body in root.findall(
-            '{http://schemas.xmlsoap.org/soap/envelope/}Body'):
-            for resp in body.findall(
-                '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/}retrievePackagingHierarchyResponse'):
-                for result in resp.findall(
-                    '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/}result'):
-                    sgtin = result.find(
-                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}TagId').text
-                    self.assertEquals(sgtin,
-                                      'urn:epc:id:sgtin:305555.3555555.1')
-                    childCount = result.find(
-                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}ChildTagCount').text
-                    self.assertEquals(childCount, '5')
-                    r = result.findall(
-                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}ChildTagsVO')
-                    self.assertTrue(len(r) == int(childCount))
-
-    def test_rocit_container2_query(self):
-        '''
-        Posting SOAP Request Content
-        :return:
-        '''
-        url = reverse("retrievePackagingHierarchyResponse")
-        data = self._get_test_data('rocit-search-container2-request.xml')
-        response = self.client.post(url, data, content_type='application/xml')
-        self.assertEquals(response.status_code, 200)
-
-        root = ET.fromstring(response.data)
-        for body in root.findall(
-            '{http://schemas.xmlsoap.org/soap/envelope/}Body'):
-            for resp in body.findall(
-                '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/}retrievePackagingHierarchyResponse'):
-                for result in resp.findall(
-                    '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/applicationModule/common/types/}result'):
-                    sgtin = result.find(
-                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}TagId').text
-                    self.assertEquals(sgtin,
-                                      'urn:epc:id:sgtin:305555.3555555.6')
-                    status = result.find(
-                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}Status').text
-                    # self.assertEquals(status, "CONTAINER_CLOSED")
-                    state = result.find(
-                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}State').text
-                    # self.assertEquals(state, 'PACKING')
-                    childCount = result.find(
-                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}ChildTagCount').text
-                    self.assertEquals(childCount, '5')
-                    r = result.findall(
-                        '{http://xmlns.oracle.com/oracle/apps/pas/serials/serialsService/view/common/}ChildTagsVO')
-                    self.assertTrue(len(r) == int(childCount))
-
+    
     def _get_test_data(self, file_name):
         '''
         Loads the XML file and passes its data back as a string.
