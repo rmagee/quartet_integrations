@@ -65,20 +65,14 @@ class RocItQuery():
         except IndexError:
             entry = entries.Entry.objects.get(identifier=tag_id)
 
-        last_agg_event = entry.last_aggregation_event
-        last_event = entry.last_event
         parent_tag = entry.parent_id if entry.parent_id else None
-
-        if last_agg_event is not None:
-            # If there was a last_agg_event, then get the bizStep (state in the response)
-            # And disposition (status in the response)
-            try:
-                status = last_event.disposition.split(':')[4].upper()
-            except:
-                logger.exception('An unexpected status or state was set.')
-                # disposition may not have been sent in the EPCIS Doc, ignore
-                status = 'ACTIVE'
-            state = status_dict[status]
+        try:
+            status = entry.last_disposition.split(':')[4].upper()
+        except:
+            logger.exception('An unexpected status or state was set.')
+            # disposition may not have been sent in the EPCIS Doc, ignore
+            status = 'ACTIVE'
+        state = status_dict[status]
 
         if send_children:
             # The request is to return the children.
