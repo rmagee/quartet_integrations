@@ -333,8 +333,6 @@ class ListToBarcodeConversionStep(Step):
                 'ListToBarcodeConverstionStep step configuration..'
             )
         padding = 17 - (len(self.company_prefix) + 1)
-        if sequential > 0 and len(data) == 2:
-            data = range(data[0],data[1])
         for number in data:
             return_vals.append(
                 self.format_sscc_barcode(number, padding)
