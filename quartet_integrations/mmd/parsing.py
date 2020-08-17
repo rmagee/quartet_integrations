@@ -194,27 +194,29 @@ class TradeItemImportParser:
                 product_name=description,
                 ndc=ndc
             )
+            
+            if len(level2_gtin) == 14:
+                self.create_trade_item(
+                    company=company,
+                    material_number=item_id,
+                    unit_of_measure=level2_uom,
+                    gtin14=level2_gtin,
+                    pack_count=level2_pack_count,
+                    pallet_pack_count=pallet_pack_count,
+                    product_name=description,
+                    ndc=ndc
+                )
 
-            self.create_trade_item(
-                company=company,
-                material_number=item_id,
-                unit_of_measure=level2_uom,
-                gtin14=level2_gtin,
-                pack_count=level2_pack_count,
-                pallet_pack_count=pallet_pack_count,
-                product_name=description,
-                ndc=ndc
-            )
-
-            self.create_trade_item(
-                company=company,
-                material_number=item_id,
-                unit_of_measure=level3_uom,
-                gtin14=level3_gtin,
-                pack_count=level3_pack_count,
-                pallet_pack_count=pallet_pack_count,
-                product_name=description,
-                ndc=ndc
+            if len(level3_gtin) == 14:
+                self.create_trade_item(
+                    company=company,
+                    material_number=item_id,
+                    unit_of_measure=level3_uom,
+                    gtin14=level3_gtin,
+                    pack_count=level3_pack_count,
+                    pallet_pack_count=pallet_pack_count,
+                    product_name=description,
+                    ndc=ndc
 
             )
 
