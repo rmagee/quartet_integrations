@@ -24,13 +24,38 @@ from quartet_capture.rules import RuleContext
 from quartet_integrations.extended.environment import get_default_environment
 from quartet_integrations.extended.events import AppendedShippingObjectEvent
 from quartet_integrations.extended.parsers import ExtendedParser
-from quartet_output.steps import ContextKeys
+from quartet_output.steps import ContextKeys, DynamicTemplateMixin, \
+    EPCPyYesOutputStep
 from quartet_templates.models import Template
+
+
+class TemplateOutputStep(DynamicTemplateMixin, EPCPyYesOutputStep):
+    """
+    Will use a configured template to format a message
+    """
+
+    def declared_parameters(self):
+        params = super().declared_parameters()
+        params['Template'] = "The name of the template to use to render the " \
+                             "output."
+
+    def get_epcis_document_class(self,
+                                 all_events) -> template_events.EPCISEventListDocument:
+        epcis_document = super().get_epcis_document_class(all_events)
+        template = self.get_or_create_parameter('Template',
+                                                'Please configure...',
+                                                'The template to render.')
+        env = get_default_environment()
+        epcis_document.template = self.get_template(env, template)
+        return epcis_document
+
 
 """
     This Step will Append an ObjectEvent with a bizStep of shipping and
     , by default, a disposition of in_transit to the current EPCIS Document.
 """
+
+
 class AppendShippingStep(rules.Step):
 
     def __init__(self, db_task: models.Task, **kwargs):
@@ -86,9 +111,10 @@ class AppendShippingStep(rules.Step):
         shipping_event._context['biz_location'] = parser.biz_location
         shipping_event._context['read_point'] = parser.read_point
         shipping_event._context['PO'] = parser.PO
-        trans_date = "{0}-{1}-{2}".format(datetime.datetime.now().year,datetime.datetime.now().month,datetime.datetime.now().day)
+        trans_date = "{0}-{1}-{2}".format(datetime.datetime.now().year,
+                                          datetime.datetime.now().month,
+                                          datetime.datetime.now().day)
         shipping_event._context['trans_date'] = trans_date
-
 
         rule_context.context[ContextKeys.FILTERED_EVENTS_KEY.value] = [
             shipping_event, ]
@@ -97,7 +123,8 @@ class AppendShippingStep(rules.Step):
         rule_context.context[
             ContextKeys.AGGREGATION_EVENTS_KEY.value] = parser._aggregation_events
 
-        all_events = parser._object_events + parser._aggregation_events + [shipping_event,]
+        all_events = parser._object_events + parser._aggregation_events + [
+            shipping_event, ]
 
         env = get_default_environment()
 
@@ -118,7 +145,6 @@ class AppendShippingStep(rules.Step):
         rule_context.context[
             ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value
         ] = data
-
 
     def get_template(self):
         """
