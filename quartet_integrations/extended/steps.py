@@ -27,6 +27,7 @@ from quartet_integrations.extended.parsers import ExtendedParser
 from quartet_output.steps import ContextKeys, DynamicTemplateMixin, \
     EPCPyYesOutputStep
 from quartet_templates.models import Template
+from uuid import uuid4
 
 
 class TemplateOutputStep(DynamicTemplateMixin, EPCPyYesOutputStep):
@@ -47,6 +48,7 @@ class TemplateOutputStep(DynamicTemplateMixin, EPCPyYesOutputStep):
                                                 'The template to render.')
         env = get_default_environment()
         epcis_document.template = self.get_template(env, template)
+        epcis_document.additional_context = {'uuid':str(uuid4())}
         return epcis_document
 
 

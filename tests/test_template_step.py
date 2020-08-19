@@ -77,6 +77,7 @@ class TestOutputParsing(TestCase):
         step.order = 3
         step.name = 'CreateAggregation'
         step.step_class = 'quartet_output.steps.UnpackHierarchyStep'
+        step.save()
 
     def _create_epcpyyes_step(self, rule, json=False):
         step = Step()
@@ -103,7 +104,7 @@ class TestOutputParsing(TestCase):
         sp2 = StepParameter()
         sp2.step = step
         sp2.name = "Append Filtered Events"
-        sp2.value = 'False'
+        sp2.value = 'True'
         sp2.description = 'Do not append the filtered event.'
         sp2.save()
 
@@ -196,8 +197,8 @@ class TestOutputParsing(TestCase):
         Template.objects.create(
             name='Test Template',
             content="""
- <?xml version="1.0" encoding="utf-8"?>
- <epcis:EPCISDocument xmlns:cbvmda="urn:epcglobal:cbv:mda" xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns" xmlns:sbdh="http://www.unece.org/cefact/namespaces/StandardBusinessDocumentHeader" schemaVersion="1.2" creationDate="{{ created_date }}" xmlns:epcis="urn:epcglobal:epcis:xsd:1">
+<?xml version="1.0" encoding="utf-8"?>
+<epcis:EPCISDocument xmlns:cbvmd="urn:epcglobal:cbv:mda" xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns" xmlns:sbdh="http://www.unece.org/cefact/namespaces/StandardBusinessDocumentHeader" schemaVersion="1.2" creationDate="{{created_date}}-00:00" xmlns:epcis="urn:epcglobal:epcis:xsd:1">
   <EPCISHeader>
     <sbdh:StandardBusinessDocumentHeader>
       <sbdh:HeaderVersion>1.0</sbdh:HeaderVersion>
@@ -210,9 +211,9 @@ class TestOutputParsing(TestCase):
       <sbdh:DocumentIdentification>
         <sbdh:Standard>EPCGlobal</sbdh:Standard>
         <sbdh:TypeVersion>1.2</sbdh:TypeVersion>
-        <sbdh:InstanceIdentifier>e6137866-695b-4d5c-b3ff-70da78aea390</sbdh:InstanceIdentifier>
+        <sbdh:InstanceIdentifier>{{ additional_context.uuid }}</sbdh:InstanceIdentifier>
         <sbdh:Type>Events</sbdh:Type>
-        <sbdh:CreationDateAndTime>2020-08-05T17:50:40.6218191-05:00</sbdh:CreationDateAndTime>
+        <sbdh:CreationDateAndTime>{{ created_date }}-00:00</sbdh:CreationDateAndTime>
       </sbdh:DocumentIdentification>
     </sbdh:StandardBusinessDocumentHeader>
     <extension>
@@ -220,19 +221,19 @@ class TestOutputParsing(TestCase):
         <VocabularyList>
           <Vocabulary type="urn:epcglobal:epcis:vtype:location">
             <VocabularyElementList>
-              <VocabularyElement id="urn:epc:id:sgln:77777777.00000.0">
-                <attribute id="urn:epcglobal:cbv:mda#name">PharmaCorp</attribute>
-                <attribute id="urn:epcglobal:cbv:mda#streetAddressOne">7590 Sand Street</attribute>
-                <attribute id="urn:epcglobal:cbv:mda#city">Net Worth</attribute>
-                <attribute id="urn:epcglobal:cbv:mda#state">AL</attribute>
+              <VocabularyElement id="urn:epc:id:sgln:7777777.00000.0">
+                <attribute id="urn:epcglobal:cbv:mda#name">asdf</attribute>
+                <attribute id="urn:epcglobal:cbv:mda#streetAddressOne">7590 asd Street</attribute>
+                <attribute id="urn:epcglobal:cbv:mda#city">Sumpter</attribute>
+                <attribute id="urn:epcglobal:cbv:mda#state">CA</attribute>
                 <attribute id="urn:epcglobal:cbv:mda#postalCode">77777</attribute>
                 <attribute id="urn:epcglobal:cbv:mda#countryCode">US</attribute>
               </VocabularyElement>
-              <VocabularyElement id="urn:epc:id:sgln:77777771.0.0">
-                <attribute id="urn:epcglobal:cbv:mda#name">asdf PRODUCTS, INC</attribute>
-                <attribute id="urn:epcglobal:cbv:mda#streetAddressOne">1610 THHIS DR</attribute>
-                <attribute id="urn:epcglobal:cbv:mda#city">THIS CITY</attribute>
-                <attribute id="urn:epcglobal:cbv:mda#state">TX</attribute>
+              <VocabularyElement id="urn:epc:id:sgln:7777777.0.0">
+                <attribute id="urn:epcglobal:cbv:mda#name">PRODUCTS, INC</attribute>
+                <attribute id="urn:epcglobal:cbv:mda#streetAddressOne">16 ASDF DR</attribute>
+                <attribute id="urn:epcglobal:cbv:mda#city">SOME TOWN</attribute>
+                <attribute id="urn:epcglobal:cbv:mda#state">AL</attribute>
                 <attribute id="urn:epcglobal:cbv:mda#postalCode">77777</attribute>
                 <attribute id="urn:epcglobal:cbv:mda#countryCode">US</attribute>
               </VocabularyElement>
@@ -241,10 +242,10 @@ class TestOutputParsing(TestCase):
           <Vocabulary type="urn:epcglobal:epcis:vtype:epcclass">
             <VocabularyElementList>
               <VocabularyElement id="urn:epc:idpat:sgtin:*">
-                <attribute id="urn:epcglobal:cbv:mda#additionalTradeItemIdentification">123412341234</attribute>
+                <attribute id="urn:epcglobal:cbv:mda#additionalTradeItemIdentification">777777777</attribute>
                 <attribute id="urn:epcglobal:cbv:mda#additionalTradeItemIdentificationTypeCode">FDA_NDC_11</attribute>
-                <attribute id="urn:epcglobal:cbv:mda#regulatedProductName">Covid 20 Vaccine</attribute>
-                <attribute id="urn:epcglobal:cbv:mda#manufacturerOfTradeItemPartyName">Pharma Corp</attribute>
+                <attribute id="urn:epcglobal:cbv:mda#regulatedProductName">Tussen</attribute>
+                <attribute id="urn:epcglobal:cbv:mda#manufacturerOfTradeItemPartyName">CORP, INC</attribute>
                 <attribute id="urn:epcglobal:cbv:mda#dosageFormType">TABLET</attribute>
                 <attribute id="urn:epcglobal:cbv:mda#strengthDescription">50MG</attribute>
               </VocabularyElement>
@@ -257,17 +258,17 @@ class TestOutputParsing(TestCase):
       <gs1ushc:affirmTransactionStatement>false</gs1ushc:affirmTransactionStatement>
     </gs1ushc:dscsaTransactionStatement>
   </EPCISHeader>
-        <EPCISBody>
-            <EventList>
-                {% block events %}
-                    {% if template_events|length > 0 %}
-                        {% for event in template_events %}
-                            {% include event.template %}
-                        {% endfor %}
-                    {% endif %}
-                {% endblock %}
-            </EventList>
-        </EPCISBody>
+  <EPCISBody>
+    <EventList>
+        {% block events %}
+            {% if template_events|length > 0 %}
+                {% for event in template_events %}
+                    {% include event.template %}
+                {% endfor %}
+            {% endif %}
+        {% endblock %}
+    </EventList>
+  </EPCISBody>
 </epcis:EPCISDocument>
 """)
 
@@ -277,6 +278,7 @@ class TestOutputParsing(TestCase):
         db_rule = self._create_rule()
         self._create_step(db_rule)
         self._create_comm_step(db_rule)
+        self._create_add_agg_step(db_rule)
         self._create_epcpyyes_step(db_rule)
         self._create_task_step(db_rule)
         db_rule2 = self._create_transport_rule()
