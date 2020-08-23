@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <epcis:EPCISDocument creationDate="{{ created_date }}"
-                     schemaVersion="1.1"
+                     schemaVersion="1.0"
                      xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns"
                      xmlns:sbdh="http://www.unece.org/cefact/namespaces/StandardBusinessDocumentHeader"
                      xmlns:epcis="urn:epcglobal:epcis:xsd:1">

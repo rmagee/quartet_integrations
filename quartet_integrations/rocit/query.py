@@ -69,7 +69,7 @@ class RocItQuery():
         try:
             status = entry.last_disposition.split(':')[4].upper()
         except:
-            logger.exception('An unexpected status or state was set.')
+            logger.info('An unexpected status or state was set.')
             # disposition may not have been sent in the EPCIS Doc, ignore
             status = 'ACTIVE'
         state = status_dict[status]

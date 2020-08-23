@@ -194,7 +194,7 @@ class TradeItemImportParser:
                 product_name=description,
                 ndc=ndc
             )
-            
+
             if len(level2_gtin) == 14:
                 self.create_trade_item(
                     company=company,
