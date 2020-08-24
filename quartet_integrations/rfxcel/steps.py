@@ -48,6 +48,15 @@ class RFExcelOutputStep(EPCPyYesOutputStep):
         template = env.get_template('rfxcel/rfxcel_shipping_event.xml')
         return template
 
+    def _get_aggregation_template(self):
+        """
+        Returns an aggregation event template for use by the filtered event.
+        :return: A jinja template object.
+        """
+        env = get_default_environment()
+        template = env.get_template('rfxcel/rfxcel_aggregation_event.xml')
+        return template
+
     def execute(self, data, rule_context: RuleContext):
         # two events need new templates - object and shipping
         # the overall document needs a new template get that below
@@ -67,6 +76,15 @@ class RFExcelOutputStep(EPCPyYesOutputStep):
                 template = self._get_new_template()
                 for event in object_events:
                     event._template = template
+
+            aggregation_events = rule_context.context.get(
+                ContextKeys.AGGREGATION_EVENTS_KEY.value, [])
+
+            if len(aggregation_events)>0:
+               template = self._get_aggregation_template()
+               for event in aggregation_events:
+                   event._template = template
+
         super().execute(data, rule_context)
 
     def get_epcis_document_class(self,

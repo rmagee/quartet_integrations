@@ -1,6 +1,6 @@
 <ilmd>
     {% for attribute in ilmd %}
-        
+
         {% if attribute.name == 'lotNumber' %}
             <gs1ushc:lotNumber xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns">{{ attribute.value }}</gs1ushc:lotNumber>
         {% endif %}
