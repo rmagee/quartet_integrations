@@ -11,6 +11,23 @@ from random_flavorpack import models
 from serialbox.models import Pool, ResponseRule
 from serialbox.models import SequentialRegion
 
+def create_serialbox_gtin_response_rule():
+    rule, created = Rule.objects.get_or_create(
+        name='SerialBox GTIN URN Response',
+        description='A list to URN response rule.  Converts serialbox '
+                    'integers to URNs.',
+    )
+
+    conversion_step, created = Step.objects.get_or_create(
+        rule=rule,
+        name='Integer to URN Conversion',
+        step_class='quartet_integrations.serialbox.steps.ListToUrnConversionStep',
+        order=1
+    )
+    if not created:
+        conversion_step.description = 'Convert the list of numbers to ' \
+                                      'GTINs or SSCCs.'
+
 
 def create_gtin_response_rule():
     rule, created = Rule.objects.get_or_create(
