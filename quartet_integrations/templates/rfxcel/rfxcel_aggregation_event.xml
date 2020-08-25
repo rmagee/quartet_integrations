@@ -1,0 +1,17 @@
+<AggregationEvent>
+    {% include "epcis/event_times.xml" %}
+    {% include "epcis/base_extension.xml" %}
+    {% if event.parent_id %}
+        <parentID>{{ event.parent_id }}</parentID>
+    {% endif %}
+    {% if event.child_epcs %}
+        <childEPCs>
+            {% for epc in event.child_epcs %}
+                <epc>{{ epc }}</epc>
+            {% endfor %}
+        </childEPCs>
+    {% endif %}
+    {% include "rfxcel/rfxcel_business_data.xml" %}
+    {% include "epcis/extension.xml" %}
+</AggregationEvent>
+
