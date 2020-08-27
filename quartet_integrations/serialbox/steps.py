@@ -76,7 +76,7 @@ class ListToUrnConversionStep(Step):
             rule_context.context['item_reference'] = converter.item_reference
             rule_context.context[
                 'saleable_unit_flag'] = 1 if converter.indicator_digit == '0' else 0
-        elif len(pool) == 18:
+        else:
             self.handle_ssccs(cp_length, data, return_vals, pool)
 
         return return_vals
@@ -103,6 +103,14 @@ class ListToUrnConversionStep(Step):
         rule_context.context['trade_item'] = TradeItem.objects.get(
             GTIN14=pool
         )
+        # if the below evaluates to true then we know we are dealing with
+        # a sequential reply.  In that case, we transform the start and
+        # end numbers into a list using the range function
+        if len(numbers) == 2 and numbers[0] - numbers[1] != 1:
+            self.info('Sequential pool detected, converting to list.')
+            numbers = range(numbers[0], numbers[1])
+        else:
+            self.info('Random pool detected.')
         self.info('Formatting for GTIN response.')
         # provide a dummy serial number so we can just quickly parse the company prefix
         converter = BarcodeConverter(
