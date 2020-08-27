@@ -67,6 +67,7 @@ class TestURNConversion(APITestCase):
         response = self.client.get(url, format=format, content_type='application/xml')
         print(response.content or response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return response
 
     def test_sscc(self):
         self.create_company('031300')
@@ -74,7 +75,8 @@ class TestURNConversion(APITestCase):
         rule = utils.create_serialbox_gtin_response_rule()
         print('creating test pool')
         self.create_sscc_pool(rule=rule)
-        self.allocate_numbers(MACHINE_NAME, '10', 'xml')
+        response = self.allocate_numbers(MACHINE_NAME, '10', 'xml')
+        print(response)
 
     def create_company(self, company_prefix):
         Company.objects.create(
