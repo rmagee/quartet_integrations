@@ -67,6 +67,7 @@ class ListToUrnConversionStep(Step):
         # if we are dealing with gtins we need to make urn values sans the
         # epc declaration
         return_vals = []
+        rule_context.context['pool'] = pool
         if len(pool) == 14:
             converter = self.handle_gtins(cp_length, data, return_vals, pool,
                                           rule_context)
@@ -77,8 +78,10 @@ class ListToUrnConversionStep(Step):
             rule_context.context[
                 'saleable_unit_flag'] = 1 if converter.indicator_digit == '0' else 0
         else:
-            self.handle_ssccs(cp_length, data, return_vals, pool)
-
+            converter = self.handle_ssccs(cp_length, data, return_vals, pool)
+            rule_context.context['company_prefix'] = converter.company_prefix
+            rule_context.context['indicator_digit'] = converter.extension_digit
+            rule_context.context['is_sscc'] = converter.extension_digit
         return return_vals
 
     def handle_gtins(self, cp_length, numbers, return_vals, pool,
@@ -103,14 +106,7 @@ class ListToUrnConversionStep(Step):
         rule_context.context['trade_item'] = TradeItem.objects.get(
             GTIN14=pool
         )
-        # if the below evaluates to true then we know we are dealing with
-        # a sequential reply.  In that case, we transform the start and
-        # end numbers into a list using the range function
-        if len(numbers) == 2 and numbers[0] - numbers[1] != 1:
-            self.info('Sequential pool detected, converting to list.')
-            numbers = range(numbers[0], numbers[1])
-        else:
-            self.info('Random pool detected.')
+        numbers = self.get_number_list(numbers)
         self.info('Formatting for GTIN response.')
         # provide a dummy serial number so we can just quickly parse the company prefix
         converter = BarcodeConverter(
@@ -126,8 +122,52 @@ class ListToUrnConversionStep(Step):
             )
         return converter
 
+    def get_number_list(self, numbers):
+        """
+        Converts a sequential start/end to a list of numbers for processing.
+        Leaves random lists alone
+        :param numbers: The numbers to inspect and possibly convert to a list.
+        :return: A list of numbers
+        """
+        # if the below evaluates to true then we know we are dealing with
+        # a sequential reply.  In that case, we transform the start and
+        # end numbers into a list using the range function, otherwise
+        # we leave the list alone
+        if len(numbers) == 2 and numbers[0] - numbers[1] != 1:
+            self.info('Sequential pool detected, converting to list.')
+            numbers = range(numbers[0], numbers[1])
+        else:
+            self.info('Random pool detected.')
+        return numbers
+
     def handle_ssccs(self, cp_length, numbers, return_vals, sb_response):
-        raise NotImplementedError('handle_ssccs is not currently implemented.')
+        serial_length = 16 - cp_length
+        converter = BarcodeConverter('00%s' % (sb_response), cp_length)
+        numbers = self.get_number_list(numbers)
+        for number in numbers:
+            return_vals.append(
+                self.format_sscc_urn(
+                    converter.company_prefix,
+                    converter.extension_digit,
+                    number,
+                    serial_length
+                )
+            )
+        return converter
+
+    def format_sscc_urn(self, company_prefix, extension_digit, number,
+                        serial_length):
+        """
+        Creates SSCC EPC Urns.  Override to change the behavior or format.
+        :param company_prefix: The company prefix
+        :param extension_digit: The SSCC extension digit
+        :param number: The serial number for the SSCC.
+        :return: A properly formatted EPC SSCC URN value.
+        """
+        return '%s%s.%s%s' % (
+            'urn:epc:id:sscc:', company_prefix, extension_digit,
+            str(number).zfill(serial_length)
+        )
 
     def format_gtin_urn(self, company_prefix: str, indicator: str,
                         item_reference: str, serial_number: str):
@@ -143,6 +183,10 @@ class ListToUrnConversionStep(Step):
             'urn:epc:id:sgtin:', company_prefix, indicator, item_reference,
             serial_number
         )
+
+    def foramt_sscc_urn(self, company_prefix: str, extension: str,
+                        serial_number: str):
+        pass
 
     def on_failure(self):
         pass
@@ -331,7 +375,8 @@ class ListToBarcodeConversionStep(Step):
             executing rule.
         :return: None
         """
-        sequential = Pool.objects.prefetch_related('sequentialregion_set').filter(
+        sequential = Pool.objects.prefetch_related(
+            'sequentialregion_set').filter(
             machine_name=pool
         ).count()
         if self.company_prefix == '':
@@ -386,12 +431,11 @@ class ListToBarcodeConversionStep(Step):
             'SSCC App Identifier': 'True or False- whether or not to include '
                                    'the Application Identifier for SSCC values'
                                    ' in the response.',
-            'Extension Digit':'The extension digit for SSCCs (does not apply '
-                              'to GTINs.',
-            'Company Prefix':'The company prefix must be supplied for handling'
-                             ' SSCC values.',
+            'Extension Digit': 'The extension digit for SSCCs (does not apply '
+                               'to GTINs.',
+            'Company Prefix': 'The company prefix must be supplied for handling'
+                              ' SSCC values.',
         }
-
 
     class InvalidCompanyPrefix(Exception):
         pass
