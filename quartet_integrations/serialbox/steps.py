@@ -62,7 +62,12 @@ class ListToUrnConversionStep(Step):
                   'machine name / API Key value %s and matching against '
                   'a Trade Item and/or Company in the master data '
                   'configuration', pool)
-        cp_length = DBProxy().get_company_prefix_length(pool)
+        try:
+            cp_length = DBProxy().get_company_prefix_length(pool)
+        except DBProxy.InvalidBarcode:
+            logger.debug('Invalid barcode, this may be an indicator /'
+                         ' company prefix format...trying')
+            cp_length = len(pool) - 1
         rule_context.context['company_prefix_length'] = cp_length
         # if we are dealing with gtins we need to make urn values sans the
         # epc declaration
@@ -142,17 +147,34 @@ class ListToUrnConversionStep(Step):
 
     def handle_ssccs(self, cp_length, numbers, return_vals, sb_response):
         serial_length = 16 - cp_length
-        converter = BarcodeConverter('00%s' % (sb_response), cp_length)
+        converter = None
+        try:
+            converter = BarcodeConverter('00%s' % (sb_response), cp_length)
+            company_prefix = converter.company_prefix
+            extension_digit = converter.extension_digit
+        except (DBProxy.InvalidBarcode, BarcodeConverter.BarcodeNotValid):
+            logger.info('Data was not sent as a barcode...trying '
+                        'extension digit / company prefix format')
+            company_prefix = sb_response[1:]
+            extension_digit = sb_response[:1]
+            serial_length = 16 - len(company_prefix)
+
         numbers = self.get_number_list(numbers)
         for number in numbers:
             return_vals.append(
                 self.format_sscc_urn(
-                    converter.company_prefix,
-                    converter.extension_digit,
+                    company_prefix,
+                    extension_digit,
                     number,
                     serial_length
                 )
             )
+        if not converter:
+            class Converter:
+                pass
+            converter = Converter()
+            converter.company_prefix = company_prefix
+            converter.extension_digit = extension_digit
         return converter
 
     def format_sscc_urn(self, company_prefix, extension_digit, number,
