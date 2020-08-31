@@ -293,6 +293,12 @@ class ListToBarcodeConversionStep(Step):
             ' is included in SSCC return values.'
         ).lower() == 'true'
 
+        self.create_list = self.get_or_create_parameter(
+            'Create List', 'False',
+            'A boolean flag that indicates whether or not to create lists '
+            'from sequential ranges.'
+        ).lower() == 'true'
+
         self.extension_digit = int(self.get_or_create_parameter(
             'Extension Digit', '0',
             'A single numeric value from 0-9 for any SSCC responses.'
@@ -400,7 +406,7 @@ class ListToBarcodeConversionStep(Step):
         sequential = Pool.objects.prefetch_related(
             'sequentialregion_set').filter(
             machine_name=pool
-        ).count()
+        ).count() == 1
         if self.company_prefix == '':
             raise self.InvalidCompanyPrefix(
                 'The company prefix must be configured in the Response Rule '
@@ -408,6 +414,8 @@ class ListToBarcodeConversionStep(Step):
                 'ListToBarcodeConverstionStep step configuration..'
             )
         padding = 17 - (len(self.company_prefix) + 1)
+        if sequential and len(data) == 2 and self.create_list == True:
+            data = range(data[0], data[1]+1)
         for number in data:
             return_vals.append(
                 self.format_sscc_barcode(number, padding)
@@ -457,6 +465,8 @@ class ListToBarcodeConversionStep(Step):
                                'to GTINs.',
             'Company Prefix': 'The company prefix must be supplied for handling'
                               ' SSCC values.',
+            'Create List': 'Wheteher or not to create a list-based return '
+                           'from sequential ranges.'
         }
 
     class InvalidCompanyPrefix(Exception):
