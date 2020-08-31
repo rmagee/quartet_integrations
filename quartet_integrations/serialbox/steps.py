@@ -140,7 +140,7 @@ class ListToUrnConversionStep(Step):
         # we leave the list alone
         if len(numbers) == 2 and numbers[0] - numbers[1] != 1:
             self.info('Sequential pool detected, converting to list.')
-            numbers = range(numbers[0], numbers[1])
+            numbers = range(numbers[0], numbers[1] + 1)
         else:
             self.info('Random pool detected.')
         return numbers
