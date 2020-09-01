@@ -28,7 +28,8 @@ from quartet_integrations.extended.events import AppendedShippingObjectEvent
 from quartet_integrations.traxeed.parsers import (
     TraxeedParser,
     TraxeedRfxcelParser,
-    TraxeedIRISParser
+    TraxeedIRISParser,
+	TraxeedCIVICAParser
 )
 from quartet_output.steps import ContextKeys
 from quartet_templates.models import Template
@@ -252,8 +253,8 @@ class TraxeedRfxcel(rules.Step):
 
         shipping_event = template_events.ObjectEvent(
             epc_list=ssccs,
-            record_time=dt.strftime('%Y-%m-%dT%H:%M:%SZ'),
-            event_time=dt.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            record_time=datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+            event_time=datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
             event_timezone_offset=agg_event.event_timezone_offset,
             action="OBSERVE",
             biz_step=BusinessSteps.shipping.value,
@@ -338,7 +339,7 @@ class TraxeedIRIS(rules.Step):
                                                              'The SGLN URN of the Destination Location')
 
         env = get_default_environment()
-        temp = env.get_template('traxeed/tx_rfxcel_epcis_document.xml')
+        temp = env.get_template('traxeed/tx_seton_epcis_document.xml')
         self._doc_template = temp
         temp = env.get_template('traxeed/tx_rf_object_events.xml')
         self._obj_template = temp
@@ -384,8 +385,8 @@ class TraxeedIRIS(rules.Step):
 
         shipping_event = template_events.ObjectEvent(
             epc_list=ssccs,
-            record_time=dt.strftime('%Y-%m-%dT%H:%M:%SZ'),
-            event_time=dt.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            record_time=datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+            event_time=datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
             event_timezone_offset=agg_event.event_timezone_offset,
             action="OBSERVE",
             biz_step=BusinessSteps.shipping.value,
@@ -417,7 +418,139 @@ class TraxeedIRIS(rules.Step):
             all_events,
             None,
             template=env.get_template(
-                'traxeed/tx_rfxcel_epcis_document.xml'
+                'traxeed/tx_seton_epcis_document.xml'
+            ),
+            additional_context=additional_context
+        )
+        if self.get_boolean_parameter('JSON', False):
+            data = epcis_document.render_json()
+        else:
+            data = epcis_document.render()
+        rule_context.context[
+            ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value
+        ] = data
+
+    def declared_parameters(self):
+        return {
+            'Source Owning Party': 'The SGLN URN of the Source Owning Party',
+            'Source Location': 'The SGLN URN of the Source Location',
+            'Destination Owning Party': 'The SGLN URN of the Destination Owning Party',
+            'Destination Location': 'The SGLN URN of the Destination Location',
+        }
+
+    def on_failure(self):
+        pass
+
+    def get_template(self):
+        """
+        Looks up the template based on the step parameter.
+        :return: The content of the template.
+        """
+        template_name = self.get_parameter('Template Name',
+                                           raise_exception=True)
+
+
+        ret_val = Template.objects.get(name=template_name).content
+        return ret_val
+
+
+class TraxeedCIVICA(rules.Step):
+
+    def __init__(self, db_task: models.Task, **kwargs):
+
+        self._regEx = '^urn:epc:id:sgtin:[0-9]{6,12}\.[0-9]{1,7}'
+
+
+        self._source_op = self.get_or_create_parameter('Source Owning Party','',
+                                                       'The SGLN URN of the Source Owning Party')
+        self._source_location = self.get_or_create_parameter('Source Location', '',
+                                                       'The SGLN URN of the Source Location')
+        self._destination_op = self.get_or_create_parameter('Destination Owning Party', '',
+                                                                  'The SGLN URN of the Destination Owning Party')
+        self._destination_location = self.get_or_create_parameter('Destination Location', '',
+                                                             'The SGLN URN of the Destination Location')
+
+        env = get_default_environment()
+        temp = env.get_template('traxeed/tx_civica_epcis_document.xml')
+        self._doc_template = temp
+        temp = env.get_template('traxeed/tx_rf_object_events.xml')
+        self._obj_template = temp
+
+        super().__init__(db_task, **kwargs)
+
+    def execute(self, data, rule_context: RuleContext):
+
+        # Parse EPCIS with the ExtendedParser
+        if isinstance(data, File):
+            parser = TraxeedCIVICAParser(data,
+                                    reg_ex=self._regEx)
+
+        elif isinstance(data, str):
+            parser = TraxeedCIVICAParser(io.BytesIO(str.encode(data)),
+                                    reg_ex=self._regEx)
+
+        else:
+            parser = TraxeedCIVICAParser(io.BytesIO(data),
+                                    reg_ex=self._regEx)
+        # parse
+        parser.parse()
+        # get the first aggregation event for the record/event times
+        agg_event = parser._aggregation_events[0]
+        # adjust the record/event time into the future
+        t = datetime.datetime.strptime(agg_event.record_time, '%Y-%m-%dT%H:%M:%SZ')
+        dt = t + timedelta(seconds=10)
+
+        # All SSCCs found in the ObjectEvents of the EPCIS Document (data parameter)
+        # are now in the ExtendedParser's sscc_list
+        ssccs = parser.sscc_list
+
+        biz_trans = BusinessTransaction(biz_transaction=parser.PO, type="urn:epcglobal:cbv:btt:po")
+
+
+        source_op = Source(source = self._source_op, source_type = 'urn:epcglobal:cbv:sdt:owning_party')
+        source_location = Source(source=self._source_location, source_type='urn:epcglobal:cbv:sdt:location' )
+        destination_op = Destination(destination_type='urn:epcglobal:cbv:sdt:owning_party', destination=self._destination_op)
+        destination_location = Destination(destination_type='urn:epcglobal:cbv:sdt:location', destination=self._destination_location)
+
+        source_list = [source_op, source_location]
+        destination_list = [destination_op, destination_location]
+
+        shipping_event = template_events.ObjectEvent(
+            epc_list=ssccs,
+            record_time=datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+            event_time=datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+            event_timezone_offset=agg_event.event_timezone_offset,
+            action="OBSERVE",
+            biz_step=BusinessSteps.shipping.value,
+            disposition=Disposition.in_transit.value,
+            read_point=agg_event.read_point,
+            biz_location=agg_event.biz_location,
+            business_transaction_list = [biz_trans],
+            source_list=source_list,
+            destination_list=destination_list,
+            template=self._obj_template
+        )
+
+
+
+        rule_context.context[ContextKeys.FILTERED_EVENTS_KEY.value] = [
+            shipping_event, ]
+        rule_context.context[
+            ContextKeys.OBJECT_EVENTS_KEY.value] = parser._object_events
+        rule_context.context[
+            ContextKeys.AGGREGATION_EVENTS_KEY.value] = parser._aggregation_events
+
+        all_events = parser._object_events + parser._aggregation_events + [shipping_event, ]
+
+        env = get_default_environment()
+
+        identifier = str(uuid.uuid4())
+        additional_context = {'identifier': identifier}
+        epcis_document = template_events.EPCISEventListDocument(
+            all_events,
+            None,
+            template=env.get_template(
+                'traxeed/tx_civica_epcis_document.xml'
             ),
             additional_context=additional_context
         )
