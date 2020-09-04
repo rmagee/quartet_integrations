@@ -138,11 +138,14 @@ class ListToUrnConversionStep(Step):
         # a sequential reply.  In that case, we transform the start and
         # end numbers into a list using the range function, otherwise
         # we leave the list alone
-        if len(numbers) == 2 and numbers[0] - numbers[1] != 1:
-            self.info('Sequential pool detected, converting to list.')
-            numbers = range(numbers[0], numbers[1] + 1)
-        else:
-            self.info('Random pool detected.')
+        try:
+            if len(numbers) == 2 and numbers[0] - numbers[1] != 1:
+                self.info('Sequential pool detected, converting to list.')
+                numbers = range(numbers[0], numbers[1] + 1)
+            else:
+                self.info('Random pool detected.')
+        except TypeError:
+            self.info('List-based detected.')
         return numbers
 
     def handle_ssccs(self, cp_length, numbers, return_vals, sb_response):
