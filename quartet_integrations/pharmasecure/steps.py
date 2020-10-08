@@ -398,7 +398,7 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
                 num = sn.serial_number
                 serial_numbers.append(num)
             else:
-                sn = curtag[2:]
+                serial_numbers.append(curtag[2:])
 
         self.write_list(serial_numbers, region)
 
