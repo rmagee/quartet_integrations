@@ -392,8 +392,9 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
         serial_numbers = []
         # add tags to serial_numbers array
         for tag in tags:
-            if len(tag) != 20:
-                sn = conversion.BarcodeConverter(tag.find('a:SerialNumber', ns).text, company_prefix_length=len("0370010"))
+            curtag = tag.find('a:SerialNumber', ns).text
+            if len(curtag) != 20:
+                sn = conversion.BarcodeConverter(curtag, company_prefix_length=len("0370010"))
                 num = sn.serial_number
                 serial_numbers.append(num)
             else:
