@@ -33,6 +33,7 @@ from quartet_output.steps import ContextKeys as OutputKeys, \
     EPCPyYesOutputStep as EPYOS
 from quartet_output.steps import OutputParsingStep as QOPS
 from EPCPyYes.core.v1_2.events import Source, Destination
+import copy
 
 EventList = List[EPCISBusinessEvent]
 
@@ -179,11 +180,12 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                     'Found some filtered object events.'
                     ' Looking up the receiver company by urn value/'
                     'company prefix.')
+                copied_event = copy.copy(filtered_events[0])
                 mapping_applied = False
                 if self.append_mapping:
                     mapping_applied = self.append_mapping_info(filtered_events[0])
                 if self.add_sbdh:
-                    self.add_header(filtered_events[0], rule_context,
+                    self.add_header(copied_event, rule_context,
                                     mapping_applied)
                 # self.sbdh.partners.append(receiver)
                 for event in object_events:
