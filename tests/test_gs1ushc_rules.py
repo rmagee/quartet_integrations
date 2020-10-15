@@ -48,8 +48,8 @@ class TestGS1USHC(TestCase):
             postal_code='77700',
             country='US',
             gs1_company_prefix='305555',
-            GLN13='3055550000000',
-            SGLN='urn:epc:id:sgln:3055555.0.0'
+            GLN13='0842671116709',
+            SGLN='urn:epc:id:sgln:0842671116709.0.0'
         )
         ship_from = Location.objects.create(
             name='C3PO',
@@ -58,7 +58,7 @@ class TestGS1USHC(TestCase):
             state_province='TX',
             postal_code='70707',
             country='US',
-            GLN13='0842671116709',
+            GLN13='0842671116001',
             SGLN='urn:epc:id:sgln:0842671116.0.0',
         )
         ship_to = Location.objects.create(
@@ -68,11 +68,11 @@ class TestGS1USHC(TestCase):
             state_province='PA',
             postal_code='77777',
             country='US',
-            GLN13='0842222216709',
+            GLN13='0362175000002',
             SGLN='urn:epc:id:sgln:08222222.0.0',
         )
         OutboundMapping.objects.create(
-            company=cmo,
+            company=owner,
             from_business=cmo,
             ship_from=ship_from,
             to_business=owner,

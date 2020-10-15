@@ -241,14 +241,8 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                                                    rule_context)
         self.add_receiver_partner(receiver_company, rule_context)
         # next get the receiving location by the receiving party in the event
-        try:
-            receiver_location = self.get_company_by_identifier(
-                epcis_event=filtered_event, source_list=False
-            )
-        except Company.DoesNotExist:
-            receiver_location = self.get_location_by_identifier(
-                filtered_event, source_list=False
-            )
+        receiver_location = self.get_receiver_location(filtered_event)
+
         if not mapping_applied:
             owner_source = Source(
                 source_destination.SourceDestinationTypes.owning_party.value,
@@ -271,6 +265,25 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
             sender_location.SGLN: sender_location
         }
 
+    def get_receiver_location(self, filtered_event):
+        """
+        Will grab either the Company or Location quartet_masterdata.models
+        instance that correlates to the filtered event's receiver location
+        data.
+        :param filtered_event: The event that met the output criteria and
+        was filtered.
+        :return: The Company or Location model instance.
+        """
+        try:
+            receiver_location = self.get_company_by_identifier(
+                epcis_event=filtered_event, source_list=False
+            )
+        except Company.DoesNotExist:
+            receiver_location = self.get_location_by_identifier(
+                filtered_event, source_list=False
+            )
+        return receiver_location
+
     def get_sender_location(self, filtered_event):
         """
         The name is slightly misleading, this will return either a
@@ -291,7 +304,8 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
             )
         return sender_location
 
-    def append_mapping_info(self, filtered_event: EPCISBusinessEvent):
+    def append_mapping_info(self, filtered_event: EPCISBusinessEvent,
+                            use_receiver=True):
         """
         If the append partner step parameter is set, this will look for an
         outbound mapping in the system's master data and append the mappings
@@ -301,7 +315,10 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         :return: None
         """
         biz_step = getattr(filtered_event, 'biz_step', None)
-        company = self.get_sender_location(filtered_event)
+        if use_receiver:
+            company = self.get_receiver_location(filtered_event)
+        else:
+            company = self.get_sender_location(filtered_event)
         if biz_step and 'shipping' in biz_step:
             mapping = self.get_outbound_mapping_by_company(company)
             if mapping:
