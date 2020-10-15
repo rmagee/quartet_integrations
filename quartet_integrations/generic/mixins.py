@@ -14,18 +14,13 @@
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 from copy import copy
 
-from enum import Enum
-from gs123.conversion import URNConverter
 from EPCPyYes.core.v1_2 import template_events as events
+from EPCPyYes.core.v1_2.CBV import SourceDestinationTypes
 from EPCPyYes.core.v1_2.events import EPCISBusinessEvent
-from quartet_epcis.db_api.queries import EPCISDBProxy
-from quartet_masterdata.models import Company, Location
-from quartet_masterdata.db import DBProxy
+from gs123.conversion import URNConverter
 from quartet_capture.rules import RuleContext
-from EPCPyYes.core.v1_2.CBV import InstanceLotMasterDataAttribute, \
-    ItemLevelAttributeName, LotLevelAttributeName, \
-    TradeItemLevelAttributeName, SourceDestinationTypes
-from EPCPyYes.core.v1_2.events import Destination, Source
+from quartet_epcis.db_api.queries import EPCISDBProxy
+from quartet_masterdata.models import Company, Location, OutboundMapping
 
 
 class ObserveChildrenMixin:
@@ -86,6 +81,23 @@ class CompanyFromURNMixin:
 
     class CompanyNotFoundError(Exception):
         pass
+
+
+class OutboundMappingMixin:
+    def get_outbound_mapping_by_company(self, company: Company) -> OutboundMapping:
+        """
+        Grabs an outbound mapping from the master material configuration if
+        it exists and will return the mapping.  Otherwise, will return
+        none.
+        :return: An OutboundMapping model instance or None.
+        """
+        try:
+            return OutboundMapping.objects.get(company__id=company.pk)
+        except OutboundMapping.DoesNotExist:
+            if hasattr(self, 'info'):
+                self.info(
+                    'No outbound mapping is configured, using the filtered '
+                    'event trading partner data.')
 
 
 class CompanyLocationMixin:

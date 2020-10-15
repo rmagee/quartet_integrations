@@ -36,6 +36,7 @@ from EPCPyYes.core.v1_2.events import Source, Destination
 
 EventList = List[EPCISBusinessEvent]
 
+
 class ContextKeys(Enum):
     """
     RECEIVER_COMPANY
@@ -107,6 +108,7 @@ class OutputParsingStep(mixins.ObserveChildrenMixin, QOPS):
 
 
 class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
+                         mixins.OutboundMappingMixin,
                          mixins.CompanyLocationMixin):
     """
     Provides a new template for object events that includes gs1ushc
@@ -149,6 +151,10 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
             'Whether or not to call the modify date function on teh step'
             ' for events prior to rendering.'
         ) in ['True', 'true']
+        self.append_mapping = self.get_or_create_parameter(
+            'Add Partners to Shipping Events', 'True').lower() == 'true'
+        self.use_glns = self.get_or_create_parameter('Use GLNs for Owners',
+                                                     'True').lower() == 'true'
         ilmd = None
         schema_version = self.get_or_create_parameter('Schema Version', '1',
                                                       self.declared_parameters.get(
@@ -173,8 +179,12 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                     'Found some filtered object events.'
                     ' Looking up the receiver company by urn value/'
                     'company prefix.')
+                mapping_applied = False
+                if self.append_mapping:
+                    mapping_applied = self.append_mapping_info(filtered_events[0])
                 if self.add_sbdh:
-                    self.add_header(filtered_events[0], rule_context)
+                    self.add_header(filtered_events[0], rule_context,
+                                    mapping_applied)
                 # self.sbdh.partners.append(receiver)
                 for event in object_events:
                     event._template = self.template
@@ -194,8 +204,10 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         provide different behavior.
         """
         for epcis_event in epcis_events:
-            epcis_event.event_time = epcis_event.event_time.replace('+00:00', 'Z')
-            epcis_event.record_time = epcis_event.record_time.replace('+00:00', 'Z')
+            epcis_event.event_time = epcis_event.event_time.replace('+00:00',
+                                                                    'Z')
+            epcis_event.record_time = epcis_event.record_time.replace('+00:00',
+                                                                      'Z')
 
     def append_event_data(self, epcis_events: EventList):
         """
@@ -204,32 +216,26 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
         different behavior.
         """
         disposition = self.get_or_create_parameter(
-            'Added Disposition',Disposition.in_progress.value,
+            'Added Disposition', Disposition.in_progress.value,
             'The disposition to add to events that do not have one.'
         )
         for epcis_event in epcis_events:
             if not epcis_event.disposition:
                 epcis_event.disposition = disposition
 
-    def add_header(self, filtered_event: EPCISBusinessEvent, rule_context):
+    def add_header(self, filtered_event: EPCISBusinessEvent, rule_context,
+                   mapping_applied: bool):
         """
         Adds the SBDH data.
         :param object_events:
         :param rule_context:
+        :param mapping_applied: Whether or not an outbound mapping has
+        already been applied.
         :return:
         """
         # first get the receiver by the company prefix
         # noinspection PyTypeChecker
-        try:
-            sender_location = self.get_company_by_identifier(
-                filtered_event,
-                source_destination.SourceDestinationTypes.possessing_party.value
-            )
-        except Company.DoesNotExist:
-            sender_location = self.get_location_by_identifier(
-                filtered_event,
-                source_destination.SourceDestinationTypes.possessing_party.value
-            )
+        sender_location = self.get_sender_location(filtered_event)
         self.add_sender_partner(sender_location, rule_context)
         receiver_company = self.get_company_by_urn(filtered_event,
                                                    rule_context)
@@ -243,26 +249,117 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
             receiver_location = self.get_location_by_identifier(
                 filtered_event, source_list=False
             )
-        owner_source = Source(
-            source_destination.SourceDestinationTypes.owning_party.value,
-            receiver_company.SGLN)
-        owner_destination = Destination(
-            source_destination.SourceDestinationTypes.owning_party.value,
-            receiver_company.SGLN)
-        source_location = Source(
-            source_destination.SourceDestinationTypes.location.value,
-            sender_location.SGLN)
-        destination_location = Destination(
-            source_destination.SourceDestinationTypes.location.value,
-            receiver_location.SGLN)
-        filtered_event.source_list = [owner_source, source_location]
-        filtered_event.destination_list = [owner_destination,
-                                           destination_location]
+        if not mapping_applied:
+            owner_source = Source(
+                source_destination.SourceDestinationTypes.owning_party.value,
+                receiver_company.SGLN)
+            owner_destination = Destination(
+                source_destination.SourceDestinationTypes.owning_party.value,
+                receiver_company.SGLN)
+            source_location = Source(
+                source_destination.SourceDestinationTypes.location.value,
+                sender_location.SGLN)
+            destination_location = Destination(
+                source_destination.SourceDestinationTypes.location.value,
+                receiver_location.SGLN)
+            filtered_event.source_list = [owner_source, source_location]
+            filtered_event.destination_list = [owner_destination,
+                                               destination_location]
         rule_context.context['masterdata'] = {
             receiver_company.SGLN: receiver_company,
             receiver_location.SGLN: receiver_location,
             sender_location.SGLN: sender_location
         }
+
+    def get_sender_location(self, filtered_event):
+        """
+        The name is slightly misleading, this will return either a
+        quartet_masterdata.models Company or Location django model instance
+        if it can be found by the SGLN or GLN value in the message.
+        :param filtered_event: The event that has met the output criteria.
+        :return: The Company or Location model instance.
+        """
+        try:
+            sender_location = self.get_company_by_identifier(
+                filtered_event,
+                source_destination.SourceDestinationTypes.possessing_party.value
+            )
+        except Company.DoesNotExist:
+            sender_location = self.get_location_by_identifier(
+                filtered_event,
+                source_destination.SourceDestinationTypes.possessing_party.value
+            )
+        return sender_location
+
+    def append_mapping_info(self, filtered_event: EPCISBusinessEvent):
+        """
+        If the append partner step parameter is set, this will look for an
+        outbound mapping in the system's master data and append the mappings
+        if they are present.  This will only take place if the filtered event
+        is has a shipping business step.
+        :param company: The company in question.
+        :return: None
+        """
+        biz_step = getattr(filtered_event, 'biz_step', None)
+        company = self.get_sender_location(filtered_event)
+        if biz_step and 'shipping' in biz_step:
+            mapping = self.get_outbound_mapping_by_company(company)
+            if mapping:
+                senders = []
+                receivers = []
+                # from business
+                if mapping.from_business:
+                    from_business = mapping.from_business.GLN13 if self.use_glns else mapping.from_business.SGLN
+                    if from_business:
+                        senders.append(
+                            Source(
+                                source_destination.SourceDestinationTypes.possessing_party.value,
+                                from_business
+                            )
+                        )
+                        self.info('Appending %s as the posessing party.',
+                                  from_business)
+                # from location
+                if mapping.ship_from:
+                    ship_from = mapping.ship_from.SGLN
+                    if ship_from:
+                        senders.append(
+                            Source(
+                                source_destination.SourceDestinationTypes.location.value,
+                                ship_from
+                            )
+                        )
+                        self.info('Appending %s as the ship from party.',
+                                  ship_from)
+                # to business
+                if mapping.to_business:
+                    to_business = mapping.to_business.GLN13 if self.use_glns else mapping.to_business.SGLN
+                    if to_business:
+                        receivers.append(
+                            Destination(
+                                source_destination.SourceDestinationTypes.owning_party.value,
+                                to_business
+                            )
+                        )
+                        self.info(
+                            'Appending %s as the to business owning party.',
+                            to_business)
+                # to location
+                if mapping.ship_to:
+                    ship_to = mapping.ship_to.SGLN
+                    if ship_to:
+                        receivers.append(
+                            Destination(
+                                source_destination.SourceDestinationTypes.location.value,
+                                ship_to
+                            )
+                        )
+                        self.info('Appending %s as the ship to location.',
+                                  ship_to)
+                filtered_event.source_list = senders
+                filtered_event.destination_list = receivers
+                return True
+
 
     def add_receiver_location(self, receiver):
         pass
@@ -328,4 +425,11 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                                 'default is 1'
         ret['Add SBDH'] = 'Whether or not to add a Standard Business Document' \
                           ' Header to the EPCIS message.  Default is true.'
+        ret['Add Partners to Shipping Events'] = 'Whether or not to add any ' \
+                                                 'mapped partner info to ' \
+                                                 'shipping events.'
+        ret['Use GLNs for Owners'] = 'Whether or not to use SGLNs or GLNs for ' \
+                                     'owning parties in the shipping event ' \
+                                     'source destinations.  If true, GLNs will ' \
+                                     'be used. Default is False.'
         return ret

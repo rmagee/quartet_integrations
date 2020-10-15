@@ -20,7 +20,8 @@ from quartet_epcis.parsing.business_parser import BusinessEPCISParser
 from quartet_output import models
 from quartet_output.models import EPCISOutputCriteria
 from quartet_output.steps import SimpleOutputParser, ContextKeys
-from quartet_masterdata.models import Company, Location
+from quartet_masterdata.models import Company, Location, OutboundMapping
+
 
 class TestGS1USHC(TestCase):
 
@@ -28,7 +29,7 @@ class TestGS1USHC(TestCase):
         self.create_companies()
 
     def create_companies(self):
-        Company.objects.create(
+        cmo = Company.objects.create(
             name='CMO Corp',
             address1='Testing street',
             city='Testerville',
@@ -39,7 +40,7 @@ class TestGS1USHC(TestCase):
             GLN13='7777777777777',
             gs1_company_prefix='777777'
         )
-        Company.objects.create(
+        owner = Company.objects.create(
             name='Virtual Corp',
             address1='Imaginary street',
             city='Virtuality',
@@ -50,7 +51,7 @@ class TestGS1USHC(TestCase):
             GLN13='3055550000000',
             SGLN='urn:epc:id:sgln:3055555.0.0'
         )
-        Location.objects.create(
+        ship_from = Location.objects.create(
             name='C3PO',
             address1='Android Lane',
             city='Protocol Droid',
@@ -60,9 +61,57 @@ class TestGS1USHC(TestCase):
             GLN13='0842671116709',
             SGLN='urn:epc:id:sgln:0842671116.0.0',
         )
-
+        ship_to = Location.objects.create(
+            name='R2D2',
+            address1='Android Lane',
+            city='Astromech Droid',
+            state_province='PA',
+            postal_code='77777',
+            country='US',
+            GLN13='0842222216709',
+            SGLN='urn:epc:id:sgln:08222222.0.0',
+        )
+        OutboundMapping.objects.create(
+            company=cmo,
+            from_business=cmo,
+            ship_from=ship_from,
+            to_business=owner,
+            ship_to=ship_to
+        )
 
     def test_rule_with_agg_comm(self):
+        self._create_good_ouput_criterion()
+        db_rule = self._create_rule()
+        self._create_step(db_rule)
+        self._create_output_steps(db_rule)
+        self._create_comm_step(db_rule)
+        self._create_epcpyyes_step(db_rule)
+        db_task = self._create_task(db_rule)
+        curpath = os.path.dirname(__file__)
+        # prepopulate the db
+        self._parse_test_data('data/commissioning_three_events.xml')
+        self._parse_test_data('data/nested_pack.xml')
+        data_path = os.path.join(curpath, 'data/ship_pallet.xml')
+        with open(data_path, 'r') as data_file:
+            context = execute_rule(data_file.read().encode(), db_task)
+            self.assertEqual(
+                len(context.context[ContextKeys.AGGREGATION_EVENTS_KEY.value]),
+                3,
+                "There should be three filtered events."
+            )
+            for event in context.context[
+                ContextKeys.AGGREGATION_EVENTS_KEY.value]:
+                if event.parent_id in ['urn:epc:id:sgtin:305555.3555555.1',
+                                       'urn:epc:id:sgtin:305555.3555555.2']:
+                    self.assertEqual(len(event.child_epcs), 5)
+                else:
+                    self.assertEqual(len(event.child_epcs), 2)
+            self.assertIsNotNone(
+                context.context.get(
+                    ContextKeys.EPCIS_OUTPUT_CRITERIA_KEY.value)
+            )
+
+    def test_rule_with_agg_comm_mapping(self):
         self._create_good_ouput_criterion()
         db_rule = self._create_rule()
         self._create_step(db_rule)
@@ -319,5 +368,3 @@ class TestGS1USHC(TestCase):
 
     def tearDown(self):
         pass
-
-
