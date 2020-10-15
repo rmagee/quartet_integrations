@@ -332,7 +332,7 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                     if from_business:
                         senders.append(
                             Source(
-                                source_destination.SourceDestinationTypes.possessing_party.value,
+                                source_destination.SourceDestinationTypes.owning_party.value,
                                 from_business
                             )
                         )
