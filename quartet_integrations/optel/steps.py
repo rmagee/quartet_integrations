@@ -117,9 +117,7 @@ class OptelLineParsingStep(SAPParsingStep):
     A QU4RTET parsing step that can parse SAP XML data that contains
     custom event data.
     """
-
-    def __init__(self, db_task: models.Task, **kwargs):
-        super().__init__(db_task, **kwargs)
+    def execute(self, data, rule_context: RuleContext):
         self.replace_timezone = self.get_boolean_parameter('Replace Timezone',
                                                            False)
         self.loose_enforcement = self.get_boolean_parameter(
@@ -133,8 +131,6 @@ class OptelLineParsingStep(SAPParsingStep):
             'Use Top For Child Update', 'True',
             'Whether or not to use top records or true recursion.'
         ).lower() == "true"
-
-    def execute(self, data, rule_context: RuleContext):
         self.rule_context = rule_context
         super().execute(data, rule_context)
 
