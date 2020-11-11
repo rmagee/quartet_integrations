@@ -20,7 +20,7 @@ from EPCPyYes.core.v1_2 import template_events
 from EPCPyYes.core.v1_2 import template_events as yes_events, events
 from logging import getLogger
 from quartet_epcis.models import choices
-from quartet_epcis.parsing.business_parser import BusinessEPCISParser
+from quartet_epcis.parsing.context_parser import BusinessEPCISParser
 from quartet_integrations.gs1ushc import mixins
 from quartet_integrations.optel.epcpyyes import get_default_environment
 from quartet_output.parsing import BusinessOutputParser
@@ -41,7 +41,7 @@ class OptelOutputEPCISParser(BusinessOutputParser):
         )
 
 
-class OptelEPCISLegacyParser(mixins.ConversionMixin, BusinessEPCISParser):
+class OptelEPCISLegacyParser(BusinessEPCISParser, mixins.ConversionMixin):
     """
     Parses the old Optel non-compliant epcis data and converts
     to use-able EPCIS data for QU4RTET.  The conversion mixin handles

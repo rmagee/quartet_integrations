@@ -15,12 +15,14 @@
 
 from gs123.conversion import URNConverter
 from quartet_capture import models
+from quartet_capture.rules import RuleContext
 from quartet_integrations.optel.epcpyyes import get_default_environment
 from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
     ConsolidationParser
 from quartet_integrations.sap.steps import SAPParsingStep
 from quartet_output import steps
 from quartet_templates.models import Template
+
 
 class AddCommissioningDataStep(steps.AddCommissioningDataStep,
                                steps.DynamicTemplateMixin):
@@ -95,8 +97,8 @@ class AppendCommissioningStep(steps.AppendCommissioningStep,
             'Template': 'The name of the QU4RTET template to use if you '
                         'want to override the default template.',
             'EPC Filter Search': 'A search value that is used to filter '
-                                'out EPC values during processing.  Typically '
-                                'used to remove redundant EPC data.',
+                                 'out EPC values during processing.  Typically '
+                                 'used to remove redundant EPC data.',
             'Reverse Filter': 'Set to True if you want to use the regex '
                               'parameter to identify EPCs to include rather '
                               'than filter out.',
@@ -120,10 +122,29 @@ class OptelLineParsingStep(SAPParsingStep):
         super().__init__(db_task, **kwargs)
         self.replace_timezone = self.get_boolean_parameter('Replace Timezone',
                                                            False)
+        self.loose_enforcement = self.get_boolean_parameter(
+            'LooseEnforcement', False)
+        self.format = self.get_parameter('Format', 'XML')
+        self.recursive_child_update = self.get_or_create_parameter(
+            'Recursive Child Update', 'True',
+            "Whether or not to update children during observe events."
+        ).lower() == "true"
+        self.use_top_for_update = self.get_or_create_parameter(
+            'Use Top For Child Update', 'True',
+            'Whether or not to use top records or true recursion.'
+        ).lower() == "true"
+
+    def execute(self, data, rule_context: RuleContext):
+        self.rule_context = rule_context
+        super().execute(data, rule_context)
 
     def _parse(self, data):
-        return OptelEPCISLegacyParser(data).parse(
-            replace_timezone=self.replace_timezone
+        return OptelEPCISLegacyParser(
+            data, recursive_child_update=True,
+            child_update_from_top=self.use_top_for_update,
+            rule_context=self.rule_context,
+        ).parse(
+            replace_timezone=self.replace_timezone,
         )
 
     @property
