@@ -79,10 +79,10 @@ class OptelEPCISLegacyParser(BusinessEPCISParser, mixins.ConversionMixin):
 
 
 class OptelAutoShipParser(OptelEPCISLegacyParser):
-    def handle_object_event(self, epcis_event: yes_events.ObjectEvent):
+    def handle_aggregation_event(self, epcis_event: events.AggregationEvent):
         if epcis_event.action == Action.add.value:
             epcis_event.disposition = Disposition.in_transit
-        return super().handle_object_event(epcis_event)
+        return super().handle_aggregation_event(epcis_event)
 
 
 class ConsolidationParser(OptelEPCISLegacyParser):
