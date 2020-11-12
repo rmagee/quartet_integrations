@@ -18,6 +18,8 @@ from typing import List
 
 from EPCPyYes.core.v1_2 import template_events
 from EPCPyYes.core.v1_2 import template_events as yes_events, events
+from EPCPyYes.core.v1_2.events import Action
+from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
 from logging import getLogger
 from quartet_epcis.models import choices
 from quartet_epcis.parsing.context_parser import BusinessEPCISParser
@@ -74,6 +76,13 @@ class OptelEPCISLegacyParser(BusinessEPCISParser, mixins.ConversionMixin):
 
     def _parse_date(self, epcis_event):
         return self.get_event_time(epcis_event)
+
+
+class OptelAutoShipParser(OptelEPCISLegacyParser):
+    def handle_object_event(self, epcis_event: yes_events.ObjectEvent):
+        if epcis_event.action == Action.add.value:
+            epcis_event.disposition = Disposition.in_transit
+        return super().handle_object_event(epcis_event)
 
 
 class ConsolidationParser(OptelEPCISLegacyParser):

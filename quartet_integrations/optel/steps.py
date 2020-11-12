@@ -18,7 +18,7 @@ from quartet_capture import models
 from quartet_capture.rules import RuleContext
 from quartet_integrations.optel.epcpyyes import get_default_environment
 from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
-    ConsolidationParser
+    ConsolidationParser, OptelAutoShipParser
 from quartet_integrations.sap.steps import SAPParsingStep
 from quartet_output import steps
 from quartet_templates.models import Template
@@ -117,6 +117,7 @@ class OptelLineParsingStep(SAPParsingStep):
     A QU4RTET parsing step that can parse SAP XML data that contains
     custom event data.
     """
+
     def execute(self, data, rule_context: RuleContext):
         self.replace_timezone = self.get_boolean_parameter('Replace Timezone',
                                                            False)
@@ -150,6 +151,22 @@ class OptelLineParsingStep(SAPParsingStep):
                                      'timezone declarations in event times ' \
                                      'with the timezone offset in the event.'
         return params
+
+
+class OptelAutoShipStep(OptelLineParsingStep):
+    """
+    A QU4RTET parsing step that can parse SAP XML data that contains
+    custom event data.
+    """
+
+    def _parse(self, data):
+        return OptelAutoShipParser(
+            data, recursive_child_update=False,
+            child_update_from_top=False,
+            rule_context=self.rule_context,
+        ).parse(
+            replace_timezone=self.replace_timezone,
+        )
 
 
 class ConsolidationParsingStep(OptelLineParsingStep):
