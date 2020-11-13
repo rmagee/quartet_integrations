@@ -21,6 +21,8 @@ from EPCPyYes.core.v1_2 import template_events as yes_events, events
 from EPCPyYes.core.v1_2.events import Action
 from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
 from logging import getLogger
+
+from quartet_capture.rules import RuleContext
 from quartet_epcis.models import choices
 from quartet_epcis.parsing.context_parser import BusinessEPCISParser
 from quartet_integrations.gs1ushc import mixins
@@ -49,6 +51,19 @@ class OptelEPCISLegacyParser(mixins.ConversionMixin, BusinessEPCISParser):
     to use-able EPCIS data for QU4RTET.  The conversion mixin handles
     the gs1ushc namespace items.
     """
+
+    def __init__(self, stream, event_cache_size: int = 1024,
+                 recursive_decommission: bool = True,
+                 recursive_child_update: bool = False,
+                 child_update_from_top: bool = True,
+                 rule_context: RuleContext = None):
+        BusinessEPCISParser.__init__(
+            self,
+            stream, event_cache_size,
+            recursive_decommission,
+            recursive_child_update, child_update_from_top,
+            rule_context
+        )
 
     def parse(self, replace_timezone=False):
         """
