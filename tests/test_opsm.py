@@ -1,18 +1,11 @@
 import os
-
-from quartet_capture.models import Rule, StepParameter, Step
-from serialbox.models import Pool, ResponseRule
-from random_flavorpack import models
-from quartet_templates.models import Template
-from django.db import transaction
+from django.contrib.auth.models import User, Permission, Group
 from django.urls import reverse
 from rest_framework.test import APITestCase
+
+from quartet_integrations.management.commands import utils
 from random_flavorpack.management.commands.load_random_flavorpack_auth import \
     Command
-from serialbox.models import SequentialRegion
-from django.contrib.auth.models import User, Permission, Group
-from quartet_masterdata.models import TradeItem, Company
-from quartet_integrations.management.commands import utils
 
 
 class OPSMTestCase(APITestCase):

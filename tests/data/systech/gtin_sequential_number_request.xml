@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+  <soapenv:Header />
+  <soapenv:Body>
+    <ain:NumberRangeRequestMessage xmlns:ain="http://sap.com/xi/AIN">
+      <SendingSystem>Systech</SendingSystem>
+      <IDType>GS1_SER</IDType>
+      <EncodingType>SGTIN</EncodingType>
+      <Size>50</Size>
+      <ObjectKey>
+        <Name>GTIN</Name>
+        <Value>00377700000136</Value>
+      </ObjectKey>
+      <RequestRandomizedNumbers />
+    </ain:NumberRangeRequestMessage>
+  </soapenv:Body>
+</soapenv:Envelope>

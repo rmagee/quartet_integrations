@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP:Envelope xmlns:SOAP="http://schemas.xmlsoap.org/soap/envelope/">
+  <SOAP:Header />
+  <SOAP:Body>
+    <n0:NumberRangeResponseMessage xmlns:n0="http://sap.com/xi/AIN">
+      <ReceivingSystem>{{ task_parameters.sending_system }}</ReceivingSystem>
+      <ActionCode>C</ActionCode>
+      <EncodingType>{{ task_parameters.encoding_type }}</EncodingType>
+      <IDType>{{ task_parameters.id_type }}</IDType>
+      <Interval>
+        <NumberFrom>{{ '%012d' % data[0] }}</NumberFrom>
+        <NumberTo>{{ '%012d' % data[1] }}</NumberTo>
+      </Interval>
+      <ObjectKey>
+        <Name>{{ task_parameters.type }}</Name>
+        <Value>{{ task_parameters.machine_name }}</Value>
+      </ObjectKey>
+      <RandomizedNumberList />
+    </n0:NumberRangeResponseMessage>
+  </SOAP:Body>
+</SOAP:Envelope>
