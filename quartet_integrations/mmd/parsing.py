@@ -274,7 +274,7 @@ class TradeItemImportParser:
             )
 
         # Create the pallet_pack_count TradeItem Field
-        TradeItemField.objects.get_or_create(
+        TradeItemField.objects.get(
             trade_item=trade_item,
             name='pallet_pack_count',
             value=pallet_pack_count
