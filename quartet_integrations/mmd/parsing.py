@@ -130,7 +130,7 @@ class TradeItemImportParser:
         parsed_data = csv.DictReader(file_stream)
         """
         -- Field Values
-            0 = Item 
+            0 = Item
             1 =,, (The Header in the file is Empty but it is the UOM for Level 1.)
             2 = GTIN,
             3 = Level2 UOM,
@@ -373,7 +373,7 @@ class TradeItemImportParser:
         template = self.verify_request_template()
 
         try:
-            pool = Pool.objects.create(
+            pool = Pool.objects.get_or_create(
                 readable_name='%s | %s | %s' % (
                     trade_item.regulated_product_name, material_number,
                     trade_item.GTIN14),
@@ -397,7 +397,8 @@ class TradeItemImportParser:
             region.save()
             self.assign_response_rule(pool)
             self.create_processing_parameters(region)
-        except IntegrityError:
+        except IntegrityError as ie:
+            self.info_func(str(ie))
             self.info_func('Duplicate number range %s | %s being skipped' %
                            (trade_item.regulated_product_name, material_number))
 
