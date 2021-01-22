@@ -398,6 +398,7 @@ class TradeItemImportParser:
             self.assign_response_rule(pool)
             self.create_processing_parameters(region)
         except IntegrityError as ie:
+            self.info_func('Handling integrity exception...')
             self.info_func(str(ie))
             self.info_func('Duplicate number range %s | %s being skipped' %
                            (trade_item.regulated_product_name, material_number))
