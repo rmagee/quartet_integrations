@@ -379,7 +379,7 @@ class TradeItemImportParser:
                     trade_item.GTIN14),
                 machine_name=trade_item.GTIN14,
                 request_threshold=self.threshold
-            )
+            )[0]
             self.info_func('Creating a List Based Region in Pool {0} for {1}'.format(pool.readable_name, trade_item.GTIN14))
             region = ListBasedRegion(
                 readable_name=pool.readable_name,
