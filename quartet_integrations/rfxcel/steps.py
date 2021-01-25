@@ -25,6 +25,8 @@ from EPCPyYes.core.v1_2 import template_events
 from quartet_capture import models
 from list_based_flavorpack.processing_classes.third_party_processing.rules import \
     get_region_table
+from quartet_capture.models import Task, TaskParameter
+from serialbox.models import Pool, SequentialRegion
 
 
 class RFExcelOutputStep(EPCPyYesOutputStep):
@@ -63,7 +65,8 @@ class RFExcelOutputStep(EPCPyYesOutputStep):
         # if filtered events has more than one event then you know
         # the event in filtered events is a shipping event so grab that
         # and give it a new template
-        filtered_events = rule_context.context.get(ContextKeys.FILTERED_EVENTS_KEY.value)
+        filtered_events = rule_context.context.get(
+            ContextKeys.FILTERED_EVENTS_KEY.value)
         if len(filtered_events) > 0:
             template = self._get_shipping_template()
             filtered_events[0]._template = template
@@ -72,7 +75,7 @@ class RFExcelOutputStep(EPCPyYesOutputStep):
             object_events = rule_context.context.get(
                 ContextKeys.OBJECT_EVENTS_KEY.value, [])
             if len(object_events) > 0:
-                #here you are changing the object event templates
+                # here you are changing the object event templates
                 template = self._get_new_template()
                 for event in object_events:
                     event._template = template
@@ -80,10 +83,10 @@ class RFExcelOutputStep(EPCPyYesOutputStep):
             aggregation_events = rule_context.context.get(
                 ContextKeys.AGGREGATION_EVENTS_KEY.value, [])
 
-            if len(aggregation_events)>0:
-               template = self._get_aggregation_template()
-               for event in aggregation_events:
-                   event._template = template
+            if len(aggregation_events) > 0:
+                template = self._get_aggregation_template()
+                for event in aggregation_events:
+                    event._template = template
 
         super().execute(data, rule_context)
 
@@ -104,8 +107,6 @@ class RFExcelOutputStep(EPCPyYesOutputStep):
     @property
     def declared_parameters(self):
         return super().declared_parameters
-
-
 
 
 class NumberResponseStep(Step):
@@ -189,7 +190,8 @@ class RFXCELNumberResponseParserStep(Step):
     '''
     Parses the Number Response and writes them to a file in list-based format.
     '''
-    def execute(self, data, rule_context:RuleContext):
+
+    def execute(self, data, rule_context: RuleContext):
         '''
         Attempts to parse XML response and writes items to a file.
         '''
@@ -201,7 +203,8 @@ class RFXCELNumberResponseParserStep(Step):
         region = ListBasedRegion.objects.get(machine_name=param.value)
         try:
             root = etree.fromstring(rule_context.context["NUMBER_RESPONSE"])
-            id_list = root.find('.//{http://xmlns.rfxcel.com/traceability/identifier/3}idList')
+            id_list = root.find(
+                './/{http://xmlns.rfxcel.com/traceability/identifier/3}idList')
 
             numbers = []
 
@@ -212,7 +215,6 @@ class RFXCELNumberResponseParserStep(Step):
                 if "sscc" in urn.text:
                     sn = urn.text.split(":")[4].split('.')[1][1:]
                     numbers.append(sn)
-
 
             if not os.path.exists(region.db_file_path):
                 connection = sqlite3.connect(region.db_file_path)
@@ -234,8 +236,50 @@ class RFXCELNumberResponseParserStep(Step):
             connection.commit()
             self.info("Execution time: %.3f seconds." % (time.time() - start))
         except:
-            self.info("Error while processing response: %s", rule_context.context["NUMBER_RESPONSE"])
+            self.info("Error while processing response: %s",
+                      rule_context.context["NUMBER_RESPONSE"])
             raise
+
+    def on_failure(self):
+        super().on_failure()
+
+    @property
+    def declared_parameters(self):
+        return {}
+
+
+class SerialboxSSCCConversionStep(Step):
+    """
+    Converts serial box sequential or random numbers to the right format
+    for an SSCC response for an rfXcel request.
+
+    The machine name for any pool using this in a response rule must be in
+    the format of the extension digit plus the company prefix as one set
+    of digits, for example 00355555- where the first zero is the extension
+    digit and the 0355555 would be the company prefix.
+    """
+    def execute(self, data, rule_context: RuleContext):
+        # get the task
+        db_task = Task.objects.get(name=rule_context.task_name)
+        self.info('Executing against pool ')
+        machine_name = db_task.taskparameter_set.get(name='pool').value
+        self.info('Executing against pool %s.', machine_name)
+        # the first digit of the machine name is the extension digit
+        is_sequential = Pool.objects.get(
+            machine_name=machine_name).sequentialregion_set.count() != 0
+        extension_digit = machine_name[:1]
+        self.info('Is sequential? %s', is_sequential)
+        # the length of the company prefix is available
+        cp_len = len(machine_name[1:])
+        # the length of the serial number is the company prefix len - 16
+        num_len = 16 - cp_len
+        self.info('Number length = %s', num_len)
+        # if sequential you need to create a list
+        if is_sequential:
+            data = [str(num).zfill(num_len) for num in range(data[0], data[1])]
+        else:
+            data = [str(num).zfill(num_len) for num in data]
+        return data
 
     def on_failure(self):
         super().on_failure()
