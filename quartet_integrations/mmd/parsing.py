@@ -270,11 +270,10 @@ class TradeItemImportParser:
                 regulated_product_name=product_name,
                 NDC=ndc,
                 NDC_pattern=self.get_ndc_pattern(ndc)
-
             )
 
         # Create the pallet_pack_count TradeItem Field
-        TradeItemField.objects.get(
+        TradeItemField.objects.create(
             trade_item=trade_item,
             name='pallet_pack_count',
             value=pallet_pack_count
