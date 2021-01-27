@@ -258,8 +258,14 @@ class SerialboxSSCCConversionStep(Step):
     of digits, for example 00355555- where the first zero is the extension
     digit and the 0355555 would be the company prefix.
     """
+
     def execute(self, data, rule_context: RuleContext):
         # get the task
+        create_urns = self.get_or_create_parameter(
+            'Create URNs', 'True',
+            'If set to true URNs will be created, if false '
+            'the "packaging line" format will be used'
+        ).lower() == 'true'
         db_task = Task.objects.get(name=rule_context.task_name)
         self.info('Executing against pool ')
         machine_name = db_task.taskparameter_set.get(name='pool').value
@@ -267,7 +273,7 @@ class SerialboxSSCCConversionStep(Step):
         # the first digit of the machine name is the extension digit
         is_sequential = Pool.objects.get(
             machine_name=machine_name).sequentialregion_set.count() != 0
-        extension_digit = machine_name[:1]
+
         self.info('Is sequential? %s', is_sequential)
         # the length of the company prefix is available
         cp_len = len(machine_name[1:])
@@ -279,11 +285,28 @@ class SerialboxSSCCConversionStep(Step):
             data = [str(num).zfill(num_len) for num in range(data[0], data[1])]
         else:
             data = [str(num).zfill(num_len) for num in data]
+        if create_urns:
+            data = self.convert_numbers_to_urn(data, machine_name)
         return data
+
+    def convert_numbers_to_urn(self, data: list, machine_name: str):
+        """
+        Converts the serial-numbers to URNs if the Create URN step
+        parameter is set.
+        :param data: The serial numbers
+        :param machine_name: The machine name of the pool
+        :return: A list of urns.
+        """
+        # get the company prefix and extension digit from the machine name
+        company_prefix = machine_name[1:]
+        extension_digit = machine_name[:1]
+        return ['urn:epc:id:sscc:%s.%s%s' %
+                (company_prefix, extension_digit, d) for d in data]
 
     def on_failure(self):
         super().on_failure()
 
     @property
     def declared_parameters(self):
-        return {}
+        return {'Create URNs': 'If set to true URNs will be created, if false '
+                               'the "packaging line" format will be used'}
