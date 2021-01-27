@@ -282,7 +282,10 @@ class SerialboxSSCCConversionStep(Step):
         self.info('Number length = %s', num_len)
         # if sequential you need to create a list
         if is_sequential:
-            data = [str(num).zfill(num_len) for num in range(data[0], data[1])]
+            if len(data) > 1:
+                data = [str(num).zfill(num_len) for num in range(data[0], data[1])]
+            else:
+                data = [str(num).zfill(num_len) for num in data]
         else:
             data = [str(num).zfill(num_len) for num in data]
         if create_urns:
