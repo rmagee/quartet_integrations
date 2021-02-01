@@ -1,0 +1,14 @@
+<n0:MT_NumberRangeConfirmationMessage xmlns:n0="http://sap.com/xi/AIN">
+    <ReceivingSystem>{{ task_parameters.sending_system }}</ReceivingSystem>
+    <ActionCode>F</ActionCode>
+    <EncodingType>{{ task_parameters.encoding_type }}</EncodingType>
+    <IDType>{{ task_parameters.id_type }}</IDType>
+    <Interval>
+        <NumberFrom/>
+        <NumberTo/>
+    </Interval>
+    <ObjectKey>
+        <Name>{{ task_parameters.type }}</Name>
+        <Value>{{ task_parameters.machine_name }}</Value>
+    </ObjectKey>
+</n0:MT_NumberRangeConfirmationMessage>

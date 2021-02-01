@@ -5,11 +5,11 @@
         <ain:NumberRangeRequestMessage xmlns:ain="http://sap.com/xi/AIN">
             <SendingSystem>Systech</SendingSystem>
             <IDType>GS1_SER</IDType>
-            <EncodingType>SGTIN</EncodingType>
+            <EncodingType>SSCC</EncodingType>
             <Size>50</Size>
             <ObjectKey>
-                <Name>GTIN</Name>
-                <Value>00377700000136</Value>
+                <Name>GCP</Name>
+                <Value>00355555</Value>
             </ObjectKey>
             <RequestRandomizedNumbers/>
         </ain:NumberRangeRequestMessage>

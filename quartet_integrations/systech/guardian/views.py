@@ -89,8 +89,9 @@ class GuardianNumberRangeView(AllocateView):
             if child.text and (
                 'GTIN' in child.text
                 or 'SSCC' in child.text
+                or 'GCP' in child.text
             ):
-                logger.debug('Found GTIN or SSCC object key...getting '
+                logger.debug('Found GTIN, GCP or SSCC object key...getting '
                              'the machine name.')
                 name = child.text
             elif name and 'Value' in child.tag:
