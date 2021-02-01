@@ -49,6 +49,7 @@ class GuardianTestCase(APITestCase):
         self.random_rule = self.create_random_rule()
         self.create_random_response_rule()
         self.create_sscc_pool()
+        self.create_random_sscc_pool()
 
     def create_sscc_pool(self):
         pool = Pool.objects.create(
@@ -70,10 +71,10 @@ class GuardianTestCase(APITestCase):
             content_type='xml'
         )
 
-    def create_sscc_pool(self):
+    def create_random_sscc_pool(self):
         pool = Pool.objects.create(
             machine_name='10355555',
-            readable_name='Unit test ssccc'
+            readable_name='Random Unit test ssccc'
         )
         region = RandomizedRegion.objects.create(
             machine_name=pool.machine_name,
