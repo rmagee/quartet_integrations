@@ -90,7 +90,7 @@ class CreateOutputTaskStep(COTS):
             rule_context.context.get(
                 ContextKeys.EPCIS_OUTPUT_CRITERIA_KEY.value):
             raise self.FailedShipmentException(
-                rule_context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY])
+                rule_context.context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value])
 
     class FailedShipmentException(Exception):
         pass
