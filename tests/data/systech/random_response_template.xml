@@ -13,7 +13,7 @@
     </ObjectKey>
     <RandomizedNumberList>
         {% for number in data %}
-            <SerialNumber>{{ number }}</SerialNumber>
+            <SerialNo>{{ number }}</SerialNo>
         {% endfor %}
     </RandomizedNumberList>
 </n0:MT_NumberRangeConfirmationMessage>
