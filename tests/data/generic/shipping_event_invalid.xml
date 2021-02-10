@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<EPCISDocument xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="0" creationDate="2021-02-02T04:00:11" xmlns="urn:epcglobal:epcis:xsd:1">
+    <EPCISBody xmlns="">
+        <EventList>
+            <ObjectEvent>
+                <eventTime>2021-02-02T04:00:11</eventTime>
+                <eventTimeZoneOffset>+00:00</eventTimeZoneOffset>
+                <epcList>
+                    <epc>urn:epc:id:sscc:03555555555.200000</epc>
+                </epcList>
+                <action>OBSERVE</action>
+                <bizStep>urn:epcglobal:cbv:bizstep:shipping</bizStep>
+                <disposition>urn:epcglobal:cbv:disp:in_transit</disposition>
+                <readPoint>
+                    <id>urn:epc:id:sgln:03555555555.0.0</id>
+                </readPoint>
+                <bizLocation>
+                    <id>urn:epc:id:sgln:03555555555.0.0</id>
+                </bizLocation>
+                <bizTransactionList>
+                    <bizTransaction type="urn:epcglobal:cbv:btt:poc">urn:epcglobal:cbv:bt:SO0000035</bizTransaction>
+                </bizTransactionList>
+                <extension>
+                    <sourceList>
+                        <source type="urn:epcglobal:cbv:sdt:possessing_party">urn:epc:id:sgln:08600003979.0.0</source>
+                        <source type="urn:epcglobal:cbv:sdt:location">urn:epc:id:sgln:08600003979.0.0</source>
+                        <source type="urn:epcglobal:cbv:sdt:owning_party">urn:epc:id:sgln:08600003979.0.0</source>
+                    </sourceList>
+                    <destinationList />
+                </extension>
+            </ObjectEvent>
+        </EventList>
+    </EPCISBody>
+</EPCISDocument>
