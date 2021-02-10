@@ -1,0 +1,20 @@
+<SOAP:Envelope xmlns:SOAP="http://schemas.xmlsoap.org/soap/envelope/">
+    <SOAP:Header/>
+    <SOAP:Body>
+        <NumberRangeResponseMessage>
+            <ReceivingSystem>{{task_parameters.sending_system}}</ReceivingSystem>
+            <ActionCode>C</ActionCode>
+            <EncodingType>{{task_parameters.encoding_type}}</EncodingType>
+            <IDType>{{task_parameters.id_type}}</IDType>
+            <Interval>
+                <NumberFrom>{{ '%09d' % data[0] }}</NumberFrom>
+                <NumberTo>{{ '%09d' % data[1] }}</NumberTo>
+            </Interval>
+            <ObjectKey>
+                <Name>{{task_parameters.type}}</Name>
+                <Value>{{task_parameters.machine_name}}</Value>
+            </ObjectKey>
+            <RandomizedNumberList/>
+        </NumberRangeResponseMessage>
+    </SOAP:Body>
+</SOAP:Envelope>
