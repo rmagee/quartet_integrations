@@ -99,8 +99,7 @@ class GuardianNumberRangeView(AllocateView):
                 value = child.text
         return name, value
 
-    def _set_task_parameters(self, pool, region, response_rule, size, request,
-                             template_name):
+    def _set_task_parameters(self, pool, region, response_rule, size, request):
         """
         Override the _set_task_parameters so that we can pass in the
         additional systech parameters for the rule.
