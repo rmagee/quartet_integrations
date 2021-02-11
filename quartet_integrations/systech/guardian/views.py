@@ -105,11 +105,11 @@ class GuardianNumberRangeView(AllocateView):
         additional systech parameters for the rule.
         """
         sequential_sscc_rule = getattr(settings,
-                                       'SYSTECH_SEQUENTIAL_SSCC_RULE'
+                                       'SYSTECH_SEQUENTIAL_SSCC_RULE',
                                        'Systech Sequential Number Reply'
                                        )
         random_sscc_rule = getattr(settings,
-                                       'SYSTECH_RANDOM_SSCC_RULE'
+                                       'SYSTECH_RANDOM_SSCC_RULE',
                                        'Systech Random Number Reply'
                                        )
         db_task = super()._set_task_parameters(pool, region, response_rule,
