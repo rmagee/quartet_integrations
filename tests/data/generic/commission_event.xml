@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<EPCISDocument xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="0" creationDate="2021-02-05T17:35:56" xmlns="urn:epcglobal:epcis:xsd:1">
+    <EPCISBody xmlns="">
+        <EventList>
+            <ObjectEvent>
+                <eventTime>2021-02-05T17:35:56</eventTime>
+                <eventTimeZoneOffset>+00:00</eventTimeZoneOffset>
+                <epcList>
+                    <epc>urn:epc:id:sscc:03555555555.100000</epc>
+                </epcList>
+                <action>ADD</action>
+                <bizStep>urn:epcglobal:cbv:bizstep:commissioning</bizStep>
+                <disposition>urn:epcglobal:cbv:disp:encoded</disposition>
+                <readPoint>
+                    <id>urn:epc:id:sgln:03555555555.0.0</id>
+                </readPoint>
+                <bizLocation>
+                    <id>urn:epc:id:sgln:03555555555.0.0</id>
+                </bizLocation>
+            </ObjectEvent>
+        </EventList>
+    </EPCISBody>
+</EPCISDocument>

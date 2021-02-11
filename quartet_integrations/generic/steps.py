@@ -12,14 +12,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2020 SerialLab Corp.  All rights reserved.
-from quartet_capture import models
+from quartet_capture import models, errors as capture_errors
 from quartet_capture.rules import Step, RuleContext
 from quartet_epcis.parsing.steps import EPCISParsingStep
 from quartet_epcis.parsing.errors import EntryException
 from quartet_integrations.generic.parsing import FailedMessageParser
 from quartet_output.steps import ContextKeys, CreateOutputTaskStep as COTS
 from io import BytesIO
-
+from quartet_output.steps import TransportStep
+from quartet_output.models import EPCISOutputCriteria, EndPoint
+from django.utils.translation import gettext as _
 
 class MyStep(Step):
     def execute(self, data, rule_context: RuleContext):
@@ -67,6 +69,12 @@ class EPCISNotifcationStep(EPCISParsingStep):
                 rule_context.context[
                     ContextKeys.EPCIS_OUTPUT_CRITERIA_KEY.value
                 ] = self.output_criteria
+                models.TaskParameter.objects.create(
+                    name='EPCIS Output Criteria',
+                    value=self.output_criteria,
+                    description='Contains Endpoint infomation about'
+                                'where to send the error message to.',
+                    task=self.task)
             return data
 
     def create_messsage(self, data):
@@ -91,6 +99,115 @@ class CreateOutputTaskStep(COTS):
                 ContextKeys.EPCIS_OUTPUT_CRITERIA_KEY.value):
             raise self.FailedShipmentException(
                 rule_context.context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value])
+
+    class FailedShipmentException(Exception):
+        pass
+
+
+class ErrorReportTransportStep(TransportStep):
+    """
+    In case of EntryException in  EPCISNotifcationStep (parsing step)
+    notification is sent with error report to the specified end point in
+    EPCIS Output Criteria (by default this should be an email - mailto).
+    If no EntryException then this step is skipped.
+    """
+
+    def execute(self, data, rule_context: RuleContext):
+        if rule_context.context.get(
+                ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value, None):
+            # Error msg found
+            self.info('Performing error message routine.')
+            super().execute(data, rule_context)
+            self.info('Error message sent successfully.')
+            raise self.FailedShipmentException(
+                rule_context.context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value])
+        else:
+            self.info('There was no entry error so this step is skipped.')
+
+
+    def send_email(self, data: str, rule_context: RuleContext,
+                   output_criteria: EPCISOutputCriteria,
+                   info_func,
+                   file_extension='txt',
+                   mimetype='text/plain'):
+        '''
+        Inserts/Changes body param into the mailto email and then
+        runs original send_email method. 
+
+        :param data: The data to send.
+        :param rule_context: The quartet capture rules.RuleContext instance
+            from the currently running rule.
+        :param output_criteria: The models.OutputCriteria instance from the
+            current TransportStep being executed.
+        :param info_func: The info logging function from the calling step
+            class.
+        :param file_extension: This is the file extension for the attachement
+            being sent.  It is best to leave it as txt even if the "real" data is
+            JSON or XML since many email filters will block those formats.
+        :param mimetype: The mimetype of the attachment.  Default is text/plain.
+        :return: None.
+        '''
+        # Get message body text from rule_context
+        msg_body = rule_context.context[
+                    ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value
+                ]
+        # temporarily change output_criteria.end_point.urn so it 
+        # contains correct message inside body paramerer
+        self.info('Assembling body from the message email message.')
+        output_criteria.end_point.urn = self.set_email_fields(
+            output_criteria.end_point.urn, msg_body
+        )
+        self.info('Email message assembled.')
+        # Execute original send_email method to send thr email
+        super().send_email(
+            data,
+            rule_context,
+            output_criteria,
+            self.info,
+            file_extension,
+            mimetype
+        )
+
+    def set_email_fields(self, mailto: str,
+                         body: str,
+                         ):
+        """
+        Inserts or changes body praam in an email in mailto format
+
+        :param mailto: email urn in mailto format
+
+        :param body: message which will be inserted into body
+        
+        :return: new mailto urn with body param inserted
+        """
+        # Separate email address from parameters
+        try:
+            email_address, parameters = mailto.split('?')
+        except ValueError:
+            # in case of no params join body and return
+            return '?'.join([mailto, 'body=%s' % body])
+        # Separate parameters
+        parameters = parameters.split('&')
+        # Find body parameter
+        # If there is no body param then "index_of" will be -1
+        index_of = -1
+        try:
+            for param in parameters:
+                if param.lower().startswith('body='):
+                    index_of = parameters.index(param)
+                    break
+        except ValueError:
+            pass
+        # Add/Set body param
+        if index_of == -1:
+            parameters.append('body=%s' % body)
+        else:
+            parameters[index_of] = 'body=%s' % body
+        # reassemble email address with params
+        parameters = '&'.join(parameters)
+        ret = '?'.join([email_address, parameters])
+        # and then return it
+        return ret
 
     class FailedShipmentException(Exception):
         pass
