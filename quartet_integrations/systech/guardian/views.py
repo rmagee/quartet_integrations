@@ -99,13 +99,23 @@ class GuardianNumberRangeView(AllocateView):
                 value = child.text
         return name, value
 
-    def _set_task_parameters(self, pool, region, response_rule, size, request):
+    def _set_task_parameters(self, pool, region, response_rule, size, request,
+                             template_name):
         """
         Override the _set_task_parameters so that we can pass in the
         additional systech parameters for the rule.
         """
-        db_task = super()._set_task_parameters(pool, region, response_rule, size,
-                                            request)
+        sequential_sscc_rule = getattr(settings,
+                                       'SYSTECH_SEQUENTIAL_SSCC_RULE'
+                                       'Systech Sequential Number Reply'
+                                       )
+        random_sscc_rule = getattr(settings,
+                                       'SYSTECH_RANDOM_SSCC_RULE'
+                                       'Systech Random Number Reply'
+                                       )
+        db_task = super()._set_task_parameters(pool, region, response_rule,
+                                               size,
+                                               request)
         TaskParameter.objects.create(
             task=db_task,
             name='id_type',
