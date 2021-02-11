@@ -1,0 +1,15 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <NumberRangeRequestMessage>
+            <SendingSystem>Systech</SendingSystem>
+            <IDType>GS1_SER</IDType>
+            <EncodingType>SSCC</EncodingType>
+            <Size>50</Size>
+            <ObjectKey>
+                <Name>COMPANY_PREFIX</Name>
+                <Value>10355555</Value>
+            </ObjectKey>
+        </NumberRangeRequestMessage>
+    </soapenv:Body>
+</soapenv:Envelope>
