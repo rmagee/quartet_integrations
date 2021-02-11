@@ -1,0 +1,24 @@
+<SOAP:Envelope xmlns:SOAP="http://schemas.xmlsoap.org/soap/envelope/">
+    <SOAP:Header/>
+    <SOAP:Body>
+        <NumberRangeResponseMessage>
+            <ReceivingSystem>{{task_parameters.sending_system}}</ReceivingSystem>
+            <ActionCode>C</ActionCode>
+            <EncodingType>{{task_parameters.encoding_type}}</EncodingType>
+            <IDType>{{task_parameters.id_type}}</IDType>
+            <Interval>
+                <NumberFrom/>
+                <NumberTo/>
+            </Interval>
+            <ObjectKey>
+                <Name>{{task_parameters.type}}</Name>
+                <Value>{{task_parameters.machine_name}}</Value>
+            </ObjectKey>
+            <RandomizedNumberList>
+            {% for serial_num in range(data[0], data[1]+1) %}
+                <SerialNo>{{ '%09d' % serial_num }}</SerialNo>
+            {% endfor %}
+            </RandomizedNumberList>
+        </NumberRangeResponseMessage>
+    </SOAP:Body>
+</SOAP:Envelope>
