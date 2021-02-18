@@ -1,0 +1,22 @@
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
+	<S:Body>
+		<ns2:serialNumbersRequestResponse xmlns:ns2="urn:tracelink:soap">
+			<SNResponse>
+                <ReceivingSystem>{{ task_parameters.sending_system }}</ReceivingSystem>
+                <SendingSystem>{{ task_parameters.receiving_system }}</SendingSystem>
+                <ActionCode>C</ActionCode>
+                <EncodingType>{{ task_parameters.encoding_type }}</EncodingType>
+                <IDType>{{ task_parameters.id_type }}</IDType>
+                <ObjectKey>
+                    <Name>{{ task_parameters.type }}</Name>
+                    <Value>{{ task_parameters.machine_name }}</Value>
+                </ObjectKey>
+                <RandomizedNumberList>
+                    {% for number in data %}
+                    <SerialNo>{{ number }}</SerialNo>
+                    {% endfor %}
+                </RandomizedNumberList>
+			</SNResponse>
+		</ns2:serialNumbersRequestResponse>
+	</S:Body>
+</S:Envelope>

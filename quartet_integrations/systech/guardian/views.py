@@ -12,22 +12,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2020 SerialLab Corp.  All rights reserved.
-from django.contrib.auth import authenticate
-from django.conf import settings
-from django.db.models import ObjectDoesNotExist
-from lxml import etree
-from rest_framework import status
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework.authentication import BasicAuthentication
-from rest_framework_xml import parsers
-
 from logging import getLogger
-from quartet_capture import views as capture_views
-from quartet_capture.models import TaskParameter
-from serialbox.api.views import AllocateView
+
+from django.conf import settings
 from io import BytesIO
+from lxml import etree
+
+from quartet_capture.models import TaskParameter
+from rest_framework_xml import parsers
+from serialbox.api.views import AllocateView
 
 logger = getLogger(__name__)
 
@@ -58,6 +51,19 @@ class GuardianNumberRangeView(AllocateView):
                             events=('end',),
                             remove_comments=True)
         count = None
+        count = self.parse_xml(request_data)
+        ret = super().get(request, self.machine_name, count)
+        return ret
+
+    def parse_xml(self, request_data) -> int:
+        """
+        Override to handle different parsing scenarios.  Populates the
+        instance fields and returns teh
+        :param count:
+        :param request_data:
+        :return:
+        """
+        count = 0
         for event, element in request_data:
             print(element.tag)
             if 'ObjectKey' in element.tag:
@@ -73,8 +79,7 @@ class GuardianNumberRangeView(AllocateView):
             elif 'SendingSystem' in element.tag:
                 self.sending_system = element.text
             print(element.tag)
-        ret = super().get(request, self.machine_name, count)
-        return ret
+        return count
 
     def check_object_key(self, object_key: etree.Element) -> tuple:
         """
@@ -104,14 +109,6 @@ class GuardianNumberRangeView(AllocateView):
         Override the _set_task_parameters so that we can pass in the
         additional systech parameters for the rule.
         """
-        sequential_sscc_rule = getattr(settings,
-                                       'SYSTECH_SEQUENTIAL_SSCC_RULE',
-                                       'Systech Sequential Number Reply'
-                                       )
-        random_sscc_rule = getattr(settings,
-                                       'SYSTECH_RANDOM_SSCC_RULE',
-                                       'Systech Random Number Reply'
-                                       )
         db_task = super()._set_task_parameters(pool, region, response_rule,
                                                size,
                                                request)

@@ -175,6 +175,7 @@ class ListToUrnConversionStep(Step):
         if not converter:
             class Converter:
                 pass
+
             converter = Converter()
             converter.company_prefix = company_prefix
             converter.extension_digit = extension_digit
@@ -304,14 +305,18 @@ class ListToBarcodeConversionStep(Step):
 
         self.extension_digit = int(self.get_or_create_parameter(
             'Extension Digit', '0',
-            'A single numeric value from 0-9 for any SSCC responses.'
+            'A single numeric value from 0-9 for any SSCC responses. If a '
+            'task parameter is supplied with this value, then the task '
+            'parameter will be used instead.'
         ))
 
         self.company_prefix = self.get_or_create_parameter(
             'Company Prefix', '',
             'If serving SSCC values using this step in a Response Rule, '
             'you must configure the company prefix for SSCC values '
-            'explicitly in the step.  This is Not used for GTINs.'
+            'explicitly in the step.  This is Not used for GTINs. If there is'
+            'a task parameter named company_prefix, this parameter will be '
+            'used instead.'
         )
 
         if self.extension_digit > 9 or self.extension_digit < 0:
@@ -328,7 +333,10 @@ class ListToBarcodeConversionStep(Step):
         """
         task_params = self.get_task_parameters(rule_context)
         pool = task_params['pool']
-
+        self.company_prefix = task_params.get('company_prefix',
+                                              self.company_prefix)
+        self.extension_digit = task_params.get('extension_digit',
+                                               self.extension_digit)
         self.info('Working against Pool with machine name %s', pool)
 
         self.info('Looking up the company prefix by using the pool '
@@ -418,7 +426,7 @@ class ListToBarcodeConversionStep(Step):
             )
         padding = 17 - (len(self.company_prefix) + 1)
         if sequential and len(data) == 2 and self.create_list == True:
-            data = range(data[0], data[1]+1)
+            data = range(data[0], data[1] + 1)
         for number in data:
             return_vals.append(
                 self.format_sscc_barcode(number, padding)
