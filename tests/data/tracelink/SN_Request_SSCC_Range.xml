@@ -1,0 +1,16 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:tracelink:soap">
+	<soapenv:Header/>
+	<soapenv:Body>
+		<urn:serialNumbersRequest>
+			<SendingSystem>OPTEL_DEMO</SendingSystem>
+			<ReceivingSystem>OPTEL_HQ</ReceivingSystem>
+			<IdType>GS1_SER</IdType>
+			<EncodingType>SSCC</EncodingType>
+			<Size>2</Size>
+			<ObjectKey>
+				<Name>COMPANY_PREFIX</Name>
+				<Value>0355555|0</Value>
+			</ObjectKey>
+		</urn:serialNumbersRequest>
+	</soapenv:Body>
+</soapenv:Envelope>
