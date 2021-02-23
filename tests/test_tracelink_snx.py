@@ -185,7 +185,7 @@ class TraceLinkSNXTestCase(APITestCase):
         with open(data_path, 'r') as f:
             content = f.read()
             Template.objects.create(
-                name='TraceLink Sequential Response',
+                name='TraceLink Sequential GTIN Response',
                 content=content,
                 description='The tracelink response template'
             )
@@ -198,7 +198,7 @@ class TraceLinkSNXTestCase(APITestCase):
         with open(data_path, 'r') as f:
             content = f.read()
             Template.objects.create(
-                name='TraceLink Random Response',
+                name='TraceLink Random GTIN Response',
                 content=content,
                 description='The tracelink random response template'
             )
@@ -261,7 +261,7 @@ class TraceLinkSNXTestCase(APITestCase):
         )
         StepParameter.objects.create(
             name='Template Name',
-            value='TraceLink Sequential Response',
+            value='TraceLink Sequential GTIN Response',
             step=template_step
         )
         return rule
@@ -280,7 +280,7 @@ class TraceLinkSNXTestCase(APITestCase):
         )
         StepParameter.objects.create(
             name='Template Name',
-            value='TraceLink Random Response',
+            value='TraceLink Random GTIN Response',
             step=template_step
         )
         return rule
