@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from rest_framework.test import APITestCase
 from django.contrib.auth.models import User
 from django.urls import reverse
-from quartet_epcis.parsing.business_parser import BusinessEPCISParser
+from quartet_epcis.parsing.context import BusinessEPCISParser
 from quartet_masterdata.models import TradeItem, TradeItemField, Company, \
     Location
 

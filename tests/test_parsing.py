@@ -24,7 +24,7 @@ from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
 from quartet_capture.models import Rule, Step, Task, StepParameter
 from quartet_capture.tasks import execute_rule
 from quartet_epcis.models import events
-from quartet_epcis.parsing.business_parser import BusinessEPCISParser
+from quartet_epcis.parsing.context import BusinessEPCISParser
 from quartet_integrations.sap.parsing import SAPParser
 from quartet_masterdata import models
 from quartet_output.models import EPCISOutputCriteria, EndPoint
