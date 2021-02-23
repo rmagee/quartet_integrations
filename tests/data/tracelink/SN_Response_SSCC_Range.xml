@@ -13,7 +13,7 @@
                 </Interval>
                 <ObjectKey>
                     <Name>{{ task_parameters.type }}</Name>
-                    <Value>{{ task_parameters.machine_name }}</Value>
+                    <Value>{{ task_parameters.company_prefix }}|{{ task_parameters.extension_digit }}</Value>
                 </ObjectKey>
             </SNResponse>
         </ns2:serialNumbersRequestResponse>
