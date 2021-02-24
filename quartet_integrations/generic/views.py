@@ -19,6 +19,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_xml.renderers import XMLRenderer
+from rest_framework.parsers import JSONParser
 from quartet_capture.parsers import RawParser
 import json
 
@@ -32,6 +33,9 @@ class LoggingView(APIView):
     permission_classes = [AllowAny]
     renderer_classes = [TaskXMLRenderer]
     parser_classes = [RawParser]
+
+    def get(self, request):
+        return Response("<echo>OK</echo>")
 
     def post(self, request: Request, format=None):
         """
