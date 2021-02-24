@@ -25,37 +25,30 @@ from serialbox.api.views import AllocateView
 logger = getLogger(__name__)
 
 from rest_framework.negotiation import DefaultContentNegotiation
+from rest_framework_xml.renderers import XMLRenderer
 
-
-class DefaultTextXMLContent(DefaultContentNegotiation):
-
-    def select_renderer(self, request, renderers, format_suffix):
-        """
-        Use the XML renderer as default.
-        """
-        # Allow URL style format override.  eg. "?format=json
-        format_query_param = self.settings.URL_FORMAT_OVERRIDE
-        format = format_suffix or request.query_params.get(format_query_param)
-        request.query_params.get(format_query_param)
-        for renderer in renderers:
-            if renderer.media_type == "application/xml":
-                renderer.media_type = "text/xml"
-                return (renderer, "text/xml")
-        return DefaultContentNegotiation.select_renderer(self, request,
-                                                         renderers, format)
-
+class GuardianRenderer(XMLRenderer):
+    '''
+    Overrrides the basic XMLRenderer and uses the
+    `EPCPyYes.core.v1_2.template_events` Event class's .render() output
+    directly since that output is already encoded into XML.
+    '''
+    media_type = "text/xml"
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        if isinstance(data, str):
+            ret = data.encode(self.charset)
+        else:
+            ret = super().render(data, accepted_media_type, renderer_context)
+        return ret
 
 parser_classes = [parsers.XMLParser]
-content_negotiation_class = DefaultTextXMLContent
-
 
 class GuardianNumberRangeView(AllocateView):
     """
     Will process inbound Guardian Number Range requests and return accordingly.
     This is a SOAP interface and supports only the POST operation.
     """
-
-    content_negotiation_class = DefaultTextXMLContent
+    renderer_classes = [GuardianRenderer]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
