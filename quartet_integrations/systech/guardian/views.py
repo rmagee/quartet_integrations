@@ -37,12 +37,10 @@ class DefaultTextXMLContent(DefaultContentNegotiation):
         format_query_param = self.settings.URL_FORMAT_OVERRIDE
         format = format_suffix or request.query_params.get(format_query_param)
         request.query_params.get(format_query_param)
-        header = request.META.get('HTTP_ACCEPT', '*/*')
-        if request.content_type == "text/xml":
-            for renderer in renderers:
-                if renderer.media_type == "application/xml":
-                    renderer.media_type = "text/xml"
-                    return (renderer, "text/xml")
+        for renderer in renderers:
+            if renderer.media_type == "application/xml":
+                renderer.media_type = "text/xml"
+                return (renderer, "text/xml")
         return DefaultContentNegotiation.select_renderer(self, request,
                                                          renderers, format)
 
