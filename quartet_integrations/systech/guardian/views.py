@@ -24,11 +24,31 @@ from serialbox.api.views import AllocateView
 
 logger = getLogger(__name__)
 
-from quartet_integrations.rocit.views import DefaultXMLContent
+from rest_framework.negotiation import DefaultContentNegotiation
 
-content_negotiation_class = DefaultXMLContent
+
+class DefaultTextXMLContent(DefaultContentNegotiation):
+
+    def select_renderer(self, request, renderers, format_suffix):
+        """
+        Use the XML renderer as default.
+        """
+        # Allow URL style format override.  eg. "?format=json
+        format_query_param = self.settings.URL_FORMAT_OVERRIDE
+        format = format_suffix or request.query_params.get(format_query_param)
+        request.query_params.get(format_query_param)
+        header = request.META.get('HTTP_ACCEPT', '*/*')
+        if request.content_type == "text/xml":
+            for renderer in renderers:
+                if renderer.media_type == "application/xml":
+                    renderer.media_type = "text/xml"
+                    return (renderer, "text/xml")
+        return DefaultContentNegotiation.select_renderer(self, request,
+                                                         renderers, format)
+
 
 parser_classes = [parsers.XMLParser]
+content_negotiation_class = DefaultTextXMLContent
 
 
 class GuardianNumberRangeView(AllocateView):
@@ -36,6 +56,8 @@ class GuardianNumberRangeView(AllocateView):
     Will process inbound Guardian Number Range requests and return accordingly.
     This is a SOAP interface and supports only the POST operation.
     """
+
+    content_negotiation_class = DefaultTextXMLContent
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
