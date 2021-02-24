@@ -22,6 +22,7 @@ from rest_framework_xml.renderers import XMLRenderer
 from rest_framework.parsers import JSONParser
 from quartet_capture.parsers import RawParser
 import json
+from quartet_capture.models import Task
 
 class TaskXMLRenderer(XMLRenderer):
 
@@ -29,10 +30,11 @@ class TaskXMLRenderer(XMLRenderer):
         return data
 
 class LoggingView(APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
+    #authentication_classes = []
+    #permission_classes = [AllowAny]
     renderer_classes = [TaskXMLRenderer]
     parser_classes = [RawParser]
+    queryset = Task.objects.all()
 
     def get(self, request):
         return Response("<echo>OK</echo>")
