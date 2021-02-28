@@ -14,17 +14,16 @@
 # Copyright 2020 SerialLab Corp.  All rights reserved.
 from logging import getLogger
 
-from django.conf import settings
 from io import BytesIO
 from lxml import etree
+from rest_framework.request import Request
 
 from quartet_capture.models import TaskParameter
+from quartet_capture.views import CaptureInterface
 from rest_framework_xml import parsers
 from serialbox.api.views import AllocateView
 
 logger = getLogger(__name__)
-
-from rest_framework.negotiation import DefaultContentNegotiation
 from rest_framework_xml.renderers import XMLRenderer
 
 class GuardianRenderer(XMLRenderer):
@@ -151,3 +150,11 @@ class GuardianNumberRangeView(AllocateView):
             value=self.machine_name
         )
         return db_task
+
+class GuardianCapture(CaptureInterface):
+
+    def post(self, request: Request, format=None, epcis=False):
+        response = super().post(request, format, epcis)
+        response.status_code = 200
+        response.data = "OK"
+        return response

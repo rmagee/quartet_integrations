@@ -14,6 +14,7 @@
 # Copyright 2020 SerialLab Corp.  All rights reserved.
 from django.conf.urls import url
 from quartet_integrations.systech.guardian.views import GuardianNumberRangeView
+from quartet_integrations.systech.guardian.views import GuardianCapture
 
 app_name = 'quartet_integrations'
 
@@ -22,4 +23,8 @@ urlpatterns = [
         r'guardian/NumberRangeService/?',
         GuardianNumberRangeView.as_view(), name="guardianNumberRangeService"
     ),
+    url(
+        r'guardian/guardian-capture/?',
+        GuardianCapture.as_view(), name="guardianCapture"
+    )
 ]

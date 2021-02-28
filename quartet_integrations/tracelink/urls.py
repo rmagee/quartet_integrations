@@ -5,7 +5,7 @@ app_name = 'quartet_integrations'
 
 urlpatterns = [
     url(
-        r'/soap/snx/snrequest/?',
+        r'soap/snx/snrequest/?',
         TraceLinkNumberRangeView.as_view(), name="tracelinkSNX"
     ),
 ]
