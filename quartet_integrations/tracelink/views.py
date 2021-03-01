@@ -17,7 +17,9 @@ from logging import getLogger
 
 import os
 from django.template import loader
+
 from lxml import etree
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.request import Request
@@ -48,7 +50,9 @@ class TraceLinkNumberRangeView(GuardianNumberRangeView):
         if 'wsdl' in request.query_params.keys():
             template = loader.get_template(
                 "tracelink/snrequest.xml")
-            xml = template.render({})
+            xml = template.render({"host": request._request.get_host(),
+                                   "scheme": request._request.scheme
+                                   })
             return Response(xml, status.HTTP_200_OK,
                             content_type='application/xml')
 

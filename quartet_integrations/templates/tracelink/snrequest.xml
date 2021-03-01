@@ -4,10 +4,10 @@
 <definitions xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:wsp="http://www.w3.org/ns/ws-policy" xmlns:wsp1_2="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="urn:tracelink:soap" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.xmlsoap.org/wsdl/" targetNamespace="urn:tracelink:soap" name="SerialNumberRequestService">
 <types>
 <xsd:schema>
-<xsd:import namespace="urn:tracelink:soap" schemaLocation="https://api.tracelink.com:443/soap/snx/snrequest?xsd=1"/>
+<xsd:import namespace="urn:tracelink:soap" schemaLocation="{{ scheme }}://{{ host }}/soap/snx/snrequest?xsd=1"/>
 </xsd:schema>
 <xsd:schema>
-<xsd:import namespace="http://tracelink.com/snx" schemaLocation="https://api.tracelink.com:443/soap/snx/snrequest?xsd=2"/>
+<xsd:import namespace="http://tracelink.com/snx" schemaLocation="{{ scheme }}://{{ host }}/soap/snx/snrequest?xsd=2"/>
 </xsd:schema>
 </types>
 <message name="serialNumbersRequest">
@@ -36,7 +36,7 @@
 </binding>
 <service name="SerialNumberRequestService">
 <port name="snrequestPort" binding="tns:snrequestPortBinding">
-<soap:address location="https://api.tracelink.com:443/soap/snx/snrequest"/>
+<soap:address location="{{ scheme }}://{{ host }}/soap/snx/snrequest"/>
 </port>
 </service>
 </definitions>
