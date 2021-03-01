@@ -247,3 +247,27 @@ class GuardianTestCase(APITestCase):
                                       content_type='application/xml')
             print(result.data)
             self.assertEqual(result.status_code, 200)
+
+    def test_accept_xml_text(self):
+        rule = Rule.objects.create(name="EPCIS", description="unit test rule")
+        Step.objects.create(
+            step_class="quartet_epcis.parsing.steps.EPCISParsingStep",
+            order=1,
+            name="EPCIS",
+            rule=rule
+        )
+
+        curpath = os.path.dirname(__file__)
+        file_path = os.path.join(
+            curpath,
+            'data/epcis.xml'
+        )
+        with open(file_path, "r") as f:
+            request = f.read()
+            url = reverse('guardianCapture')
+            url = "%s%s" % (url, "/?rule=EPCIS&run-immediately=true")
+            result = self.client.post(url, request,
+                                      content_type='text/xml',
+                                      Accept='text/xml')
+            self.assertEqual(result.data, "OK")
+            self.assertEqual(result.status_code, 200)

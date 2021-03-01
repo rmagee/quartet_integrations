@@ -13,10 +13,17 @@
 #
 # Copyright 2021 SerialLab Corp.  All rights reserved.
 
+from logging import getLogger
+
+import os
+from django.template import loader
 from lxml import etree
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.request import Request
+
 from quartet_capture.models import TaskParameter
 from quartet_integrations.systech.guardian.views import GuardianNumberRangeView
-from logging import getLogger
 
 logger = getLogger(__name__)
 
@@ -32,6 +39,18 @@ class TraceLinkNumberRangeView(GuardianNumberRangeView):
         self.receiving_system = None
         self.company_prefix = None
         self.extension_digit = None
+
+    def get(self, request: Request, pool=None, size=None, region=None):
+        """
+        Just serves up the tracelink WSDL file for optel connectors and
+        applications that require the WSDL to function.
+        """
+        if 'wsdl' in request.query_params.keys():
+            template = loader.get_template(
+                "tracelink/snrequest.xml")
+            xml = template.render({})
+            return Response(xml, status.HTTP_200_OK,
+                            content_type='application/xml')
 
     def parse_xml(self, request_data) -> int:
         """
@@ -122,3 +141,6 @@ class TraceLinkNumberRangeView(GuardianNumberRangeView):
                 logger.debug('Getting the value...')
                 value = child.text
         return name, value
+
+
+
