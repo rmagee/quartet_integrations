@@ -72,11 +72,11 @@ class GuardianNumberRangeView(AllocateView):
         return ret
 
     def log_request(self, request: Request):
-        if settings.LOGGING_LEVEL == DEBUG:
+        if logger.level == DEBUG:
             headers = request._request.headers
             raw_request = ["%s: %s" % (name, val) for name, val in
                            headers.items()]
-            print("Request: %s \n%s", raw_request, request.body)
+            logger.debug("Request: %s \n%s", raw_request, request.body)
 
     def parse_xml(self, request_data) -> int:
         """
