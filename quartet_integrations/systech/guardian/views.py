@@ -167,4 +167,12 @@ class GuardianCapture(CaptureInterface):
         response = super().post(request, format, epcis)
         response.status_code = 200
         response.data = "OK"
+        self.log_request(request)
         return response
+
+    def log_request(self, request: Request):
+        if settings.LOGGING_LEVEL == 'DEBUG':
+            headers = request._request.headers
+            raw_request = ["%s: %s" % (name, val) for name, val in
+                           headers.items()]
+            logger.debug("Request: %s \n%s", raw_request, request.body)
