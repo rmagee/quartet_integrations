@@ -72,7 +72,7 @@ class GuardianNumberRangeView(AllocateView):
         return ret
 
     def log_request(self, request: Request):
-        if settings.LOGGING_LEVEL == 'DEBUG':
+        if settings.LOGGING_LEVEL == DEBUG:
             headers = request._request.headers
             raw_request = ["%s: %s" % (name, val) for name, val in
                            headers.items()]
