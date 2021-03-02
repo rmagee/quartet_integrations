@@ -13,15 +13,18 @@
 #
 # Copyright 2020 SerialLab Corp.  All rights reserved.
 from logging import getLogger
+from logging import DEBUG
 
 from io import BytesIO
 from lxml import etree
 from rest_framework.request import Request
 
+from django.conf import settings
 from quartet_capture.models import TaskParameter
 from quartet_capture.views import CaptureInterface
 from rest_framework_xml import parsers
 from serialbox.api.views import AllocateView
+
 
 logger = getLogger(__name__)
 from rest_framework_xml.renderers import XMLRenderer
@@ -65,7 +68,15 @@ class GuardianNumberRangeView(AllocateView):
         count = None
         count = self.parse_xml(request_data)
         ret = super().get(request, self.machine_name, count)
+        self.log_request(request)
         return ret
+
+    def log_request(self, request: Request):
+        if settings.LOGGING_LEVEL == 'DEBUG':
+            headers = request._request.headers
+            raw_request = ["%s: %s" % (name, val) for name, val in
+                           headers.items()]
+            print("Request: %s \n%s", raw_request, request.body)
 
     def parse_xml(self, request_data) -> int:
         """
