@@ -12,8 +12,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2020 SerialLab Corp.  All rights reserved.
-from logging import getLogger
-from logging import DEBUG
+from logging import getLogger, getLevelName, DEBUG
 
 from io import BytesIO
 from lxml import etree
@@ -72,7 +71,7 @@ class GuardianNumberRangeView(AllocateView):
         return ret
 
     def log_request(self, request: Request):
-        if logger.level == DEBUG:
+        if settings.LOGGING_LEVEL == 'DEBUG':
             headers = request._request.headers
             raw_request = ["%s: %s" % (name, val) for name, val in
                            headers.items()]
