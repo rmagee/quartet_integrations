@@ -25,7 +25,8 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 
 from quartet_capture.models import TaskParameter
-from quartet_integrations.systech.guardian.views import GuardianNumberRangeView
+from quartet_integrations.systech.guardian.views import GuardianNumberRangeView, GuardianRenderer
+from rest_framework.renderers import BrowsableAPIRenderer
 
 logger = getLogger(__name__)
 
@@ -35,6 +36,7 @@ class TraceLinkNumberRangeView(GuardianNumberRangeView):
     This number range view handles data very similar to the "SAP" format
     handled by Systech Guardian.
     """
+    renderer_classes = [GuardianRenderer, BrowsableAPIRenderer]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -73,6 +75,8 @@ class TraceLinkNumberRangeView(GuardianNumberRangeView):
                                    })
             return Response(xml, status.HTTP_200_OK,
                             content_type='application/xml')
+        else:
+            return Response(status=status.HTTP_200_OK)
 
     def parse_xml(self, request_data) -> int:
         """
