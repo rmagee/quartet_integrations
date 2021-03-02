@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='UTF-8'?><!-- Published by JAX-WS RI at http://jax-ws.dev.java.net. RI's version is JAX-WS RI 2.2-hudson-752-. --><xs:schema xmlns:tns="urn:tracelink:soap" xmlns:ns1="http://tracelink.com/snx" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0" targetNamespace="urn:tracelink:soap">
+
+<xs:import namespace="http://tracelink.com/snx" schemaLocation="{{ scheme }}://{{ host }}/soap/snx/snrequest?xsd=2" />
+
+<xs:element name="serialNumbersRequest" type="tns:serialNumbersRequest" />
+
+<xs:element name="serialNumbersRequestResponse" type="tns:serialNumbersRequestResponse" />
+
+<xs:element name="snResponse" type="tns:SNResponse" />
+
+<xs:complexType name="serialNumbersRequest">
+<xs:sequence>
+<xs:element name="SendingSystem" type="xs:string" minOccurs="0" />
+<xs:element name="ReceivingSystem" type="xs:string" minOccurs="0" />
+<xs:element name="IdType" type="tns:idType" minOccurs="0" />
+<xs:element name="EncodingType" type="tns:encodingType" minOccurs="0" />
+<xs:element name="Size" type="xs:int" minOccurs="0" />
+<xs:element name="ObjectKey" type="tns:objectKey" minOccurs="0" />
+<xs:element name="RequestRandomizedNumber" type="xs:string" minOccurs="0" />
+<xs:element name="ReferenceDocuments" type="ns1:ReferenceDocuments" minOccurs="0" />
+<xs:element name="SyncRequest" type="xs:boolean" />
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="objectKey">
+<xs:sequence>
+<xs:element name="Name" type="tns:objectIdentifierType" minOccurs="0" />
+<xs:element name="Value" type="xs:string" minOccurs="0" />
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="serialNumbersRequestResponse">
+<xs:sequence>
+<xs:element name="SNResponse" type="tns:SNResponse" minOccurs="0" />
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="SNResponse">
+<xs:sequence>
+<xs:element name="ReceivingSystem" type="xs:string" minOccurs="0" />
+<xs:element name="SendingSystem" type="xs:string" minOccurs="0" />
+<xs:element name="ActionCode" type="xs:string" minOccurs="0" />
+<xs:element name="EncodingType" type="tns:encodingType" minOccurs="0" />
+<xs:element name="IDType" type="tns:idType" minOccurs="0" />
+<xs:element name="Interval" type="tns:interval" minOccurs="0" />
+<xs:element name="ObjectKey" type="tns:objectKey" minOccurs="0" />
+<xs:element name="ReferenceDocuments" type="ns1:ReferenceDocuments" minOccurs="0" />
+<xs:element name="RandomizedNumberList" type="tns:randomizedNumberList" minOccurs="0" />
+<xs:element name="RfidException" type="tns:errorMessage" minOccurs="0" />
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="interval">
+<xs:sequence>
+<xs:element name="NumberFrom" type="xs:string" minOccurs="0" />
+<xs:element name="NumberTo" type="xs:string" minOccurs="0" />
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="randomizedNumberList">
+<xs:sequence>
+<xs:element name="SerialNo" type="tns:serialNumberType" minOccurs="0" maxOccurs="unbounded" />
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="serialNumberType">
+<xs:simpleContent>
+<xs:extension base="xs:string">
+<xs:attribute name="cryptoKey" type="xs:string" />
+<xs:attribute name="cryptoCode" type="xs:string" />
+</xs:extension>
+</xs:simpleContent>
+</xs:complexType>
+
+<xs:complexType name="errorMessage">
+<xs:sequence>
+<xs:element name="ErrorCode" type="xs:string" minOccurs="0" />
+<xs:element name="ErrorMessage" type="xs:string" minOccurs="0" />
+</xs:sequence>
+</xs:complexType>
+
+<xs:simpleType name="idType">
+<xs:restriction base="xs:string">
+<xs:enumeration value="GS1_SER" />
+<xs:enumeration value="CN_SER" />
+</xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="encodingType">
+<xs:restriction base="xs:string">
+<xs:enumeration value="SGTIN" />
+<xs:enumeration value="SSCC" />
+<xs:enumeration value="CN_EDMC" />
+<xs:enumeration value="NTIN" />
+</xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="objectIdentifierType">
+<xs:restriction base="xs:string">
+<xs:enumeration value="GTIN" />
+<xs:enumeration value="NTIN" />
+<xs:enumeration value="COMPANY_PREFIX" />
+<xs:enumeration value="CN_RESCODE" />
+<xs:enumeration value="CN_SUBTYPE_LEVEL_RATIO" />
+</xs:restriction>
+</xs:simpleType>
+</xs:schema>
