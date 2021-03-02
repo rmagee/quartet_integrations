@@ -47,11 +47,29 @@ class TraceLinkNumberRangeView(GuardianNumberRangeView):
         Just serves up the tracelink WSDL file for optel connectors and
         applications that require the WSDL to function.
         """
+        host = request._request.get_host()
+        scheme = request._request.scheme
         if 'wsdl' in request.query_params.keys():
             template = loader.get_template(
                 "tracelink/snrequest.xml")
-            xml = template.render({"host": request._request.get_host(),
-                                   "scheme": request._request.scheme
+            xml = template.render({"host": host,
+                                   "scheme": scheme
+                                   })
+            return Response(xml, status.HTTP_200_OK,
+                            content_type='application/xml')
+        elif request.query_params.get('xsd') == '1':
+            template = loader.get_template(
+                "tracelink/xsd1.xml")
+            xml = template.render({"host": host,
+                                   "scheme": scheme
+                                   })
+            return Response(xml, status.HTTP_200_OK,
+                            content_type='application/xml')
+        elif request.query_params.get('xsd') == '2':
+            template = loader.get_template(
+                "tracelink/xsd2.xml")
+            xml = template.render({"host": host,
+                                   "scheme": scheme
                                    })
             return Response(xml, status.HTTP_200_OK,
                             content_type='application/xml')
@@ -145,6 +163,3 @@ class TraceLinkNumberRangeView(GuardianNumberRangeView):
                 logger.debug('Getting the value...')
                 value = child.text
         return name, value
-
-
-
