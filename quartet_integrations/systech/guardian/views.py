@@ -19,22 +19,25 @@ from lxml import etree
 from rest_framework.request import Request
 
 from django.conf import settings
+from rest_framework.negotiation import DefaultContentNegotiation
+from rest_framework.renderers import BaseRenderer
 from quartet_capture.models import TaskParameter
 from quartet_capture.views import CaptureInterface
 from rest_framework_xml import parsers
 from serialbox.api.views import AllocateView
 
-
 logger = getLogger(__name__)
 from rest_framework_xml.renderers import XMLRenderer
 
-class GuardianRenderer(XMLRenderer):
+
+class GuardianNumberRangeRenderer(XMLRenderer):
     '''
     Overrrides the basic XMLRenderer and uses the
     `EPCPyYes.core.v1_2.template_events` Event class's .render() output
     directly since that output is already encoded into XML.
     '''
     media_type = "text/xml"
+
     def render(self, data, accepted_media_type=None, renderer_context=None):
         if isinstance(data, str):
             ret = data.encode(self.charset)
@@ -42,14 +45,16 @@ class GuardianRenderer(XMLRenderer):
             ret = super().render(data, accepted_media_type, renderer_context)
         return ret
 
+
 parser_classes = [parsers.XMLParser]
+
 
 class GuardianNumberRangeView(AllocateView):
     """
     Will process inbound Guardian Number Range requests and return accordingly.
     This is a SOAP interface and supports only the POST operation.
     """
-    renderer_classes = [GuardianRenderer]
+    renderer_classes = [GuardianNumberRangeRenderer]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -161,13 +166,32 @@ class GuardianNumberRangeView(AllocateView):
         )
         return db_task
 
+
+class AcceptHeaderNegotiation(DefaultContentNegotiation):
+    """
+    Just returns the renderer that guardian needs.
+    """
+    def select_renderer(self, request, renderers, format_suffix=None):
+        return GuardianEPCISRenderer, 'TEXT/XML'
+
+
+class GuardianEPCISRenderer(BaseRenderer):
+    """
+    Sets the headers and returns "OK"...this is what guardian expects to
+    get back.
+    """
+    media_type = 'text/plain'
+    format = 'text'
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        return "OK"
+
+
 class GuardianCapture(CaptureInterface):
+    content_negotiation_class = AcceptHeaderNegotiation
 
     def post(self, request: Request, format=None, epcis=False):
         response = super().post(request, format, epcis)
-        response.status_code = 200
-        response.data = "OK"
-        self.log_request(request)
         return response
 
     def log_request(self, request: Request):
@@ -175,4 +199,4 @@ class GuardianCapture(CaptureInterface):
             headers = request._request.headers
             raw_request = ["%s: %s" % (name, val) for name, val in
                            headers.items()]
-            logger.debug("Request: %s \n%s", raw_request, request.body)
+            logger.debug("Request: %s \n%s", raw_request, request.data)
