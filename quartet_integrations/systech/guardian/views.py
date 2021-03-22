@@ -20,6 +20,7 @@ from rest_framework.request import Request
 
 from django.conf import settings
 from rest_framework.negotiation import DefaultContentNegotiation
+from rest_framework.status import HTTP_100_CONTINUE
 from rest_framework.renderers import BaseRenderer
 from quartet_capture.models import TaskParameter
 from quartet_capture.views import CaptureInterface
@@ -192,6 +193,7 @@ class GuardianCapture(CaptureInterface):
 
     def post(self, request: Request, format=None, epcis=False):
         response = super().post(request, format, epcis)
+        response.status_code = 200
         return response
 
     def log_request(self, request: Request):
