@@ -25,7 +25,7 @@ from quartet_capture.tasks import execute_rule, execute_queued_task
 from quartet_epcis.models import entries
 from quartet_epcis.db_api.queries import EPCISDBProxy
 from quartet_epcis.models.events import Event
-from quartet_epcis.parsing.context import BusinessEPCISParser
+from quartet_epcis.parsing.context_parser import BusinessEPCISParser
 from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
     ConsolidationParser
 from quartet_output import models

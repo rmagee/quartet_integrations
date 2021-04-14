@@ -21,7 +21,7 @@ from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
 from EPCPyYes.core.v1_2.events import EventType
 from quartet_capture.models import Rule, Step, StepParameter, Task
 from quartet_capture.tasks import execute_rule
-from quartet_epcis.parsing.context import BusinessEPCISParser
+from quartet_epcis.parsing.context_parser import BusinessEPCISParser
 from quartet_output import models
 from quartet_output.models import EPCISOutputCriteria
 from quartet_output.steps import ContextKeys
