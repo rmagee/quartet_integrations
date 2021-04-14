@@ -52,8 +52,8 @@ urllib3
 whichcraft
 coverage
 celery
-# djangorestframework_xml
--e git://github.com/rmagee/django-rest-framework-xml.git#egg=djangorestframework-xml
+djangorestframework_xml
+#-e git://github.com/rmagee/django-rest-framework-xml.git#egg=djangorestframework-xml
 coreschema
 coreapi
 drf_yasg
