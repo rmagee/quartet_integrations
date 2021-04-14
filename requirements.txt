@@ -1,7 +1,7 @@
 EParseCIS
 EPCPyYes
 quartet_output
-quartet_epcis>=3.0.0
+quartet_epcis
 quartet_capture
 quartet_masterdata
 quartet_templates
