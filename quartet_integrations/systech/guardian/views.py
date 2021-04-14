@@ -194,6 +194,7 @@ class GuardianCapture(CaptureInterface):
     def post(self, request: Request, format=None, epcis=False):
         response = super().post(request, format, epcis)
         response.status_code = 200
+        response.data = "OK"
         return response
 
     def log_request(self, request: Request):

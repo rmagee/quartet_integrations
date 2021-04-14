@@ -268,6 +268,6 @@ class GuardianTestCase(APITestCase):
             url = "%s%s" % (url, "/?rule=EPCIS&run-immediately=true")
             result = self.client.post(url, request,
                                       content_type='text/xml',
-                                      Accept='text/xml')
+                                      Accept='TEXT/XML')
             self.assertEqual(result.data, "OK")
             self.assertEqual(result.status_code, 200)
