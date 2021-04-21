@@ -20,6 +20,10 @@ from EPCPyYes.core.v1_2 import template_events
 from EPCPyYes.core.v1_2 import template_events as yes_events, events
 from EPCPyYes.core.v1_2.events import Action
 from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
+from EPCPyYes.core.v1_2.CBV.instance_lot_master_data import \
+    InstanceLotMasterDataAttribute, LotLevelAttributeName, \
+    ItemLevelAttributeName
+
 from logging import getLogger
 
 from quartet_capture.rules import RuleContext
@@ -28,6 +32,8 @@ from quartet_epcis.parsing.context_parser import BusinessEPCISParser
 from quartet_integrations.gs1ushc import mixins
 from quartet_integrations.optel.epcpyyes import get_default_environment
 from quartet_output.parsing import BusinessOutputParser
+from gs123.conversion import URNConverter
+
 
 logger = getLogger(__name__)
 ilmd_list = List[yes_events.InstanceLotMasterDataAttribute]
@@ -139,3 +145,99 @@ class ConsolidationParser(OptelEPCISLegacyParser):
                                            self.add_event)
         else:
             super().handle_object_event(epcis_event)
+
+
+class OptelCompactV2Parser(BusinessEPCISParser):
+    '''
+    Parses EPCIS data from Optel's Compact connector
+    '''
+    def __init__(self, stream, event_cache_size: int = 1024,
+                 recursive_decommission: bool = True,
+                 recursive_child_update: bool = False,
+                 child_update_from_top: bool = True,
+                 rule_context: RuleContext = None,
+                 skip_parsing: bool = False,
+                 extension_digit: str = '0'):
+        super().__init__(stream, event_cache_size, recursive_decommission,
+                         recursive_child_update, child_update_from_top)
+        self.extension_digit = extension_digit
+        self.gtin = None
+        self.lot_number = None
+        self.ssccs = []
+        self.skip_parsing = skip_parsing
+        self.trade_item_list = []
+    
+    def parse_extension(self, epcis_event, extension):
+        super().parse_extension(epcis_event, extension)
+        # Get data from optelvision:extension tags
+        self.handle_optelvision_extension(epcis_event, extension)
+    
+    def handle_optelvision_extension(self, epcis_event, extension):
+        # Get Lot/Batch info
+        if extension.attrib.get('name').upper() == 'BATCH':
+            ilmd = InstanceLotMasterDataAttribute(
+                ItemLevelAttributeName.lotNumber.value,
+                value=extension.text.strip()
+            )
+            epcis_event.ilmd.append(ilmd)
+        elif extension.attrib.get('name').upper() == 'EXPIRY':
+            # Convert EXPIRY to valid format 
+            expiry_date = extension.text.strip()
+            expiry_date = self._format_date(expiry_date)
+            ilmd = InstanceLotMasterDataAttribute(
+                LotLevelAttributeName.itemExpirationDate.value,
+                value=expiry_date
+            )
+            epcis_event.ilmd.append(ilmd)
+    
+    def _format_date(self, date_str):
+        """
+            Converts date from YYYYMMDD to YYYY-MM-DD format
+
+            :param date_str: string value containing date
+
+            :return: date_str in a valid format
+        """
+        if len(date_str) == 8:
+                year, month, day = (
+                    date_str[:4],
+                    date_str[4:6],
+                    date_str[6:8],
+                )
+                date_str = '-'.join([year, month, day])
+        return date_str
+
+
+    def handle_object_event(self, epcis_event: events.ObjectEvent):
+        if not self.skip_parsing:
+            super().handle_object_event(epcis_event)
+        self.evaluate_object_event(epcis_event)
+
+    def handle_aggregation_event(self, epcis_event: events.AggregationEvent):
+        if not self.skip_parsing:
+            if epcis_event.action == Action.add.value:
+                epcis_event.disposition = Disposition.in_progress
+            super().handle_aggregation_event(epcis_event)
+    
+    def evaluate_object_event(self, epcis_event: events.ObjectEvent):
+        # Check if this is commissioning object event
+        if epcis_event.action == 'ADD':
+            if ':sgtin:' in epcis_event.epc_list[0]:
+                epc = epcis_event.epc_list[0]
+                gtin = URNConverter(epc).gtin14
+                # check if the extension digit matches
+                if not self.gtin and self.extension_digit == epc.split('.')[1][0]:
+                    # build and save gtin
+                    self.gtin = gtin
+                # Add to Trade Item List (For Master Data)
+                if gtin not in self.trade_item_list:
+                    self.trade_item_list.append(gtin)    
+            elif ':sscc:' in epcis_event.epc_list[0]:
+                self.ssccs += epcis_event.epc_list
+                conv = URNConverter(epcis_event.epc_list[0])
+                item = conv.extension_digit + conv.company_prefix
+                if item not in self.trade_item_list:
+                    self.trade_item_list.append(item)
+            if not self.lot_number:
+                for ilmd in epcis_event.ilmd:
+                    if 'lotNumber' in ilmd.name: self.lot_number = ilmd.value

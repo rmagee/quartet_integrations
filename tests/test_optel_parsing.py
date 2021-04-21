@@ -31,6 +31,9 @@ from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
 from quartet_output import models
 from quartet_output.models import EPCISOutputCriteria
 from quartet_output.steps import ContextKeys
+from quartet_integrations.optel.steps import ContextKeys as OptelContextKeys
+from quartet_masterdata.models import TradeItem, Company, Location, \
+    OutboundMapping, TradeItemField
 
 
 class TestOpelLegacyParser(TestCase):
@@ -379,3 +382,246 @@ class TestOutputParsing(TestCase):
         for event in events:
             if event.biz_step == 'urn:epcglobal:cbv:bizstep:shipping':
                 print(event.render())
+
+
+class TestOptelCompactV2Rule(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self._create_masterdata()
+
+    def _create_rule(self):
+        return Rule.objects.create(
+            name='Parse Optel EPCIS',
+            description='unittest'
+        )
+
+    def _create_parsing_step(self, rule):
+        return Step.objects.create(
+            name='Parse CompactV2 EPCIS',
+            description='Parse Optel CompactV2 EPCIS',
+            step_class='quartet_integrations.optel.steps.OptelCompactV2ParsingStep',
+            rule=rule,
+            order=1,
+        )
+    
+    def _create_parsing_step_params(self, step):
+        StepParameter.objects.create(
+            name='EPCIS Output Criteria',
+            value='Unit Test Criteria',
+            step=step
+        )
+        StepParameter.objects.create(
+            name='Collect Trade Items Data',
+            value=True,
+            step=step
+        )
+        StepParameter.objects.create(
+            name='EA Extension Digit',
+            value='0',
+            step=step
+        )
+
+    def _create_output_criteria(self):
+        return EPCISOutputCriteria.objects.create(
+            name='Unit Test Criteria'
+        )
+
+    def _create_task(self, rule):
+        return Task.objects.create(
+            rule=rule,
+            name='unittest task'
+        )
+    
+    def _create_masterdata(self):
+        company = Company.objects.create(
+            GLN13='0359883000000',
+            SGLN='urn:epc:id:sgln:0359883.00000.0',
+            name='Unit Test Company',
+            gs1_company_prefix='0359883'
+        )
+        TradeItem.objects.create(
+            GTIN14='00359883100063',
+            regulated_product_name='Unit Test Item 1',
+            company=company
+        )
+        TradeItem.objects.create(
+            GTIN14='30359883100064',
+            regulated_product_name='Unit Test Item 2',
+            company=company
+        )
+
+    def test_optel_compactv2_step(self):
+        # Set up the rule, step and a task
+        rule = self._create_rule()
+        step = self._create_parsing_step(rule)
+        self._create_parsing_step_params(step)
+        db_task = self._create_task(rule)
+        # Get EPCIS xml path
+        curpath = os.path.dirname(__file__)
+        data_path = os.path.join(curpath, 'data/optel-compactv2-epcis.xml')
+        # Run the task with the test data
+        context = []
+        with open(data_path, 'r') as data_file:
+            context = execute_rule(data_file.read().encode(), db_task)
+        event = Event.objects.filter(type='ob').first()
+        ilmds = event.instancelotmasterdata_set.all()
+        self.assertEquals(len(ilmds), 2)
+        self.assertEquals(str(ilmds[0]), 'lotNumber: 19AR095')
+        self.assertEquals(str(ilmds[1]), 'itemExpirationDate: 2021-09-30')
+        # 2x GTINS + 1x SSCC
+        self.assertEquals(len(context.context['TRADE_ITEMS_MASTERDATA']), 3)
+
+
+class TestCreateShippingEventStep(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        # Create Essential Masterdata
+        self._create_companies_masterdata()
+        self._create_trade_items_masterdata()
+        self._create_location_masterdata()
+        # Create Outbound Mapping
+        self._create_outbound_mapping()
+    
+    def _create_companies_masterdata(self):
+        self.company = Company.objects.create(
+            GLN13='0359883000000',
+            SGLN='urn:epc:id:sgln:0359883.00000.0',
+            name='Unit Test Company',
+            gs1_company_prefix='0359883'
+        )
+        self.company_2 = Company.objects.create(
+            GLN13='0311111000000',
+            SGLN='urn:epc:id:sgln:0311111.00000.0',
+            name='Unit Test Company 2',
+            gs1_company_prefix='0311111'
+        )
+    
+    def _create_location_masterdata(self):
+        self.location = Location.objects.create(
+            GLN13='0359883000000',
+            SGLN='urn:epc:id:sgln:0359883.00000.0',
+            name='Unit Test Company',
+            company=self.company
+        )
+        self.location_2 = Location.objects.create(
+            GLN13='0311111000000',
+            SGLN='urn:epc:id:sgln:0311111.00000.0',
+            name='Unit Test Company 2',
+            company=self.company_2
+        )
+
+    def _create_trade_items_masterdata(self):
+        item = TradeItem.objects.create(
+            GTIN14='00359883100063',
+            regulated_product_name='Unit Test Item 1',
+            company=self.company
+        )
+        TradeItemField.objects.create(
+            name=item.GTIN14,
+            value=self.company.name,
+            trade_item=item
+        )
+        TradeItem.objects.create(
+            GTIN14='30359883100064',
+            regulated_product_name='Unit Test Item 2',
+            company=self.company
+        )
+    
+    def _create_outbound_mapping(self):
+        self.mapping = OutboundMapping.objects.create(
+            company=self.company,
+            from_business=self.company,
+            to_business=self.company_2,
+            ship_from=self.location,
+            ship_to=self.location_2
+        )
+
+    def _create_rule(self):
+        return Rule.objects.create(
+            name='Parse Optel EPCIS',
+            description='unittest'
+        )
+
+    def _create_parsing_step(self, rule):
+        return Step.objects.create(
+            name='Parse CompactV2 EPCIS',
+            description='Parse Optel CompactV2 EPCIS',
+            step_class='quartet_integrations.optel.steps.OptelCompactV2ParsingStep',
+            rule=rule,
+            order=1,
+        )
+    
+    def _create_parsing_step_params(self, step):
+        StepParameter.objects.create(
+            name='EPCIS Output Criteria',
+            value='Unit Test Criteria',
+            step=step
+        )
+        StepParameter.objects.create(
+            name='Collect Trade Items Data',
+            value=True,
+            step=step
+        )
+        StepParameter.objects.create(
+            name='EA Extension Digit',
+            value='0',
+            step=step
+        )
+
+    def _create_output_criteria(self):
+        return EPCISOutputCriteria.objects.create(
+            name='Unit Test Criteria'
+        )
+
+    def _create_task(self, rule):
+        return Task.objects.create(
+            rule=rule,
+            name='unittest task'
+        )
+    
+    def _create_shipping_step(self, rule):
+        step = Step.objects.create(
+            name='Create Shipping Event',
+            rule=rule,
+            description='unittest',
+            step_class='quartet_integrations.optel.steps.CreateShippingEventStep',
+            order=2
+        )
+
+    def test_create_shipping_event(self):
+        # Set up the rule, step and a task
+        rule = self._create_rule()
+        step = self._create_parsing_step(rule)
+        self._create_parsing_step_params(step)
+        self._create_shipping_step(rule)
+        db_task = self._create_task(rule)
+        # Get EPCIS xml path
+        curpath = os.path.dirname(__file__)
+        data_path = os.path.join(curpath, 'data/optel-compactv2-epcis.xml')
+        # Run the task with the test data
+        context = []
+        with open(data_path, 'r') as data_file:
+            context = execute_rule(data_file.read().encode(), db_task)
+        # Get values from context
+        shipping_events = context.context[ContextKeys.FILTERED_EVENTS_KEY.value]
+        mapping = context.context.get(OptelContextKeys.OUTBOUND_MAPPING.value, None)
+        ssccs = context.context.get(OptelContextKeys.FILTERED_SSCCS.value)
+        # Check if they are the same as in mapping
+        self.assertEquals(len(shipping_events), 1)
+        self.assertIsNotNone(mapping)
+        self.assertEquals(
+            shipping_events[0].source_list[0].source,
+            self.mapping.from_business.SGLN)
+        self.assertEquals(
+            shipping_events[0].source_list[1].source,
+            self.mapping.ship_from.SGLN)
+        self.assertEquals(
+            shipping_events[0].destination_list[0].destination,
+            self.mapping.to_business.SGLN)
+        self.assertEquals(
+            shipping_events[0].destination_list[1].destination,
+            self.mapping.ship_to.SGLN)
+        self.assertEquals(len(shipping_events[0].epc_list), 1)
+        self.assertEquals(shipping_events[0].epc_list, ssccs)

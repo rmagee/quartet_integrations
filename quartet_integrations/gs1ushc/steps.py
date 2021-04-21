@@ -28,12 +28,14 @@ from quartet_integrations.frequentz.environment import get_default_environment
 from quartet_integrations.generic import mixins
 from quartet_integrations.gs1ushc.parsing import SimpleOutputParser, \
     BusinessOutputParser
-from quartet_masterdata.models import Company, Location
+from quartet_masterdata.models import Company, Location, TradeItem
 from quartet_output.steps import ContextKeys as OutputKeys, \
     EPCPyYesOutputStep as EPYOS
 from quartet_output.steps import OutputParsingStep as QOPS
 from EPCPyYes.core.v1_2.events import Source, Destination
 import copy
+from quartet_integrations.optel.steps import \
+    ContextKeys as OptelContextKeys
 
 EventList = List[EPCISBusinessEvent]
 
@@ -452,3 +454,72 @@ class EPCPyYesOutputStep(EPYOS, mixins.CompanyFromURNMixin,
                                      'source destinations.  If true, GLNs will ' \
                                      'be used. Default is False.'
         return ret
+
+
+class EPCPyYesMasterDataOutputStep(EPCPyYesOutputStep):
+    """
+    Additionally provides a way to add TradeItem masterdata to the 
+    """
+    
+    def get_trade_items_mastedata(self, items):
+        items_dict = {}
+        
+        for item in items:
+            try:
+                if len(item) == 14:
+                    trade_item = TradeItem.objects.get(GTIN14=item)
+                    items_dict[item] = trade_item.__dict__
+                    items_dict[item]['company'] = trade_item.company
+                else:
+                    sscc = item[1:] + '-' + item[0]
+                    items_dict[sscc] = {
+                        'id_type': 'SSCC',
+                        'GTIN14': sscc,
+                        'company': Company.objects.get(gs1_company_prefix=item[1:]),
+                        'regulated_product_name': 'The Pallet',
+                        'dosage_form': '-',
+                        'strength': '-'
+                    }
+            except TradeItem.DoesNotExist:
+                raise self.TradeItemMasterdataDoesNotExist(
+                    'Create Trade Item for GTIN %s' % item
+                )
+            except Company.DoesNotExist:
+                raise self.CompanyMasterdataDoesNotExist(
+                    'Create company for prefix %s' % item[1:]
+                )
+        return items_dict
+
+    def get_epcis_document_class(self,
+                                 all_events
+                                 ) -> template_events.EPCISEventListDocument:
+        """
+        This function will override the default 1.2 EPCIS doc with a 1.0
+        template and additionally it provides a trade items masterdata. 
+
+        :param all_events: The events to add to the document
+        :return: The EPCPyYes event list document to render
+        """
+
+        # code from base method + changed template
+        doc_class = template_events.EPCISEventListDocument(all_events,
+                                                           self.header)
+        env = get_default_environment()
+        template = env.get_template('gs1ushc/epcis_document_complete_masterdata.xml')
+        doc_class.additional_context = {
+            'masterdata': self.rule_context.context['masterdata']}
+        doc_class._template = template
+        
+        # adding a TradeItems masterdata to the template
+        trade_items = self.rule_context.context.get(
+                OptelContextKeys.TRADE_ITEMS_MASTERDATA.value)
+        trade_items_masterdata = self.get_trade_items_mastedata(trade_items)
+        doc_class.additional_context['trade_items'] = trade_items_masterdata # \
+        
+        return doc_class
+    
+    class TradeItemMasterdataDoesNotExist(Exception):
+        pass
+
+    class CompanyMasterdataDoesNotExist(Exception):
+        pass
