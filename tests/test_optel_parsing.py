@@ -589,6 +589,11 @@ class TestCreateShippingEventStep(TestCase):
             step_class='quartet_integrations.optel.steps.CreateShippingEventStep',
             order=2
         )
+        StepParameter.objects.create(
+            step=step,
+            name='Template Name',
+            value='quartet_tracelink/disposition_assigned.xml'
+        )
 
     def test_create_shipping_event(self):
         # Set up the rule, step and a task
