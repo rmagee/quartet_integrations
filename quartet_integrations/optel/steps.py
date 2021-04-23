@@ -274,6 +274,7 @@ class OptelCompactV2ParsingStep(SAPParsingStep):
             skip_parsing=self.skip_parsing)
         ret = parser.parse()
         # Get selected data from the parser
+        self.info('Getting lot number, SSCCs, and trade items from data')
         self.lot_number = parser.lot_number
         self.ssccs = parser.ssccs
         self.gtin = parser.gtin
@@ -345,6 +346,8 @@ class CreateShippingEventStep(Step, steps.DynamicTemplateMixin):
         which is used to get a OutboundMapping.
         """
         # get trade item gtin from rule context
+        self.info('Looking for a GTIN14 value in the rule context '
+                  'using FILTERED_GTIN context key')
         gtin = self.rule_context.context.get(
             ContextKeys.FILTERED_GTIN.value)
         try:
@@ -380,9 +383,12 @@ class CreateShippingEventStep(Step, steps.DynamicTemplateMixin):
         """
         lot_number = self.rule_context.context.get(
             ContextKeys.FILTERED_LOT_NUMBER.value)
+        self.info('Lot number found: %s' % lot_number)
         ssccs = self.rule_context.context.get(
             ContextKeys.FILTERED_SSCCS.value)
+        self.info('SSCC\'s list found: %s' % ssccs)
         # Create EPCIS Shipping Event
+        self.info('Creating new shipping event.')
         shipping_event = ObjectEvent()
         shipping_event.action = Action.observe.value
         shipping_event.biz_step = BusinessSteps.shipping.value
@@ -402,6 +408,7 @@ class CreateShippingEventStep(Step, steps.DynamicTemplateMixin):
             source_dest_type = SourceDestinationTypes.location.value
         else:
             source_dest_type = SourceDestinationTypes.possessing_party.value
+        self.info('Using "%s" in source and destination tags.' % source_dest_type)
         shipping_event.source_list.append(
             Source(
                 SourceDestinationTypes.owning_party.value,
@@ -435,12 +442,19 @@ class CreateShippingEventStep(Step, steps.DynamicTemplateMixin):
             )
             shipping_event.template = template
         # Add event to rule context
+        self.info('Adding shipping event to the rule context. This '
+                  'action will replace previously added events with '
+                  'the FILTERED_EVENTS_KEY key.')
         self.rule_context.context[
             steps.ContextKeys.FILTERED_EVENTS_KEY.value
         ] = [shipping_event,]
         # return shipping event
         self.rule_context.context['SENDER_GLN'] = mapping.ship_from.company.GLN13
         self.rule_context.context['RECEIVER_GLN'] = mapping.to_business.GLN13
+        self.info('Setting sender and receiver GLN\'s. Sender: %s '
+                  'Receiver: %s' % (
+                      mapping.ship_from.company.GLN13,
+                      mapping.to_business.GLN13))
         return shipping_event
 
 

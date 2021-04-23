@@ -511,10 +511,14 @@ class EPCPyYesMasterDataOutputStep(EPCPyYesOutputStep):
         doc_class._template = template
         
         # adding a TradeItems masterdata to the template
+        self.info('Trying to extract TradeItem GTINs from the rule context '
+                  'using OptelContextKey - TRADE_ITEMS_MASTERDATA key.')
         trade_items = self.rule_context.context.get(
                 OptelContextKeys.TRADE_ITEMS_MASTERDATA.value)
+        self.info('Found %d trade items in the rule context. Adding masterdata'
+                  ' to the EPCIS message.' % len(trade_items))
         trade_items_masterdata = self.get_trade_items_mastedata(trade_items)
-        doc_class.additional_context['trade_items'] = trade_items_masterdata # \
+        doc_class.additional_context['trade_items'] = trade_items_masterdata
         
         return doc_class
     
