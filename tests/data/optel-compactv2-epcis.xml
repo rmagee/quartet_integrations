@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<EPCISDocument 
+    creationDate="2021-03-03T19:05:26Z" 
+    xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns" 
+    schemaVersion="1.0" 
+    xmlns:optelvision="optelvision.extension.epcis">
+    <EPCISBody>
+        <EventList>
+            <ObjectEvent>
+                <eventTime>2020-07-29T11:05:39.424244-07:00</eventTime>
+                <eventTimeZoneOffset>-07:00</eventTimeZoneOffset>
+                <epcList>
+                    <epc>urn:epc:id:sgtin:0359883.010006.D0100000032084</epc>
+                    <epc>urn:epc:id:sgtin:0359883.010006.D0100000032085</epc>
+                    <epc>urn:epc:id:sgtin:0359883.010006.D0100000032086</epc>
+                    <epc>urn:epc:id:sgtin:0359883.010006.D0100000032087</epc>
+                    <epc>urn:epc:id:sgtin:0359883.010006.D0100000032088</epc>
+                </epcList>
+                <action>ADD</action>
+                <bizStep>urn:epcglobal:cbv:bizstep:commissioning</bizStep>
+                <disposition>urn:epcglobal:cbv:disp:active</disposition>
+                <readPoint>
+                    <id>ML-150</id>
+                </readPoint>
+                <bizLocation>
+                    <id>0315187.00000.0</id>
+                </bizLocation>
+                <optelvision:extension name="BATCH">19AR095</optelvision:extension>
+                <optelvision:extension name="EXPIRY">20210930</optelvision:extension>
+                <optelvision:extension name="PACKAGING_LEVEL">1</optelvision:extension>
+                <optelvision:extension name="OSM_INTERNAL_ID"/>
+                <optelvision:extension name="PRODUCT_ID_LEVEL_1">00359883100063</optelvision:extension>
+                <optelvision:extension name="PRODUCT_ID_LEVEL_3">30359883100064</optelvision:extension>
+                <optelvision:extension name="PRODUCT_ID_LEVEL_4">5+0359883</optelvision:extension>
+                <optelvision:extension name="CHILDREN_COUNT_LEVEL_1">0</optelvision:extension>
+                <optelvision:extension name="CHILDREN_COUNT_LEVEL_3">24</optelvision:extension>
+                <optelvision:extension name="CHILDREN_COUNT_LEVEL_4">48</optelvision:extension>
+            </ObjectEvent>
+            <ObjectEvent>
+                <eventTime>2020-07-29T11:05:39.424244-07:00</eventTime>
+                <eventTimeZoneOffset>-07:00</eventTimeZoneOffset>
+                <epcList>
+                    <epc>urn:epc:id:sgtin:0359883.310006.D0100000001939</epc>
+                </epcList>
+                <action>ADD</action>
+                <bizStep>urn:epcglobal:cbv:bizstep:commissioning</bizStep>
+                <disposition>urn:epcglobal:cbv:disp:active</disposition>
+                <readPoint>a
+                    <id>ML-150</id>
+                </readPoint>
+                <bizLocation>
+                    <id>0315187.00000.0</id>
+                </bizLocation>
+                <optelvision:extension name="BATCH">19AR095</optelvision:extension>
+                <optelvision:extension name="EXPIRY">20210930</optelvision:extension>
+                <optelvision:extension name="PACKAGING_LEVEL">3</optelvision:extension>
+                <optelvision:extension name="OSM_INTERNAL_ID"/>
+                <optelvision:extension name="PRODUCT_ID_LEVEL_1">00359883100063</optelvision:extension>
+                <optelvision:extension name="PRODUCT_ID_LEVEL_3">30359883100064</optelvision:extension>
+                <optelvision:extension name="PRODUCT_ID_LEVEL_4">5+0359883</optelvision:extension>
+                <optelvision:extension name="CHILDREN_COUNT_LEVEL_1">0</optelvision:extension>
+                <optelvision:extension name="CHILDREN_COUNT_LEVEL_3">24</optelvision:extension>
+                <optelvision:extension name="CHILDREN_COUNT_LEVEL_4">48</optelvision:extension>
+            </ObjectEvent>
+            <ObjectEvent>
+                <eventTime>2020-07-29T11:05:39.424244-07:00</eventTime>
+                <eventTimeZoneOffset>-07:00</eventTimeZoneOffset>
+                <epcList>
+                    <epc>urn:epc:id:sscc:0359883.5100000074</epc>
+                </epcList>
+                <action>ADD</action>
+                <bizStep>urn:epcglobal:cbv:bizstep:commissioning</bizStep>
+                <disposition>urn:epcglobal:cbv:disp:active</disposition>
+                <readPoint>
+                    <id>ML-150</id>
+                </readPoint>
+                <bizLocation>
+                    <id>0315187.00000.0</id>
+                </bizLocation>
+                <optelvision:extension name="BATCH">19AR095</optelvision:extension>
+                <optelvision:extension name="EXPIRY">20210930</optelvision:extension>
+                <optelvision:extension name="PACKAGING_LEVEL">4</optelvision:extension>
+                <optelvision:extension name="OSM_INTERNAL_ID"/>
+                <optelvision:extension name="PRODUCT_ID_LEVEL_1">00359883100063</optelvision:extension>
+                <optelvision:extension name="PRODUCT_ID_LEVEL_3">30359883100064</optelvision:extension>
+                <optelvision:extension name="PRODUCT_ID_LEVEL_4">5+0359883</optelvision:extension>
+                <optelvision:extension name="CHILDREN_COUNT_LEVEL_1">0</optelvision:extension>
+                <optelvision:extension name="CHILDREN_COUNT_LEVEL_3">24</optelvision:extension>
+                <optelvision:extension name="CHILDREN_COUNT_LEVEL_4">48</optelvision:extension>
+            </ObjectEvent>
+            <AggregationEvent>
+                <eventTime>2020-08-04T13:50:48.953362-07:00</eventTime>
+                <eventTimeZoneOffset>-07:00</eventTimeZoneOffset>
+                <parentID>urn:epc:id:sgtin:0359883.310006.D0100000001939</parentID>
+                <childEPCs>
+                    <epc>urn:epc:id:sgtin:0359883.010006.D0100000032084</epc>
+                    <epc>urn:epc:id:sgtin:0359883.010006.D0100000032085</epc>
+                    <epc>urn:epc:id:sgtin:0359883.010006.D0100000032086</epc>
+                    <epc>urn:epc:id:sgtin:0359883.010006.D0100000032087</epc>
+                    <epc>urn:epc:id:sgtin:0359883.010006.D0100000032088</epc>
+                </childEPCs>
+                <action>ADD</action>
+                <bizStep>urn:epcglobal:cbv:bizstep:packing</bizStep>
+                <readPoint>
+                    <id>ML-150</id>
+                </readPoint>
+                <bizLocation>
+                    <id>0315187.00000.0</id>
+                </bizLocation>
+                <optelvision:extension name="PACKAGING_LEVEL">3</optelvision:extension>
+            </AggregationEvent>
+            <AggregationEvent>
+                <eventTime>2020-08-04T14:09:23.519111-07:00</eventTime>
+                <eventTimeZoneOffset>-07:00</eventTimeZoneOffset>
+                <parentID>urn:epc:id:sscc:0359883.5100000074</parentID>
+                <childEPCs>
+                    <epc>urn:epc:id:sgtin:0359883.310006.D0100000001939</epc>
+                </childEPCs>
+                <action>ADD</action>
+                <bizStep>urn:epcglobal:cbv:bizstep:packing</bizStep>
+                <readPoint>
+                    <id>ML-150</id>
+                </readPoint>
+                <bizLocation>
+                    <id>0315187.00000.0</id>
+                </bizLocation>
+                <optelvision:extension name="PACKAGING_LEVEL">4</optelvision:extension>
+            </AggregationEvent>
+        </EventList>
+    </EPCISBody>
+</EPCISDocument>

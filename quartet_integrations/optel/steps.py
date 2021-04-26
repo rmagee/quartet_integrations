@@ -13,15 +13,37 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 
+from enum import Enum
 from gs123.conversion import URNConverter
 from quartet_capture import models
-from quartet_capture.rules import RuleContext
+from quartet_capture.rules import RuleContext, Step
 from quartet_integrations.optel.epcpyyes import get_default_environment
 from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
-    ConsolidationParser, OptelAutoShipParser
+    ConsolidationParser, OptelAutoShipParser, OptelCompactV2Parser
 from quartet_integrations.sap.steps import SAPParsingStep
 from quartet_output import steps
 from quartet_templates.models import Template
+from quartet_masterdata.models import TradeItem, TradeItemField, \
+    OutboundMapping, Company
+
+from EPCPyYes.core.v1_2.events import Action, BusinessTransaction, Source, Destination
+from EPCPyYes.core.v1_2.template_events import ObjectEvent
+from EPCPyYes.core.v1_2.CBV.business_steps import BusinessSteps
+from EPCPyYes.core.v1_2.CBV.dispositions import Disposition
+from EPCPyYes.core.v1_2.CBV.business_transactions import BusinessTransactionType
+from EPCPyYes.core.v1_2.CBV.source_destination import SourceDestinationTypes
+
+
+class ContextKeys(Enum):
+    """
+    Use this keys to place event and epc inforamtion in context for building
+    a shipping event from filtered SSCCs, trade items and batch/lot number.
+    """
+    FILTERED_SSCCS = 'FILTERED_SSCCS'
+    FILTERED_LOT_NUMBER = 'FILTERED_LOT_NUMBER'
+    FILTERED_GTIN = 'FILTERED_GTIN'
+    OUTBOUND_MAPPING = 'OUTBOUND_MAPPING'
+    TRADE_ITEMS_MASTERDATA = 'TRADE_ITEMS_MASTERDATA'
 
 
 class AddCommissioningDataStep(steps.AddCommissioningDataStep,
@@ -224,3 +246,231 @@ class EPCPyYesOutputStep(steps.EPCPyYesOutputStep):
                                       'when the value is no found. Default '
                                       'is False.'
         }
+
+
+class OptelCompactV2ParsingStep(SAPParsingStep):
+    """
+    A QU4RTET parsing step that can parse Optel Compact XML data that contains
+    custom extensions.
+    """
+
+    def __init__(self, db_task: models.Task, **kwargs):
+        super().__init__(db_task, **kwargs)
+        self.extenstion_digit = self.get_or_create_parameter(
+            'EA Extension Digit', 
+            default='0',
+            description='Extension digit of the EA item (the smallest unit).')
+        self.lot_number = None
+        self.ssccs = []
+        self.output_criteria = self.get_parameter(
+            'EPCIS Output Criteria', raise_exception=True)
+        self.skip_parsing = self.get_boolean_parameter('Skip Parsing', False)
+        self.trade_items = None
+
+    def _parse(self, data):
+        parser = OptelCompactV2Parser(
+            data,
+            extension_digit=self.extenstion_digit,
+            skip_parsing=self.skip_parsing)
+        ret = parser.parse()
+        # Get selected data from the parser
+        self.info('Getting lot number, SSCCs, and trade items from data')
+        self.lot_number = parser.lot_number
+        self.ssccs = parser.ssccs
+        self.gtin = parser.gtin
+        self.trade_items = parser.trade_item_list
+        return ret
+    
+    def append_to_rule_context(self, rule_context):
+        self.info('Adding pallets and lot number to the rule context.')
+        rule_context.context[
+            ContextKeys.FILTERED_GTIN.value
+        ] = self.gtin
+        rule_context.context[
+            ContextKeys.FILTERED_SSCCS.value
+        ] = self.ssccs
+        # Add Lot Number to the rule context
+        rule_context.context[
+            ContextKeys.FILTERED_LOT_NUMBER.value
+        ] = self.lot_number
+        # Add Output Criteria to the rule context
+        rule_context.context[
+            steps.ContextKeys.EPCIS_OUTPUT_CRITERIA_KEY.value
+        ] = self.output_criteria
+        rule_context.context[
+            ContextKeys.TRADE_ITEMS_MASTERDATA.value
+        ] = self.trade_items
+
+    def execute(self, data, rule_context: RuleContext):
+        super().execute(data, rule_context)
+        # Add Filtered SSCCs to the rule context
+        self.append_to_rule_context(rule_context)
+
+
+class CreateShippingEventStep(Step, steps.DynamicTemplateMixin):
+    """
+    This step was designed to work along with the OptelCompactV2ParsingStep.
+    It creates shipping event based on the filtered sscc's and trade items.
+    To work properly it needs Outbound Mapping to be defined and linked to
+    the filtered trade item's field as:
+        - name = GTIN14
+        - value = Company Name from OutboundMapping's main company
+    """
+
+    def __init__(self, db_task: models.Task, **kwargs):
+        super().__init__(db_task, **kwargs)
+        self.template = self.get_parameter(
+            'Template Name', ''
+        )
+        self.use_location = self.get_boolean_parameter(
+            'Use Location', True
+        )
+
+    def execute(self, data, rule_context: RuleContext):
+        self.rule_context = rule_context
+        # Get mapping for the shipping event
+        mapping = self.get_mapping()
+        # Build a new shipping event
+        shipping_event = self.build_shipping_event(mapping)
+        rule_context.context['masterdata'] = {
+            mapping.company.SGLN: mapping.company.__dict__,
+            mapping.from_business.SGLN: mapping.from_business.__dict__,
+            mapping.to_business.SGLN: mapping.to_business.__dict__
+        }
+
+    def get_mapping(self):
+        """
+        Looks for a GTIN14 value in the rule context. Then it looks for a
+        TradeItem instance based on the GTIN14. Checks the TradeItems's field
+        by the name of GTIN14 value. This fields holds company name as a value
+        which is used to get a OutboundMapping.
+        """
+        # get trade item gtin from rule context
+        self.info('Looking for a GTIN14 value in the rule context '
+                  'using FILTERED_GTIN context key')
+        gtin = self.rule_context.context.get(
+            ContextKeys.FILTERED_GTIN.value)
+        try:
+            # Get trade item information
+            item = TradeItem.objects.get(GTIN14=gtin)
+            # Get TradeItemField for company name
+            field = item.tradeitemfield_set.get(name=gtin)
+            # Get OutboundMapping using company name
+            mapping = OutboundMapping.objects.get(company__name=field.value)
+        except TradeItem.DoesNotExist:
+            raise self.TradeItemDoesNotExist(
+                'Trade Item with %s GTIN14 was not added to masterdata.' % gtin)
+        except TradeItemField.DoesNotExist:
+            raise self.TradeItemFieldDoesNotExist(
+                'Trade Item Field for the %s GTIN14 was not created for TradeItem. '
+                'You need to create TradeItemField for this trade item with '
+                'name equal to GTIN14 and value equal to target company name.' % gtin)
+        except OutboundMapping.DoesNotExist:
+            raise self.OutBoundMappingDoesNotExist(
+                'Outbound Mapping was not created for the company "%s". '
+                'You need to create OutboundMapping for the shipping '
+                'event target company.' % field.value)
+        # Add it to the rule context as Filtered Events ContextKey
+        self.rule_context.context[
+            ContextKeys.OUTBOUND_MAPPING.value
+        ] = mapping
+        return mapping
+
+    def build_shipping_event(self, mapping):
+        """
+        Creates a Shipping event using values in the rule context.
+        It requires a Lot Number, SSCCs.
+        """
+        lot_number = self.rule_context.context.get(
+            ContextKeys.FILTERED_LOT_NUMBER.value)
+        self.info('Lot number found: %s' % lot_number)
+        ssccs = self.rule_context.context.get(
+            ContextKeys.FILTERED_SSCCS.value)
+        self.info('SSCC\'s list found: %s' % ssccs)
+        # Create EPCIS Shipping Event
+        self.info('Creating new shipping event.')
+        shipping_event = ObjectEvent()
+        shipping_event.action = Action.observe.value
+        shipping_event.biz_step = BusinessSteps.shipping.value
+        shipping_event.disposition = Disposition.in_transit.value
+        shipping_event.epc_list = ssccs
+        # Set up BusinessTransactionList
+        gln = mapping.ship_from.GLN13
+        shipping_event.business_transaction_list.append(
+            BusinessTransaction(
+                'urn:epcglobal:cbv:bt:%s:%s' % (gln, lot_number),
+                BusinessTransactionType.Despatch_Advice.value
+            )
+        )
+        # Set Source and Destination
+        # Check if this sould be either possessing party or location
+        if self.use_location:
+            source_dest_type = SourceDestinationTypes.location.value
+        else:
+            source_dest_type = SourceDestinationTypes.possessing_party.value
+        self.info('Using "%s" in source and destination tags.' % source_dest_type)
+        shipping_event.source_list.append(
+            Source(
+                SourceDestinationTypes.owning_party.value,
+                mapping.from_business.SGLN
+            )
+        )
+        shipping_event.source_list.append(
+            Source(
+                source_dest_type,
+                mapping.ship_from.SGLN
+            )
+        )
+        shipping_event.destination_list.append(
+            Destination(
+                SourceDestinationTypes.owning_party.value,
+                mapping.to_business.SGLN
+            )
+        )
+        shipping_event.destination_list.append(
+            Destination(
+                source_dest_type,
+                mapping.ship_to.SGLN
+            )
+        )
+        # Set template if path was provided
+        if self.template:
+            env = get_default_environment()
+            template = self.get_template(
+                env,
+                'quartet_tracelink/disposition_assigned.xml'
+            )
+            shipping_event.template = template
+        # Add event to rule context
+        self.info('Adding shipping event to the rule context. This '
+                  'action will replace previously added events with '
+                  'the FILTERED_EVENTS_KEY key.')
+        self.rule_context.context[
+            steps.ContextKeys.FILTERED_EVENTS_KEY.value
+        ] = [shipping_event,]
+        # return shipping event
+        self.rule_context.context['SENDER_GLN'] = mapping.ship_from.company.GLN13
+        self.rule_context.context['RECEIVER_GLN'] = mapping.to_business.GLN13
+        self.info('Setting sender and receiver GLN\'s. Sender: %s '
+                  'Receiver: %s' % (
+                      mapping.ship_from.company.GLN13,
+                      mapping.to_business.GLN13))
+        return shipping_event
+
+
+    def declared_parameters(self):
+        return {
+            'Template Name': 'Template used for rendering shiping object event.',
+        }
+
+    def on_failure(self):
+        pass
+
+    class TradeItemDoesNotExist(Exception):
+        pass
+
+    class TradeItemFieldDoesNotExist(Exception):
+        pass
+    
+    class OutBoundMappingDoesNotExist(Exception):
+        pass

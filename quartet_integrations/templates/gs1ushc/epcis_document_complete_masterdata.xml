@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<epcis:EPCISDocument
+        xmlns:epcis="urn:epcglobal:epcis:xsd:1"
+        xmlns:sbdh="http://www.unece.org/cefact/namespaces/StandardBusinessDocumentHeader"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:gs1ushc="http://epcis.gs1us.org/hc/ns"
+        schemaVersion="{{ schema_version or '1.2' }}"
+        creationDate="{{ created_date }}">
+        {% block header %}
+        {% if header %}
+        <EPCISHeader>
+        {% include "epcis/sbdh.xml" %}
+        {% include "gs1ushc/masterdata_complete.xml" %}
+        </EPCISHeader>
+        {% endif %}
+        {% endblock %}
+        <EPCISBody>
+            <EventList>
+                {% block events %}
+                    {% if template_events|length > 0 %}
+                        {% for event in template_events %}
+                            {% include event.template %}
+                        {% endfor %}
+                    {% endif %}
+                {% endblock %}
+            </EventList>
+        </EPCISBody>
+</epcis:EPCISDocument>

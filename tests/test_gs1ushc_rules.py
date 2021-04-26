@@ -20,7 +20,8 @@ from quartet_epcis.parsing.context_parser import BusinessEPCISParser
 from quartet_output import models
 from quartet_output.models import EPCISOutputCriteria
 from quartet_output.steps import SimpleOutputParser, ContextKeys
-from quartet_masterdata.models import Company, Location, OutboundMapping
+from quartet_masterdata.models import Company, Location, OutboundMapping, \
+    TradeItem, TradeItemField
 
 
 class TestGS1USHC(TestCase):
@@ -368,3 +369,154 @@ class TestGS1USHC(TestCase):
 
     def tearDown(self):
         pass
+
+    def _create_trade_items_masterdata(self):
+        company = Company.objects.last()
+        item1 = TradeItem.objects.create(
+            GTIN14='00397799070629',
+            regulated_product_name='Unit Test Item 1',
+            company=company
+        )
+        item2 = TradeItem.objects.create(
+            GTIN14='20397799070623',
+            regulated_product_name='Unit Test Item 2',
+            company=company
+        ) 
+        TradeItemField.objects.create(
+            trade_item=item1,
+            name=item1.GTIN14,
+            value='Virtual Corp'
+        )
+    
+    def _create_outbound_mapping(self):
+        self.mapping = OutboundMapping.objects.create(
+            company=self.company,
+            from_business=self.company,
+            to_business=self.company_2,
+            ship_from=self.location,
+            ship_to=self.location_2
+        )
+
+    def _create_rule(self):
+        return Rule.objects.create(
+            name='Parse Optel EPCIS',
+            description='unittest'
+        )
+
+    def _create_parsing_step(self, rule):
+        step = Step.objects.create(
+            name='Parse CompactV2 EPCIS',
+            description='Parse Optel CompactV2 EPCIS',
+            step_class='quartet_integrations.optel.steps.OptelCompactV2ParsingStep',
+            rule=rule,
+            order=1,
+        )
+        self._create_parsing_step_params(step)
+        return step
+    
+    def _create_parsing_step_params(self, step):
+        StepParameter.objects.create(
+            name='EPCIS Output Criteria',
+            value='Unit Test Criteria',
+            step=step
+        )
+        StepParameter.objects.create(
+            name='Collect Trade Items Data',
+            value=True,
+            step=step
+        )
+        StepParameter.objects.create(
+            name='EA Extension Digit',
+            value='0',
+            step=step
+        )
+
+    def _create_shipping_step(self, rule):
+        step = Step.objects.create(
+            name='Create Shipping Event',
+            rule=rule,
+            description='unittest',
+            step_class='quartet_integrations.optel.steps.CreateShippingEventStep',
+            order=2
+        )
+        StepParameter.objects.create(
+            step=step,
+            name='Use Location',
+            value='False'
+        )
+    
+    def _create_comm_agg_steps(self, rule):
+        Step.objects.create(
+            name='Get Comm Data',
+            rule=rule,
+            step_class='quartet_output.steps.AddCommissioningDataStep',
+            order=3
+        )
+        Step.objects.create(
+            name='Get Agg Data',
+            rule=rule,
+            step_class='quartet_output.steps.UnpackHierarchyStep',
+            order=4
+        )
+    
+    def _create_EPCPyYes_output_step(self,rule):
+        step = Step.objects.create(
+            name='Get Comm Data',
+            rule=rule,
+            step_class='quartet_integrations.gs1ushc.steps.EPCPyYesMasterDataOutputStep',
+            order=5
+        )
+        StepParameter.objects.create(
+            step=step,
+            name='Add Partners to Shipping Events',
+            value='False'
+        )
+        StepParameter.objects.create(
+            step=step,
+            name='Use GLNs for Owners',
+            value='False'
+        )
+        StepParameter.objects.create(
+            step=step,
+            name='Append Filtered Events',
+            value='True'
+        )
+    
+    def _add_companies_to_locations(self):
+        locations = Location.objects.all()
+        company = Company.objects.first()
+        for location in locations:
+            location.company = company
+            location.save()        
+
+    def test_EPCPyYesMasterDataOutputStep(self):
+        self._add_companies_to_locations()
+        # Create TradeItems
+        self._create_trade_items_masterdata()
+        # create epcis output criteria
+        eoc = self._create_good_ouput_criterion()
+        # create task and rule
+        rule = self._create_rule()
+        db_task = self._create_task(rule)
+        # create steps
+        self._create_parsing_step(rule)
+        # Shipping
+        self._create_shipping_step(rule)
+        # Comm and Agg
+        self._create_comm_agg_steps(rule)
+        self._create_EPCPyYes_output_step(rule)
+        # create step params
+        # get epcis file
+        curpath = os.path.dirname(__file__)
+        data_path = os.path.join(curpath, 'data/two_comm_agg_epcis.xml')
+        # execute
+        context = []
+        with open(data_path, 'r') as data_file:
+            context = execute_rule(data_file.read().encode(), db_task)
+        # asserts
+        output_msg = context.context.get(ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value)
+        filtered_events = context.context.get(ContextKeys.FILTERED_EVENTS_KEY.value)
+        self.assertTrue('<VocabularyElement id="00397799070629">' in output_msg)
+        self.assertEquals(
+            'urn:epc:id:sscc:305555.03000145080', 
+            filtered_events[0].epc_list[0])
