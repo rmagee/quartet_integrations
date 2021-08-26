@@ -424,6 +424,7 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
             except sqlite3.IntegrityError:
                 self.error('Duplicate serial number found: %s', serial_number)
                 connection.rollback()
+                raise
             except:
                 connection.rollback()
                 raise
