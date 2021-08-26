@@ -294,7 +294,7 @@ class TestOutputParsing(TestCase):
                 1,
                 "There should be one filtered event."
             )
-            task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY]
+            task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY.value]
             task = Task.objects.get(name=task_name)
             self.assertEqual(task.status, 'FINISHED')
             print(context.context[ContextKeys.OUTBOUND_EPCIS_MESSAGE_KEY.value])

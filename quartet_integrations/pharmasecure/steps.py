@@ -403,7 +403,6 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
         self.write_list(serial_numbers, region)
 
     def write_list(self, serial_numbers, region: ListBasedRegion):
-
         start = time.time()
         if not os.path.exists(region.db_file_path):
             connection = sqlite3.connect(region.db_file_path)
@@ -418,9 +417,16 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
         cursor = connection.cursor()
         cursor.execute('begin transaction')
         self.info('storing the numbers. {0}'.format(region.db_file_path))
-        for id in serial_numbers:
-            cursor.execute('insert into %s (serial_number, used) values '
-                           '(?, ?)' % get_region_table(region), (id, 0))
+        for serial_number in serial_numbers:
+            try:
+                cursor.execute('insert into %s (serial_number, used) values '
+                           '(?, ?)' % get_region_table(region), (serial_number, 0))
+            except sqlite3.IntegrityError:
+                self.error('Duplicate serial number found: %s', serial_number)
+                connection.rollback()
+            except:
+                connection.rollback()
+                raise
         connection.commit()
         s = ","
         self.info('Saved Serial Numbers. {0}'.format(s.join(serial_numbers)))

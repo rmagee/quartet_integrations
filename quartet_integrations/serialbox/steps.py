@@ -25,6 +25,29 @@ from gs123 import check_digit
 
 logger = logging.getLogger(__name__)
 
+class ListToBase36ConversionStep(Step):
+    """
+    Converts serial-box number ranges to Base-36 alpha numeric.
+    """
+
+    def execute(self, data, rule_context: RuleContext):
+        ret = [
+            self.base36encode(int(datum)) for datum in data
+        ]
+        self.info('Converted numbers: %s' % ret)
+        return ret
+
+    def base36encode(self, number, alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
+        """
+        Converts an integer to a base36 string.
+        """
+        base36 = ''
+        if 0 <= number < len(alphabet):
+            return alphabet[number]
+        while number != 0:
+            number, i = divmod(number, len(alphabet))
+            base36 = alphabet[i] + base36
+        return base36
 
 class ListToUrnConversionStep(Step):
     """

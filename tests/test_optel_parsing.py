@@ -355,7 +355,7 @@ class TestOutputParsing(TestCase):
                     'urn:epc:id:sgtin:0555553.300106.259812595316',
                     'urn:epc:id:sgtin:0555553.300106.127892027084']:
                     self.assertEqual(len(event.child_epcs), 4)
-            task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY]
+            task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY.value]
             execute_queued_task(task_name=task_name)
             task = Task.objects.get(name=task_name)
             self.assertEqual(task.status, 'FINISHED')
@@ -404,7 +404,7 @@ class TestOptelCompactV2Rule(TestCase):
             rule=rule,
             order=1,
         )
-    
+
     def _create_parsing_step_params(self, step):
         StepParameter.objects.create(
             name='EPCIS Output Criteria',
@@ -432,7 +432,7 @@ class TestOptelCompactV2Rule(TestCase):
             rule=rule,
             name='unittest task'
         )
-    
+
     def _create_masterdata(self):
         company = Company.objects.create(
             GLN13='0359883000000',
@@ -483,7 +483,7 @@ class TestCreateShippingEventStep(TestCase):
         self._create_location_masterdata()
         # Create Outbound Mapping
         self._create_outbound_mapping()
-    
+
     def _create_companies_masterdata(self):
         self.company = Company.objects.create(
             GLN13='0359883000000',
@@ -497,7 +497,7 @@ class TestCreateShippingEventStep(TestCase):
             name='Unit Test Company 2',
             gs1_company_prefix='0311111'
         )
-    
+
     def _create_location_masterdata(self):
         self.location = Location.objects.create(
             GLN13='0359883000000',
@@ -528,7 +528,7 @@ class TestCreateShippingEventStep(TestCase):
             regulated_product_name='Unit Test Item 2',
             company=self.company
         )
-    
+
     def _create_outbound_mapping(self):
         self.mapping = OutboundMapping.objects.create(
             company=self.company,
@@ -552,7 +552,7 @@ class TestCreateShippingEventStep(TestCase):
             rule=rule,
             order=1,
         )
-    
+
     def _create_parsing_step_params(self, step):
         StepParameter.objects.create(
             name='EPCIS Output Criteria',
@@ -580,7 +580,7 @@ class TestCreateShippingEventStep(TestCase):
             rule=rule,
             name='unittest task'
         )
-    
+
     def _create_shipping_step(self, rule):
         step = Step.objects.create(
             name='Create Shipping Event',

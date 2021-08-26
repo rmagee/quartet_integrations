@@ -293,7 +293,7 @@ class TestOutputParsing(TestCase):
                 13,
                 "There should be twelve filtered events."
             )
-            task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY]
+            task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY.value]
             execute_queued_task(task_name=task_name)
             task = Task.objects.get(name=task_name)
             self.assertEqual(task.status, 'FINISHED')
@@ -330,7 +330,7 @@ class TestOutputParsing(TestCase):
                 12,
                 "There should be twelve filtered events."
             )
-            task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY]
+            task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY.value]
             execute_queued_task(task_name=task_name)
             task = Task.objects.get(name=task_name)
             self.assertEqual(task.status, 'FINISHED')
@@ -359,7 +359,7 @@ class TestOutputParsing(TestCase):
                 12,
                 "There should be twelve filtered events."
             )
-            task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY]
+            task_name = context.context[ContextKeys.CREATED_TASK_NAME_KEY.value]
             execute_queued_task(task_name=task_name)
             task = Task.objects.get(name=task_name)
             self.assertEqual(task.status, 'FINISHED')
