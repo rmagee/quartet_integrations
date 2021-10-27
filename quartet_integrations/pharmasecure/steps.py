@@ -46,7 +46,8 @@ class PharmaSecureOutputStep(EPCPyYesOutputStep):
         :return: A new Jinja template.
         """
         env = get_default_environment()
-        template = env.get_template('pharmasecure/pharmasecure_object_event.xml')
+        template = env.get_template(
+            'pharmasecure/pharmasecure_object_event.xml')
         return template
 
     def _get_aggregation_template(self):
@@ -55,9 +56,9 @@ class PharmaSecureOutputStep(EPCPyYesOutputStep):
         :return: A jinja template object.
         """
         env = get_default_environment()
-        template = env.get_template('pharmasecure/pharamsecure_aggregation.xml')
+        template = env.get_template(
+            'pharmasecure/pharamsecure_aggregation.xml')
         return template
-
 
     def execute(self, data, rule_context: RuleContext):
         # two events need new templates - object and shipping
@@ -68,12 +69,11 @@ class PharmaSecureOutputStep(EPCPyYesOutputStep):
 
         rule_context.context[ContextKeys.FILTERED_EVENTS_KEY.value] = []
 
-
         object_events = rule_context.context.get(
             ContextKeys.OBJECT_EVENTS_KEY.value, [])
 
         if len(object_events) > 0:
-            #here you are changing the object event templates
+            # here you are changing the object event templates
             template = self._get_commissioning_template()
             for event in object_events:
                 event._template = template
@@ -87,7 +87,6 @@ class PharmaSecureOutputStep(EPCPyYesOutputStep):
             for event in aggregation_events:
                 event._template = template
 
-
         super().execute(data, rule_context)
 
     def get_epcis_document_class(self,
@@ -100,7 +99,8 @@ class PharmaSecureOutputStep(EPCPyYesOutputStep):
         """
         doc_class = super().get_epcis_document_class(all_events)
         env = get_default_environment()
-        template = env.get_template('pharmasecure/pharmasecure_epcis_document.xml')
+        template = env.get_template(
+            'pharmasecure/pharmasecure_epcis_document.xml')
         doc_class._template = template
         return doc_class
 
@@ -113,12 +113,14 @@ class PharmaSecureShipStep(EPCPyYesOutputStep):
         :return: A jinja template object.
         """
         env = get_default_environment()
-        template = env.get_template('pharmasecure/pharmasecure_shipping_objectevent.xml')
+        template = env.get_template(
+            'pharmasecure/pharmasecure_shipping_objectevent.xml')
         return template
 
     def execute(self, data, rule_context: RuleContext):
 
-        filtered_events = rule_context.context.get(ContextKeys.FILTERED_EVENTS_KEY.value)
+        filtered_events = rule_context.context.get(
+            ContextKeys.FILTERED_EVENTS_KEY.value)
         rule_context.context[ContextKeys.OBJECT_EVENTS_KEY.value] = []
         rule_context.context[ContextKeys.AGGREGATION_EVENTS_KEY.value] = []
 
@@ -139,7 +141,8 @@ class PharmaSecureShipStep(EPCPyYesOutputStep):
         """
         doc_class = super().get_epcis_document_class(all_events)
         env = get_default_environment()
-        template = env.get_template('pharmasecure/pharmasecure_epcis_document.xml')
+        template = env.get_template(
+            'pharmasecure/pharmasecure_epcis_document.xml')
         doc_class._template = template
         return doc_class
 
@@ -227,8 +230,8 @@ class PharmaSecureNumberRequestTransportStep(rules.Step, HttpTransportMixin):
             data,
             auth=self.get_auth(region),
             headers={'content-type': 'text/xml',
-                     'charset':'utf-8',
-                     'SOAPAction':'http://tempuri.org/IPSService/Generate'}
+                     'charset': 'utf-8',
+                     'SOAPAction': 'http://tempuri.org/IPSService/Generate'}
         )
         return response
 
@@ -248,9 +251,9 @@ class PharmaSecureNumberRequestTransportStep(rules.Step, HttpTransportMixin):
 
         # Set up namespaces for returned xml from IRIS
         ns = {
-            "a":"http://schemas.datacontract.org/2004/07/psIDCodeMaker",
-            "s":"http://schemas.xmlsoap.org/soap/envelope/",
-            "i":"http://www.w3.org/2001/XMLSchema-instance"
+            "a": "http://schemas.datacontract.org/2004/07/psIDCodeMaker",
+            "s": "http://schemas.xmlsoap.org/soap/envelope/",
+            "i": "http://www.w3.org/2001/XMLSchema-instance"
         }
 
         # Set parameter values from the Step
@@ -260,11 +263,13 @@ class PharmaSecureNumberRequestTransportStep(rules.Step, HttpTransportMixin):
         object_name = None
         encoding_type = None
         try:
-            object_value = region.processing_parameters.get(key='object_value').value
+            object_value = region.processing_parameters.get(
+                key='object_value').value
         except:
             pass
         try:
-            object_name = region.processing_parameters.get(key='object_name').value
+            object_name = region.processing_parameters.get(
+                key='object_name').value
         except:
             pass
         try:
@@ -272,7 +277,8 @@ class PharmaSecureNumberRequestTransportStep(rules.Step, HttpTransportMixin):
         except:
             pass
         try:
-            encoding_type = region.processing_parameters.get(key='encoding_type').value
+            encoding_type = region.processing_parameters.get(
+                key='encoding_type').value
         except:
             pass
 
@@ -297,10 +303,9 @@ class PharmaSecureNumberRequestTransportStep(rules.Step, HttpTransportMixin):
             self.error(msg)
             raise Exception(msg)
 
-
         # Build request to for serial numbers
         context = {
-            'request_id': random.randint(100000000001,999999999999),
+            'request_id': random.randint(100000000001, 999999999999),
             'encoding_type': encoding_type,
             'quantity': quantity,
             'object_name': object_name,
@@ -341,7 +346,7 @@ class PharmaSecureNumberRequestTransportStep(rules.Step, HttpTransportMixin):
 
             'object_value': 'The GTIN-14 or Company Prefix for SSCCs',
             'quantity': 'Number of serial numbers to return',
-            'object_name':'The name of the Object value e.g. COMPANY_PREFIX or GTIN',
+            'object_name': 'The name of the Object value e.g. COMPANY_PREFIX or GTIN',
             'encoding_type': 'SGTIN or SSCC'
         }
 
@@ -357,13 +362,16 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
                                   'range based information.')
 
     def execute(self, data, rule_context: RuleContext):
-
+        company_prefix_length = int(
+            self.get_or_create_parameter('Company Prefix Length', '7',
+                                         'The length of the company prefix '
+                                         'in returned barcodes.'))
         # Set up namespaces for returned xml from PharmaSecure
         ns = {
-            "a":"http://schemas.datacontract.org/2004/07/psIDCodeMaker",
-            "i":"http://www.w3.org/2001/XMLSchema-instance",
-            "s":"http://schemas.xmlsoap.org/soap/envelope/",
-            "":"http://tempuri.org/"
+            "a": "http://schemas.datacontract.org/2004/07/psIDCodeMaker",
+            "i": "http://www.w3.org/2001/XMLSchema-instance",
+            "s": "http://schemas.xmlsoap.org/soap/envelope/",
+            "": "http://tempuri.org/"
         }
 
         # Get xml response from context
@@ -383,18 +391,19 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
                 er = root.find('*/*/*/a:ErrorCode', ns).text
                 msg = "Error from PharmaSecure {0}".format(er)
             except:
-                msg = 'PharmaSecure returned no Serial Numbers for {0}'.format(region_name)
+                msg = 'PharmaSecure returned no Serial Numbers for {0}'.format(
+                    region_name)
                 self.error(msg)
 
             raise Exception(msg)
-
 
         serial_numbers = []
         # add tags to serial_numbers array
         for tag in tags:
             curtag = tag.find('a:SerialNumber', ns).text
             if len(curtag) != 20:
-                sn = conversion.BarcodeConverter(curtag, company_prefix_length=len("0370010"))
+                sn = conversion.BarcodeConverter(curtag,
+                                                 company_prefix_length=company_prefix_length)
                 num = sn.serial_number
                 serial_numbers.append(num)
             else:
@@ -420,7 +429,8 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
         for serial_number in serial_numbers:
             try:
                 cursor.execute('insert into %s (serial_number, used) values '
-                           '(?, ?)' % get_region_table(region), (serial_number, 0))
+                               '(?, ?)' % get_region_table(region),
+                               (serial_number, 0))
             except sqlite3.IntegrityError:
                 self.error('Duplicate serial number found: %s', serial_number)
                 connection.rollback()
@@ -460,5 +470,3 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
     @property
     def declared_parameters(self):
         return {}
-
-
