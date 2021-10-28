@@ -1,5 +1,6 @@
 stages:
     - test-python
+    - build-docs
     - pypi
 
 services:
