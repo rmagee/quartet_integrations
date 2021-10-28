@@ -26,7 +26,9 @@ pages:
   stage: build-docs
   script:
   - export PYTHONPATH=$PYTHONPATH:$CI_PROJECT_DIR
-  - pip install sphinx recommonmark sphinx_rtd_theme pygments ipython django
+  - pip install sphinx recommonmark sphinx_rtd_theme pygments ipython
+  - pip install -r requirements_test.txt
+  - pip install -r requirements.txt
   - cd docs/
   - make html
   - mv ./_build/html public
