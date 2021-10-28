@@ -22,20 +22,19 @@ python3_6_unit_test:
       - htmlcov/
 
 pages:
-    image: seriallab/python3.5dev
-    stage: build-docs
-    script:
-    - apt-get install -y git
-    - export PYTHONPATH=$PYTHONPATH:$CI_PROJECT_DIR
-    - pip install -r requirements_test.txt
-    - pip install sphinx sphinx_rtd_theme pygments ipython recommonmark commonmark
-    - make docs
-    - mv docs/_build/html/ public/
-    artifacts:
-        paths:
-        - public
-    only:
-      - master
+  image: seriallab/python3.6dev
+  stage: build-docs
+  script:
+  - export PYTHONPATH=$PYTHONPATH:$CI_PROJECT_DIR
+  - pip install sphinx recommonmark sphinx_rtd_theme pygments ipython
+  - cd docs/
+  - make html
+  - mv ./_build/html public
+  - ls -la public
+  artifacts:
+      paths:
+      - public
+      expire_in: 1h
 
 deploy_pypi:
     image: seriallab/python3.6dev
