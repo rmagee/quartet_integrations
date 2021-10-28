@@ -25,7 +25,7 @@ pages:
     image: seriallab/python3.5dev
     stage: build-docs
     script:
-    - apt-get install -y git
+    - apt-get install -y git libffi libffi-dev
     - export PYTHONPATH=$PYTHONPATH:$CI_PROJECT_DIR
     - pip install -r requirements_test.txt
     - pip install sphinx sphinx_rtd_theme pygments ipython recommonmark commonmark
