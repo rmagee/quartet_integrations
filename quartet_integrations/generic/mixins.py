@@ -13,7 +13,10 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 from copy import copy
+import imp
+import pytz
 
+from datetime import datetime
 from EPCPyYes.core.v1_2 import template_events as events
 from EPCPyYes.core.v1_2.CBV import SourceDestinationTypes
 from EPCPyYes.core.v1_2.events import EPCISBusinessEvent
@@ -21,6 +24,7 @@ from gs123.conversion import URNConverter
 from quartet_capture.rules import RuleContext
 from quartet_epcis.db_api.queries import EPCISDBProxy
 from quartet_masterdata.models import Company, Location, OutboundMapping
+from urllib3 import Retry
 
 
 class ObserveChildrenMixin:
@@ -51,12 +55,20 @@ class ObserveChildrenMixin:
             entries, select_for_update=False
         )
         ob_event = events.ObjectEvent()
+        ob_event.event_time = self.get_current_datetime()
         ob_event.epc_list = [entry.identifier for entry in child_entries]
         ob_event.action = events.Action.observe.value
         ob_event.source_list = copy(event.source_list) if use_sources else []
         ob_event.destination_list = copy(
             event.destination_list) if use_destinations else []
         return ob_event
+    
+    def get_current_datetime(self):
+        """
+        Will return current UTC time in ISO format.
+        :return: Returns string with current UTC time in iso format 
+        """
+        return datetime.utcnow().replace(tzinfo=pytz.utc).isoformat()
 
 
 class CompanyFromURNMixin:
