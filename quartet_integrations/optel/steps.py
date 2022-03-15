@@ -13,6 +13,7 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 
+from datetime import datetime
 from enum import Enum
 from gs123.conversion import URNConverter
 from quartet_capture import models
@@ -390,10 +391,13 @@ class CreateShippingEventStep(Step, steps.DynamicTemplateMixin):
         # Create EPCIS Shipping Event
         self.info('Creating new shipping event.')
         shipping_event = ObjectEvent()
+        shipping_event.event_time = datetime.now().isoformat()
         shipping_event.action = Action.observe.value
         shipping_event.biz_step = BusinessSteps.shipping.value
         shipping_event.disposition = Disposition.in_transit.value
         shipping_event.epc_list = ssccs
+        # Add biz location from mapping ship from
+        shipping_event.biz_location = mapping.ship_from.SGLN
         # Set up BusinessTransactionList
         gln = mapping.ship_from.GLN13
         shipping_event.business_transaction_list.append(
