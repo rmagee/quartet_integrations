@@ -12,16 +12,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2020 SerialLab Corp.  All rights reserved.
+from typing import List
 from quartet_capture import models, errors as capture_errors
 from quartet_capture.rules import Step, RuleContext
 from quartet_epcis.parsing.steps import EPCISParsingStep
 from quartet_epcis.parsing.errors import EntryException
 from quartet_integrations.generic.parsing import FailedMessageParser
+from quartet_integrations.optel.epcpyyes import ObjectEvent
 from quartet_output.steps import ContextKeys, CreateOutputTaskStep as COTS
 from io import BytesIO
 from quartet_output.steps import TransportStep
 from quartet_output.models import EPCISOutputCriteria, EndPoint
 from django.utils.translation import gettext as _
+from EPCPyYes.core.v1_2.template_events import EPCISDocument
+
 
 class MyStep(Step):
     def execute(self, data, rule_context: RuleContext):
@@ -211,3 +215,20 @@ class ErrorReportTransportStep(TransportStep):
 
     class FailedShipmentException(Exception):
         pass
+
+
+class FilteredEventsParsingStep(EPCISParsingStep):
+    '''
+    Designed to parse and save all of the filtered events 
+    from rule context in FILTERED_EVENTS_KEY context key.
+    '''
+    def prepare_epcis_doc(self, filtered_events: List):
+        epcis_doc = EPCISDocument(object_events=filtered_events).render()
+        self.info(epcis_doc)
+        return epcis_doc
+
+    def execute(self, data, rule_context: RuleContext):
+        filtered_events = rule_context.context.get(
+            ContextKeys.FILTERED_EVENTS_KEY.value)
+        epcis_doc = self.prepare_epcis_doc(filtered_events)
+        return super().execute(epcis_doc, rule_context)

@@ -24,11 +24,13 @@ from quartet_capture.models import Rule, Step, StepParameter, Task
 from quartet_capture.tasks import execute_rule, execute_queued_task
 from quartet_epcis.models import entries
 from quartet_epcis.db_api.queries import EPCISDBProxy
+from quartet_epcis.models import events
 from quartet_epcis.models.events import Event
 from quartet_epcis.parsing.context_parser import BusinessEPCISParser
 from quartet_integrations.optel.parsing import OptelEPCISLegacyParser, \
     ConsolidationParser
 from quartet_output import models
+from quartet_output import steps
 from quartet_output.models import EPCISOutputCriteria
 from quartet_output.steps import ContextKeys
 from quartet_integrations.optel.steps import ContextKeys as OptelContextKeys
@@ -630,3 +632,39 @@ class TestCreateShippingEventStep(TestCase):
             self.mapping.ship_to.SGLN)
         self.assertEquals(len(shipping_events[0].epc_list), 1)
         self.assertEquals(shipping_events[0].epc_list, ssccs)
+    
+    def _create_filtered_event_parsing_step(self, rule, order=3):
+        step = Step.objects.create(
+            name='Parse Filtered Events',
+            rule=rule,
+            description='unittest',
+            step_class='quartet_integrations.generic.steps.FilteredEventsParsingStep',
+            order=order
+        )
+        return step
+
+    def test_saving_created_shipping_event(self):
+        # Set up the rule, step and a task
+        rule = self._create_rule()
+        step = self._create_parsing_step(rule)
+        self._create_parsing_step_params(step)
+        self._create_shipping_step(rule)
+        self._create_filtered_event_parsing_step(rule)
+        db_task = self._create_task(rule)
+        # Get EPCIS xml path
+        curpath = os.path.dirname(__file__)
+        data_path = os.path.join(curpath, 'data/optel-compactv2-epcis.xml')
+        # Run the task with the test data
+        context = []
+        with open(data_path, 'r') as data_file:
+            context = execute_rule(data_file.read().encode(), db_task)
+        # Get values from context
+        ssccs = context.context.get(OptelContextKeys.FILTERED_SSCCS.value)
+        # Check if they are the same as in mapping
+        # get shipping event from db
+        
+        proxy = EPCISDBProxy()
+        db_events = proxy.get_events_by_epc(ssccs[0])
+        shipment = db_events[-1]
+        self.assertEquals(len(db_events), 3)
+        self.assertEquals(shipment.biz_step, BusinessSteps.shipping.value)
