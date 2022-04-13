@@ -12,6 +12,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
+from email import parser
 import logging
 
 from serialbox.models import Pool, SequentialRegion
@@ -22,6 +23,8 @@ from quartet_masterdata.db import DBProxy
 from quartet_masterdata.models import TradeItem
 from gs123.conversion import BarcodeConverter, URNConverter
 from gs123 import check_digit
+from io import StringIO
+from quartet_integrations.serialbox.parsing import UpdateResponseRuleParser
 
 logger = logging.getLogger(__name__)
 
@@ -505,3 +508,73 @@ class ListToBarcodeConversionStep(Step):
 
     class InvalidCompanyPrefix(Exception):
         pass
+
+
+class ResponseRulesUpdateStep(Step):
+    """
+    Will update response rules based on the data in an inbound 
+    csv file.
+    """
+
+    def __init__(self, db_task: models.Task, **kwargs):
+        super().__init__(db_task, **kwargs)
+        # raise exceptions param
+        self.raise_exceptions = self.get_boolean_parameter('Raise Exceptions', True)
+        
+    def execute(self, data, rule_context: RuleContext):
+        '''
+        Inbound data should be in CSV format.
+        :param data: the csv data for response rule update.
+        :param rule_context: The rule context.
+        '''
+        prepared_data = self.get_prepared_data(data)
+        
+        parser_class = self.get_parser_class()
+
+        self.info('Instantiating parser: %s ', str(parser_class))
+        # parse input data and save it to dict
+        parser = self.instantiate_parser(parser_class)
+        self.info('Parsing data from the csv file...')
+        parser.parse(prepared_data)
+        self.info('Parsing completed and new Response Rules are configured.')
+        # found results
+        if parser.errors:
+            self.error('Updating Response Rules for the following '
+                       'number pools was not successful "%s"' % parser.errors)
+            # TODO: decide whether to raise an error so that the task is displayed as failed. 
+        self.info('Done.')
+    
+    def get_parser_class(self) -> UpdateResponseRuleParser:
+        '''
+        Resturns a parser class that will process and add/edit response rules.
+        :return: Parser class
+        '''
+        return UpdateResponseRuleParser
+    
+    def get_prepared_data(self, data) -> StringIO:
+        '''
+        Decodes the provided data to thhe correct format 
+        in order to be passed down to the parser.
+        :param data: inbound data
+        :return: the data in StringIO format
+        '''
+        return StringIO(data.decode('utf-8'))
+
+    def instantiate_parser(self, parser_class):
+        '''
+        Instantiates a parser for updating Response Rules 
+        with all the required arguments.
+        :param parser_class: class 
+        :return: Parser instance
+        '''
+        return parser_class(self.raise_exceptions)
+
+    def declared_parameters(self):
+        return {
+            'Raise Exceptions': 'Whether or not to stop further processing '
+                                'when a non-existing pools or rules are '
+                                'encountered.',
+        }
+    
+    def on_failure(self):
+        return super().on_failure()
