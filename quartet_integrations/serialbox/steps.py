@@ -18,6 +18,7 @@ import logging
 from serialbox.models import Pool, SequentialRegion
 
 from quartet_capture import models
+from serialbox.models import Pool
 from quartet_capture.rules import Step, RuleContext
 from quartet_masterdata.db import DBProxy
 from quartet_masterdata.models import TradeItem
@@ -81,6 +82,7 @@ class ListToUrnConversionStep(Step):
         """
         task_params = self.get_task_parameters(rule_context)
         pool = task_params['pool']
+        self.pool_ref = Pool.objects.get(machine_name=pool)
 
         self.info('Working against Pool with machine name %s', pool)
 
@@ -164,14 +166,21 @@ class ListToUrnConversionStep(Step):
         # a sequential reply.  In that case, we transform the start and
         # end numbers into a list using the range function, otherwise
         # we leave the list alone
-        try:
-            if len(numbers) == 2 and numbers[0] - numbers[1] != 1:
-                self.info('Sequential pool detected, converting to list.')
-                numbers = range(numbers[0], numbers[1] + 1)
-            else:
-                self.info('Random pool detected.')
-        except TypeError:
-            self.info('List-based detected.')
+        if self.pool_ref.sequentialregion_set.count() > 0:
+            for region in self.pool_ref.sequentialregion_set.all():
+                if region.active:
+                    self.info('Sequential pool detected, converting to list.')
+                    return range(numbers[0], numbers[1] + 1)
+        elif self.pool_ref.randomizedregion_set.count() > 0:
+            for region in self.pool_ref.randomizedregion_set.all():
+                if region.active:
+                    self.info('Random pool detected.')
+        elif self.pool_ref.listbasedregion_set.count() > 0:
+            for region in self.pool_ref.listbasedregion_set.all():
+                if region.active:
+                    self.info('List-based detected.')
+        else:
+            self.error('No active region was detected.')
         return numbers
 
     def handle_ssccs(self, cp_length, numbers, return_vals, sb_response):
@@ -512,7 +521,7 @@ class ListToBarcodeConversionStep(Step):
 
 class ResponseRulesUpdateStep(Step):
     """
-    Will update response rules based on the data in an inbound 
+    Will update response rules based on the data in an inbound
     csv file.
     """
 
@@ -520,7 +529,7 @@ class ResponseRulesUpdateStep(Step):
         super().__init__(db_task, **kwargs)
         # raise exceptions param
         self.raise_exceptions = self.get_boolean_parameter('Raise Exceptions', True)
-        
+
     def execute(self, data, rule_context: RuleContext):
         '''
         Inbound data should be in CSV format.
@@ -528,7 +537,7 @@ class ResponseRulesUpdateStep(Step):
         :param rule_context: The rule context.
         '''
         prepared_data = self.get_prepared_data(data)
-        
+
         parser_class = self.get_parser_class()
 
         self.info('Instantiating parser: %s ', str(parser_class))
@@ -541,19 +550,19 @@ class ResponseRulesUpdateStep(Step):
         if parser.errors:
             self.error('Updating Response Rules for the following '
                        'number pools was not successful "%s"' % parser.errors)
-            # TODO: decide whether to raise an error so that the task is displayed as failed. 
+            # TODO: decide whether to raise an error so that the task is displayed as failed.
         self.info('Done.')
-    
+
     def get_parser_class(self) -> UpdateResponseRuleParser:
         '''
         Resturns a parser class that will process and add/edit response rules.
         :return: Parser class
         '''
         return UpdateResponseRuleParser
-    
+
     def get_prepared_data(self, data) -> StringIO:
         '''
-        Decodes the provided data to thhe correct format 
+        Decodes the provided data to thhe correct format
         in order to be passed down to the parser.
         :param data: inbound data
         :return: the data in StringIO format
@@ -562,9 +571,9 @@ class ResponseRulesUpdateStep(Step):
 
     def instantiate_parser(self, parser_class):
         '''
-        Instantiates a parser for updating Response Rules 
+        Instantiates a parser for updating Response Rules
         with all the required arguments.
-        :param parser_class: class 
+        :param parser_class: class
         :return: Parser instance
         '''
         return parser_class(self.raise_exceptions)
@@ -575,6 +584,6 @@ class ResponseRulesUpdateStep(Step):
                                 'when a non-existing pools or rules are '
                                 'encountered.',
         }
-    
+
     def on_failure(self):
         return super().on_failure()
