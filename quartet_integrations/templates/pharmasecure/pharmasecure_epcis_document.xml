@@ -10,10 +10,10 @@
 		<sbdh:StandardBusinessDocumentHeader>
 			<sbdh:HeaderVersion>1.0</sbdh:HeaderVersion>
 			<sbdh:Sender>
-				<sbdh:Identifier Authority="GLN">0862053000006</sbdh:Identifier>
+				<sbdh:Identifier Authority="GLN">{{ additional_context['sender'] }}</sbdh:Identifier>
 			</sbdh:Sender>
 			<sbdh:Receiver>
-				<sbdh:Identifier Authority="GLN">0370010000001</sbdh:Identifier>
+				<sbdh:Identifier Authority="GLN">{{ additional_context['receiver'] }}</sbdh:Identifier>
 			</sbdh:Receiver>
 			<sbdh:DocumentIdentification>
 				<sbdh:Standard>EPCglobal</sbdh:Standard>

@@ -29,12 +29,13 @@ from quartet_capture import models, rules, errors as capture_errors
 from quartet_capture.rules import RuleContext
 from quartet_output.transport.http import HttpTransportMixin
 from quartet_integrations.frequentz.environment import get_default_environment
-from quartet_masterdata.models import TradeItem
+from quartet_masterdata.models import TradeItem, Location, Company
 from list_based_flavorpack.models import ListBasedRegion
 from serialbox import models as sb_models
 from gs123 import conversion
 from quartet_templates.steps import TemplateStep
 from quartet_output.steps import ContextKeys, EPCPyYesOutputStep
+from EPCPyYes.core.v1_2.CBV.source_destination import SourceDestinationTypes
 
 
 class PharmaSecureOutputStep(EPCPyYesOutputStep):
@@ -139,12 +140,46 @@ class PharmaSecureShipStep(EPCPyYesOutputStep):
         :param all_events: The events to add to the document
         :return: The EPCPyYes event list document to render
         """
-        doc_class = super().get_epcis_document_class(all_events)
+        # Get 
+        sender, receiver = self.get_sender_and_receiver()
+        # Pass params to EPCIS doc
+        additional_context = {
+            'sender': sender,
+            'receiver': receiver
+        }
+        doc_class = template_events.EPCISEventListDocument(all_events, additional_context=additional_context)
         env = get_default_environment()
         template = env.get_template(
             'pharmasecure/pharmasecure_epcis_document.xml')
         doc_class._template = template
         return doc_class
+    
+    def _get_sender_gln(self, sgln: str):
+        
+        location = Location.objects.get(SGLN=sgln)
+        if hasattr(location.company, 'GLN13'):
+            return location.company.GLN13
+        return location.GLN13
+
+    
+    def _get_receiver_gln(self, sgln: str):
+        return Company.objects.get(SGLN=sgln).GLN13
+        
+
+    def get_sender_and_receiver(self):
+        fevents = self.rule_context.context.get(ContextKeys.FILTERED_EVENTS_KEY.value)
+        sender, receiver = None, None
+        if fevents:
+            source_list = fevents[0].source_list
+
+            for source in source_list:
+                if SourceDestinationTypes.owning_party.value == source.type:
+                    sender = self._get_sender_gln(source.source)
+            dest_list = fevents[0].destination_list
+            for dest in dest_list:
+                if SourceDestinationTypes.owning_party.value == dest.type:
+                    receiver = self._get_receiver_gln(dest.destination)
+            return sender, receiver
 
 
 class PharmaSecureNumberRequestTransportStep(rules.Step, HttpTransportMixin):
@@ -399,74 +434,4 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
 
         serial_numbers = []
         # add tags to serial_numbers array
-        for tag in tags:
-            curtag = tag.find('a:SerialNumber', ns).text
-            if len(curtag) != 20:
-                sn = conversion.BarcodeConverter(curtag,
-                                                 company_prefix_length=company_prefix_length)
-                num = sn.serial_number
-                serial_numbers.append(num)
-            else:
-                serial_numbers.append(curtag[2:])
-
-        self.write_list(serial_numbers, region)
-
-    def write_list(self, serial_numbers, region: ListBasedRegion):
-        start = time.time()
-        if not os.path.exists(region.db_file_path):
-            connection = sqlite3.connect(region.db_file_path)
-            connection.execute(
-                "create table if not exists %s "
-                "(serial_number text not null unique, used integer not null)"
-                % get_region_table(region)
-            )
-        else:
-            connection = sqlite3.connect(region.db_file_path)
-
-        cursor = connection.cursor()
-        cursor.execute('begin transaction')
-        self.info('storing the numbers. {0}'.format(region.db_file_path))
-        for serial_number in serial_numbers:
-            try:
-                cursor.execute('insert into %s (serial_number, used) values '
-                               '(?, ?)' % get_region_table(region),
-                               (serial_number, 0))
-            except sqlite3.IntegrityError:
-                self.error('Duplicate serial number found: %s', serial_number)
-                connection.rollback()
-                raise
-            except:
-                connection.rollback()
-                raise
-        connection.commit()
-        s = ","
-        self.info('Saved Serial Numbers. {0}'.format(s.join(serial_numbers)))
-        self.info("Execution time: %.3f seconds." % (time.time() - start))
-
-    def get_list_based_region(self, machine_name):
-        """
-        Gets the list based region based on the machine name of the region
-        first and, if not available, will look for a pool with the machine
-        name and pull the list based region from the pool.
-        :param machine_name: The machine name of the region or pool
-        :return: A ListBasedRegion instance
-        """
-        try:
-            ret = ListBasedRegion.objects.get(machine_name=machine_name)
-        except ListBasedRegion.DoesNotExist:
-            pool = sb_models.Pool.objects.get(machine_name=machine_name)
-            ret = ListBasedRegion.objects.filter(pool=pool)[0]
-            if not isinstance(ret, ListBasedRegion):
-                raise ListBasedRegion.DoesNotExist(
-                    'A list based region '
-                    'is not available within'
-                    'pool %s' % pool.machine_name
-                )
-        return ret
-
-    def on_failure(self):
-        super().on_failure()
-
-    @property
-    def declared_parameters(self):
-        return {}
+  
