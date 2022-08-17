@@ -434,4 +434,74 @@ class PharmaSecureNumberRequestProcessStep(rules.Step):
 
         serial_numbers = []
         # add tags to serial_numbers array
-  
+        for tag in tags:
+            curtag = tag.find('a:SerialNumber', ns).text
+            if len(curtag) != 20:
+                sn = conversion.BarcodeConverter(curtag,
+                                                 company_prefix_length=company_prefix_length)
+                num = sn.serial_number
+                serial_numbers.append(num)
+            else:
+                serial_numbers.append(curtag[2:])
+
+        self.write_list(serial_numbers, region)
+
+    def write_list(self, serial_numbers, region: ListBasedRegion):
+        start = time.time()
+        if not os.path.exists(region.db_file_path):
+            connection = sqlite3.connect(region.db_file_path)
+            connection.execute(
+                "create table if not exists %s "
+                "(serial_number text not null unique, used integer not null)"
+                % get_region_table(region)
+            )
+        else:
+            connection = sqlite3.connect(region.db_file_path)
+
+        cursor = connection.cursor()
+        cursor.execute('begin transaction')
+        self.info('storing the numbers. {0}'.format(region.db_file_path))
+        for serial_number in serial_numbers:
+            try:
+                cursor.execute('insert into %s (serial_number, used) values '
+                               '(?, ?)' % get_region_table(region),
+                               (serial_number, 0))
+            except sqlite3.IntegrityError:
+                self.error('Duplicate serial number found: %s', serial_number)
+                connection.rollback()
+                raise
+            except:
+                connection.rollback()
+                raise
+        connection.commit()
+        s = ","
+        self.info('Saved Serial Numbers. {0}'.format(s.join(serial_numbers)))
+        self.info("Execution time: %.3f seconds." % (time.time() - start))
+
+    def get_list_based_region(self, machine_name):
+        """
+        Gets the list based region based on the machine name of the region
+        first and, if not available, will look for a pool with the machine
+        name and pull the list based region from the pool.
+        :param machine_name: The machine name of the region or pool
+        :return: A ListBasedRegion instance
+        """
+        try:
+            ret = ListBasedRegion.objects.get(machine_name=machine_name)
+        except ListBasedRegion.DoesNotExist:
+            pool = sb_models.Pool.objects.get(machine_name=machine_name)
+            ret = ListBasedRegion.objects.filter(pool=pool)[0]
+            if not isinstance(ret, ListBasedRegion):
+                raise ListBasedRegion.DoesNotExist(
+                    'A list based region '
+                    'is not available within'
+                    'pool %s' % pool.machine_name
+                )
+        return ret
+
+    def on_failure(self):
+        super().on_failure()
+
+    @property
+    def declared_parameters(self):
+        return {}
