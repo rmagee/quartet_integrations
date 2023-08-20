@@ -12,19 +12,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2020 SerialLab Corp.  All rights reserved.
-from django.conf.urls import url
+from django.urls import re_path
 from quartet_integrations.systech.guardian.views import GuardianNumberRangeView
 from quartet_integrations.systech.guardian.views import GuardianCapture
 
-app_name = 'quartet_integrations'
+app_name = "quartet_integrations"
 
 urlpatterns = [
-    url(
-        r'guardian/NumberRangeService/?',
-        GuardianNumberRangeView.as_view(), name="guardianNumberRangeService"
+    re_path(
+        r"guardian/NumberRangeService/?",
+        GuardianNumberRangeView.as_view(),
+        name="guardianNumberRangeService",
     ),
-    url(
-        r'guardian/guardian-capture/?',
-        GuardianCapture.as_view(), name="guardianCapture"
-    )
+    re_path(
+        r"guardian/guardian-capture/?",
+        GuardianCapture.as_view(),
+        name="guardianCapture",
+    ),
 ]

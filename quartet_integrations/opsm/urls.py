@@ -12,20 +12,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
-from django.conf.urls import url
-from quartet_integrations.opsm.views import OPSMNumberRangeView, \
-    CaptureInterface
+from django.urls import re_path
+from quartet_integrations.opsm.views import OPSMNumberRangeView, CaptureInterface
 
-app_name = 'quartet_integrations'
+app_name = "quartet_integrations"
 # /opsmservices-transactions/SerialGenRequestServiceAMService?wsdl
 # SerialGenRequestServiceAMServiceSoapHttpPort
 urlpatterns = [
-    url(
-        r'opsmservices-transactions/SerialGenRequestServiceAMService',
-        OPSMNumberRangeView.as_view(), name="numberRangeService"
+    re_path(
+        r"opsmservices-transactions/SerialGenRequestServiceAMService",
+        OPSMNumberRangeView.as_view(),
+        name="numberRangeService",
     ),
-    url(
-        r'opsmservices-epcis/Capture',
-        CaptureInterface.as_view(), name='opsmCapture'
-    )
+    re_path(
+        r"opsmservices-epcis/Capture", CaptureInterface.as_view(), name="opsmCapture"
+    ),
 ]

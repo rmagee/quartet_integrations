@@ -13,14 +13,14 @@
 #
 # Copyright 2019 SerialLab Corp.  All rights reserved.
 # -*- coding: utf-8 -*-
-from django.conf.urls import url
+from django.urls import re_path
 
 from quartet_integrations.rocit.views import RetrievePackagingHierarchyView
 
 urlpatterns = [
-    url(
-        r'opsmservices-serials/PackagingHierarchyServiceAMService',
+    re_path(
+        r"opsmservices-serials/PackagingHierarchyServiceAMService",
         RetrievePackagingHierarchyView.as_view(),
-        name='retrievePackagingHierarchyResponse'
+        name="retrievePackagingHierarchyResponse",
     )
 ]

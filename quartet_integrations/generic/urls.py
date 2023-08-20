@@ -13,14 +13,11 @@
 #
 # Copyright 2020 SerialLab Corp.  All rights reserved.
 
-from django.conf.urls import url
-from quartet_integrations.generic.views import  LoggingView
+from django.urls import re_path
+from quartet_integrations.generic.views import LoggingView
 
-app_name = 'quartet_integrations'
+app_name = "quartet_integrations"
 
 urlpatterns = [
-    url(
-        r'debugging/requestlogger/?',
-        LoggingView.as_view(), name="requestLogger"
-    ),
+    re_path(r"debugging/requestlogger/?", LoggingView.as_view(), name="requestLogger"),
 ]
